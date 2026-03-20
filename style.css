@@ -1,9 +1,10 @@
 /* BODY */
 body {
   margin: 0;
-  background: linear-gradient(135deg, #fff7f3, #eaf7f0);
+  background: linear-gradient(135deg, #fff7f3, #dff3ea);
   color: #4a4a4a;
   font-family: 'Poppins', sans-serif;
+  transition: all 0.2s ease-in-out;
 }
 
 /* HEADER */
@@ -36,10 +37,10 @@ nav a {
 }
 
 nav a:hover {
-  color: #ff9f7a;
+  color: #8fc9a3;
 }
 
-/* SEARCH BAR */
+/* SEARCH */
 .top-bar input {
   padding: 10px 15px;
   border-radius: 25px;
@@ -69,8 +70,8 @@ nav a:hover {
 }
 
 .filters button {
-  background: #cde7d8;
-  color: #3e5f4e;
+  background: #a8d5ba;
+  color: #2f4f3e;
   border: none;
   padding: 8px 16px;
   margin: 6px;
@@ -79,7 +80,7 @@ nav a:hover {
 }
 
 .filters button:hover {
-  background: #b7dccc;
+  background: #8fc9a3;
 }
 
 /* MASONRY */
@@ -102,7 +103,7 @@ nav a:hover {
 
 .card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 12px 25px rgba(0,0,0,0.08);
+  box-shadow: 0 12px 25px rgba(168, 213, 186, 0.4);
 }
 
 .card img {
