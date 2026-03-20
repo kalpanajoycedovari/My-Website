@@ -7,31 +7,42 @@ document.addEventListener("DOMContentLoaded", () => {
     alert("✨ Try this vibe: " + random);
   };
 
-  // SAVE BUTTON
+  // SAVE SYSTEM
   document.querySelectorAll(".card button").forEach(btn => {
     if (!btn.classList.contains("toggle-btn")) {
+
       btn.addEventListener("click", () => {
-        btn.innerText = btn.innerText === "♡ save" ? "❤️ saved" : "♡ save";
+
+        const card = btn.closest(".card");
+        let saved = JSON.parse(localStorage.getItem("savedCards")) || [];
+
+        if (btn.innerText === "♡ save") {
+          btn.innerText = "❤️ saved";
+
+          saved.push(card.innerHTML);
+          localStorage.setItem("savedCards", JSON.stringify(saved));
+
+        } else {
+          btn.innerText = "♡ save";
+          saved.pop();
+          localStorage.setItem("savedCards", JSON.stringify(saved));
+        }
+
       });
+
     }
   });
 
-  // FILTER SYSTEM
+  // FILTER
   document.querySelectorAll(".filters button").forEach(button => {
     button.addEventListener("click", () => {
-
       const filter = button.getAttribute("data-filter");
 
       document.querySelectorAll(".card").forEach(card => {
         const category = card.getAttribute("data-category");
 
-        if (filter === "all" || category === filter) {
-          card.style.display = "block";
-        } else {
-          card.style.display = "none";
-        }
+        card.style.display = (filter === "all" || category === filter) ? "block" : "none";
       });
-
     });
   });
 
@@ -40,12 +51,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const value = e.target.value.toLowerCase();
 
     document.querySelectorAll(".card").forEach(card => {
-      const text = card.innerText.toLowerCase();
-      card.style.display = text.includes(value) ? "block" : "none";
+      card.style.display = card.innerText.toLowerCase().includes(value) ? "block" : "none";
     });
   });
 
-  // EXPANDABLE JOURNAL
+  // EXPAND JOURNAL
   document.querySelectorAll(".toggle-btn").forEach(btn => {
     btn.addEventListener("click", () => {
 
