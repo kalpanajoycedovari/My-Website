@@ -150,3 +150,9 @@ audio {
 .card-content p {
   margin-bottom: 8px;
 }
+.coming-soon {
+  font-size: 0.9rem;
+  color: #8fc9a3;
+  margin-top: 8px;
+  font-style: italic;
+}
