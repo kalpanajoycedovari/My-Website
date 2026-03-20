@@ -1,7 +1,11 @@
 /* GLOBAL */
 body {
   margin: 0;
+  padding: 0;
+  box-sizing: border-box;
   font-family: 'Poppins', sans-serif;
+  min-height: 100vh;
+
 
   background: linear-gradient(135deg, #fff3eb, #e6f4ea);
   color: #2e2e2e;
