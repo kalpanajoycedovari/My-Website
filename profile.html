@@ -1,54 +1,61 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Login</title>
+  <title>Create Profile</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
 <div class="login-container">
-  <h1>🌸 Welcome to Solite</h1>
+  <h1>🌸 Create Your Profile</h1>
 
-  <input type="email" id="email" placeholder="Email">
-  <input type="password" id="password" placeholder="Password">
+  <input type="text" id="name" placeholder="Your name">
+  <input type="text" id="bio" placeholder="Your vibe / bio">
+  <input type="text" id="avatar" placeholder="Image URL (optional)">
 
-  <button onclick="signup()">Sign Up</button>
-  <button onclick="login()">Login</button>
+  <button onclick="saveProfile()">Save Profile</button>
 </div>
 
 <!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyDc8vbutr2Sfnb49D58LYDdcxAqdY3sNWo",
   authDomain: "solite-d9bdb.firebaseapp.com",
-  projectId: "solite-d9bdb"
+  projectId: "solite-d9bdb",
+  storageBucket: "solite-d9bdb.firebasestorage.app",
+  messagingSenderId: "933108708137",
+  appId: "1:933108708137:web:e443d5045935fac50cbd38",
+  measurementId: "G-M0008N8CLK"
 };
 
 firebase.initializeApp(firebaseConfig);
+
 const auth = firebase.auth();
+const db = firebase.firestore();
 
-function signup() {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+// SAVE PROFILE
+function saveProfile() {
+  const user = auth.currentUser;
 
-  auth.createUserWithEmailAndPassword(email, password)
+  if (!user) {
+    alert("Please login first");
+    return;
+  }
+
+  const profile = {
+    name: document.getElementById("name").value,
+    bio: document.getElementById("bio").value,
+    avatar: document.getElementById("avatar").value
+  };
+
+  db.collection("users").doc(user.uid).set(profile)
     .then(() => {
-      alert("Account created!");
-      window.location.href = "index.html";
-    })
-    .catch(err => alert(err.message));
-}
-
-function login() {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-
-  auth.signInWithEmailAndPassword(email, password)
-    .then(() => {
+      alert("Profile saved!");
       window.location.href = "index.html";
     })
     .catch(err => alert(err.message));
