@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // LOAD PROFILE
   function loadProfile(uid) {
     db.collection("users").doc(uid).get()
       .then(doc => {
@@ -28,37 +29,106 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   }
 
-  // ❤️ SAVE TO FIREBASE
+  // ❤️ SAVE / UNSAVE
   document.querySelectorAll(".card button").forEach(btn => {
 
     if (!btn.classList.contains("toggle-btn")) {
 
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
 
         const user = firebase.auth().currentUser;
-
         if (!user) return;
 
         const card = btn.closest(".card");
+        const title = card.querySelector("h3").innerText;
 
-        const cardData = {
-          title: card.querySelector("h3").innerText,
-          text: card.querySelector("p").innerText,
-          image: card.querySelector("img") ? card.querySelector("img").src : ""
-        };
-
-        db.collection("users")
+        const snapshot = await db
+          .collection("users")
           .doc(user.uid)
           .collection("saved")
-          .add(cardData)
-          .then(() => {
-            btn.innerText = "❤️ saved";
-          });
+          .where("title", "==", title)
+          .get();
+
+        if (!snapshot.empty) {
+          snapshot.forEach(doc => doc.ref.delete());
+          btn.innerText = "♡ save";
+        } else {
+          db.collection("users")
+            .doc(user.uid)
+            .collection("saved")
+            .add({
+              title: title,
+              text: card.querySelector("p").innerText,
+              image: card.querySelector("img")?.src || ""
+            });
+
+          btn.innerText = "❤️ saved";
+        }
 
       });
 
     }
 
+  });
+
+  // RANDOM VIBE
+  const vibes = ["rainy day", "soft morning", "nostalgic", "city lights"];
+  document.getElementById("randomBtn").onclick = () => {
+    alert("✨ Try this vibe: " + vibes[Math.floor(Math.random() * vibes.length)]);
+  };
+
+  // FILTER + MOOD
+  const recommendations = {
+    gloomy: "☁️ Try Rainy Vibes playlist",
+    soft: "🌸 Soft morning songs are perfect",
+    nostalgic: "🌙 Midnight playlist hits different"
+  };
+
+  document.querySelectorAll(".filters button").forEach(btn => {
+    btn.addEventListener("click", () => {
+
+      const filter = btn.getAttribute("data-filter");
+
+      if (recommendations[filter]) {
+        alert(recommendations[filter]);
+      }
+
+      document.querySelectorAll(".card").forEach(card => {
+        const category = card.getAttribute("data-category");
+        card.style.display = (filter === "all" || category === filter) ? "block" : "none";
+      });
+
+    });
+  });
+
+  // SEARCH
+  document.querySelector(".top-bar input").addEventListener("input", (e) => {
+    const value = e.target.value.toLowerCase();
+
+    document.querySelectorAll(".card").forEach(card => {
+      card.style.display = card.innerText.toLowerCase().includes(value) ? "block" : "none";
+    });
+  });
+
+  // JOURNAL EXPAND
+  document.querySelectorAll(".toggle-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+
+      const card = btn.closest(".card");
+      const preview = card.querySelector(".preview");
+      const full = card.querySelector(".full");
+
+      if (full.classList.contains("hidden")) {
+        full.classList.remove("hidden");
+        preview.style.display = "none";
+        btn.innerText = "Read less";
+      } else {
+        full.classList.add("hidden");
+        preview.style.display = "block";
+        btn.innerText = "Read more";
+      }
+
+    });
   });
 
 });

@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Saved</title>
+  <title>Your Playlist</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<h1 style="text-align:center;">❤️ Your Saved Cards</h1>
+<h1 style="text-align:center;">🎵 Your Playlist</h1>
 
-<div id="savedContainer" class="masonry"></div>
+<div id="playlistContainer" class="masonry"></div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -28,12 +28,7 @@ const db = firebase.firestore();
 
 firebase.auth().onAuthStateChanged(user => {
 
-  if (!user) {
-    window.location.href = "profile.html";
-    return;
-  }
-
-  const container = document.getElementById("savedContainer");
+  const container = document.getElementById("playlistContainer");
 
   db.collection("users")
     .doc(user.uid)
@@ -44,33 +39,21 @@ firebase.auth().onAuthStateChanged(user => {
       snapshot.forEach(doc => {
         const data = doc.data();
 
-        container.innerHTML += `
-          <div class="card">
-            ${data.image ? `<img src="${data.image}">` : ""}
-            <div class="card-content">
+        if (data.title.includes("Song") || data.title.includes("Playlist")) {
+
+          container.innerHTML += `
+            <div class="card">
               <h3>${data.title}</h3>
               <p>${data.text}</p>
-              <button onclick="deleteCard('${doc.id}')">🗑 remove</button>
             </div>
-          </div>
-        `;
+          `;
+        }
+
       });
 
     });
 
 });
-
-// DELETE CARD
-function deleteCard(id) {
-  const user = firebase.auth().currentUser;
-
-  db.collection("users")
-    .doc(user.uid)
-    .collection("saved")
-    .doc(id)
-    .delete()
-    .then(() => location.reload());
-}
 </script>
 
 </body>
