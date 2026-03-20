@@ -336,3 +336,71 @@ input:focus {
   box-shadow: 0 0 8px rgba(159, 216, 195, 0.5);
   transition: 0.3s;
 }
+/* MENU PROFILE */
+.menu-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.menu-profile img {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+}
+
+.menu-profile span {
+  font-weight: 500;
+  color: #5a7d6a;
+}
+
+/* MENU BUTTONS */
+.menu-btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  color: #5a7d6a;
+  font-size: 14px;
+}
+
+.menu-btn:hover {
+  background: #9fd8c3;
+  color: white;
+}
+
+/* LOGOUT */
+.logout {
+  color: #ff6b6b;
+}
+
+/* 🌙 DARK MODE */
+body.dark {
+  background: linear-gradient(135deg, #1e1e1e, #2c2c2c);
+  color: #f1f1f1;
+}
+
+body.dark .card {
+  background: rgba(40, 40, 40, 0.8);
+}
+
+body.dark .card-content p {
+  color: #ccc;
+}
+
+body.dark .top {
+  background: rgba(30, 30, 30, 0.8);
+}
+
+body.dark .dropdown-content {
+  background: #2c2c2c;
+}
+
+body.dark .menu-profile span,
+body.dark .menu-btn {
+  color: #ddd;
+}

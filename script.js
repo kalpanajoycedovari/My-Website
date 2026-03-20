@@ -87,3 +87,47 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
 });
+// 🌙 DARK MODE
+function toggleDarkMode() {
+  document.body.classList.toggle("dark");
+
+  if (document.body.classList.contains("dark")) {
+    localStorage.setItem("darkMode", "on");
+  } else {
+    localStorage.setItem("darkMode", "off");
+  }
+}
+
+// load dark mode
+if (localStorage.getItem("darkMode") === "on") {
+  document.body.classList.add("dark");
+}
+
+// 🚪 LOGOUT
+function logout() {
+  firebase.auth().signOut().then(() => {
+    window.location.href = "login.html";
+  });
+}
+
+// 👤 LOAD PROFILE IN MENU
+function loadMenuProfile(uid) {
+  firebase.firestore().collection("users").doc(uid).get()
+    .then(doc => {
+      if (doc.exists) {
+        const data = doc.data();
+
+        document.getElementById("menuProfile").innerHTML = `
+          <img src="${data.avatar || 'https://via.placeholder.com/40'}">
+          <span>${data.name}</span>
+        `;
+      }
+    });
+}
+
+// connect with auth
+firebase.auth().onAuthStateChanged(user => {
+  if (user) {
+    loadMenuProfile(user.uid);
+  }
+});
