@@ -3,10 +3,7 @@
 <head>
   <title>Crisolite's Corner</title>
 
-  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins&family=Playfair+Display&display=swap" rel="stylesheet">
-
-  <!-- CSS -->
   <link rel="stylesheet" href="style.css">
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,95 +11,88 @@
 
 <body>
 
-  <header class="top">
-    <h1>Solite's Corner</h1>
-    <p>"A small corner for you and just you!"</p>
+<header class="top">
+  <h1>Solite's Corner</h1>
+  <p>"A small corner for you and just you!"</p>
 
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="music.html">Music</a>
-      <a href="stories.html">Stories</a>
-      <a href="cafes.html">Cafés</a>
-    </nav>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="music.html">Music</a>
+    <a href="stories.html">Stories</a>
+    <a href="cafes.html">Cafés</a>
+  </nav>
 
-    <div class="top-bar">
-      <input type="text" placeholder="🔍 search..." />
-      <button id="randomBtn">random vibe</button>
+  <div class="top-bar">
+    <input type="text" placeholder="🔍 search..." />
+    <button id="randomBtn">random vibe</button>
+  </div>
+
+  <div class="filters">
+    <button data-filter="all">All</button>
+    <button data-filter="gloomy">Gloomy</button>
+    <button data-filter="soft">Soft</button>
+    <button data-filter="nostalgic">Nostalgic</button>
+  </div>
+</header>
+
+<main class="masonry">
+
+  <div class="card" data-category="gloomy">
+    <img src="images/book.jpg">
+    <div class="card-content">
+      <h3>📖 Book</h3>
+      <p>"for when you want to escape"</p>
+      <button>♡ save</button>
     </div>
+  </div>
 
-    <div class="filters">
-      <button>Gloomy day</button>
-      <button>Soft morning</button>
-      <button>Nostalgic</button>
-      <button>City lights</button>
-      <button>Comfort feels</button>
+  <div class="card" data-category="soft">
+    <img src="images/cafe.jpg">
+    <div class="card-content">
+      <h3>☕ Café</h3>
+      <p>"Quiet cozy corner"</p>
+      <button>♡ save</button>
     </div>
-  </header>
+  </div>
 
-  <main class="masonry">
-
-    <!-- BOOK -->
-    <div class="card">
-      <img src="images/book.jpg" alt="book">
-      <div class="card-content">
-        <h3>📖 Book</h3>
-        <p>"for when you want to escape"</p>
-        <button>♡ save</button>
-      </div>
+  <div class="card music" data-category="soft">
+    <img src="images/music.jpg">
+    <div class="card-content">
+      <h3>🎧 Song</h3>
+      <p>"Until I Found You"</p>
+      <p class="coming-soon">🎧 Music coming soon...</p>
+      <button>♡ save</button>
     </div>
+  </div>
 
-    <!-- CAFE -->
-    <div class="card">
-      <img src="images/cafe.jpg" alt="cafe">
-      <div class="card-content">
-        <h3>☕ Café</h3>
-        <p>"Quiet cozy corner"</p>
-        <button>♡ save</button>
-      </div>
+  <div class="card journal" data-category="nostalgic">
+    <div class="card-content">
+      <h3>📝 Journal</h3>
+      <p>"today felt soft and slow"</p>
+      <button>♡ save</button>
     </div>
+  </div>
 
-    <!-- MUSIC -->
-    <div class="card music">
-      <img src="images/music.jpg" alt="music">
-      <div class="card-content">
-        <h3>🎧 Song</h3>
-        <p>"Until I Found You - Stephen Sanchez"</p>
-        <p class="coming-soon">🎧 Music coming soon...</p>
-        <button>♡ save</button>
-      </div>
+  <div class="card day" data-category="soft">
+    <div class="card-content">
+      <h3>🌼 My Day</h3>
+      <p>"coffee, music, and quiet moments"</p>
+      <button>♡ save</button>
     </div>
+  </div>
 
-    <!-- JOURNAL -->
-    <div class="card journal">
-      <div class="card-content">
-        <h3>📝 Journal</h3>
-        <p>"today felt soft. i didn’t do much, but somehow it still felt enough."</p>
-        <button>♡ save</button>
-      </div>
+  <div class="card series" data-category="gloomy">
+    <img src="images/series.jpg">
+    <div class="card-content">
+      <h3>🎬 Series</h3>
+      <p>"comfort show for nights"</p>
+      <button>♡ save</button>
     </div>
+  </div>
 
-    <!-- MY DAY -->
-    <div class="card day">
-      <div class="card-content">
-        <h3>🌼 My Day</h3>
-        <p>"woke up late, had coffee, listened to music, and let myself slow down today."</p>
-        <button>♡ save</button>
-      </div>
-    </div>
+</main>
 
-    <!-- SERIES -->
-    <div class="card series">
-      <img src="images/series.jpg" alt="series">
-      <div class="card-content">
-        <h3>🎬 Series</h3>
-        <p>"a comfort show for quiet nights"</p>
-        <button>♡ save</button>
-      </div>
-    </div>
-
-  </main>
-
-  <script src="script.js"></script>
+<script src="script.js"></script>
 
 </body>
 </html>

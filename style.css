@@ -121,3 +121,15 @@ nav a:hover {
 @media (max-width: 500px) {
   .masonry { column-count: 1; }
 }
+.card {
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: scale(1.03);
+}
+
+.coming-soon {
+  color: #8fc9a3;
+  font-style: italic;
+}
