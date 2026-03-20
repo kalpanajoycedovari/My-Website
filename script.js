@@ -1,3 +1,9 @@
+// CHECK LOGIN STATE
+firebase.auth().onAuthStateChanged(user => {
+  if (!user) {
+    window.location.href = "profile.html";
+  }
+});
 document.addEventListener("DOMContentLoaded", () => {
 
   // PROFILE SYSTEM

@@ -1,37 +1,57 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Create Profile</title>
+  <title>Login</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
 <div class="login-container">
-  <h1>🌸 Create Your Profile</h1>
+  <h1>🌸 Welcome to Solite</h1>
 
-  <input type="text" id="name" placeholder="Your name">
-  <input type="text" id="bio" placeholder="Your vibe / bio">
-  <input type="text" id="avatar" placeholder="Image URL (optional)">
+  <input type="email" id="email" placeholder="Email">
+  <input type="password" id="password" placeholder="Password">
 
-  <button onclick="saveProfile()">Save Profile</button>
+  <button onclick="signup()">Sign Up</button>
+  <button onclick="login()">Login</button>
 </div>
 
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
 <script>
-function saveProfile() {
-  const profile = {
-    name: document.getElementById("name").value,
-    bio: document.getElementById("bio").value,
-    avatar: document.getElementById("avatar").value
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyDc8vbutr2Sfnb49D58LYDdcxAqdY3sNWo",
+  authDomain: "solite-d9bdb.firebaseapp.com",
+  projectId: "solite-d9bdb"
+};
 
-  if (profile.name.trim() === "") {
-    alert("Name required!");
-    return;
-  }
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
 
-  localStorage.setItem("profile", JSON.stringify(profile));
-  window.location.href = "index.html";
+function signup() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  auth.createUserWithEmailAndPassword(email, password)
+    .then(() => {
+      alert("Account created!");
+      window.location.href = "index.html";
+    })
+    .catch(err => alert(err.message));
+}
+
+function login() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  auth.signInWithEmailAndPassword(email, password)
+    .then(() => {
+      window.location.href = "index.html";
+    })
+    .catch(err => alert(err.message));
 }
 </script>
 
