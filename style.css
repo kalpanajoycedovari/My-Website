@@ -136,3 +136,17 @@ nav a:hover {
 @media (max-width: 500px) {
   .masonry { column-count: 1; }
 }
+/* MUSIC CARD SPECIAL STYLE */
+.card.music {
+  background: #e8f5ee;
+}
+
+/* AUDIO PLAYER */
+audio {
+  width: 100%;
+  margin-top: 10px;
+  border-radius: 10px;
+}
+.card-content p {
+  margin-bottom: 8px;
+}
