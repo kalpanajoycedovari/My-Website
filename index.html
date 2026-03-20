@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Solite's Corner</title>
+  <title>Crisolite's Corner</title>
 
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins&family=Playfair+Display&display=swap" rel="stylesheet">
@@ -26,6 +26,7 @@
 
 <header class="top">
   <h1>Solite's Corner</h1>
+  <p>"A small corner for you and just you!"</p>
 
   <!-- MENU -->
   <div class="dropdown">
@@ -39,9 +40,12 @@
       </div>
 
       <a href="index.html">Home</a>
-      <a href="#">Music</a>
-      <a href="#">Stories</a>
-      <a href="#">Cafés</a>
+      <a href="music.html">Music</a>
+      <a href="stories.html">Stories</a>
+      <a href="cafes.html">Cafés</a>
+      <a href="saved.html">Saved ❤️</a>
+      <a href="profile.html">Profile</a>
+      <a href="playlist.html">Playlist</a>
 
       <button class="menu-btn" onclick="toggleDarkMode()">🌙 Dark Mode</button>
       <button class="menu-btn logout" onclick="logout()">🚪 Logout</button>
@@ -68,8 +72,28 @@
     <button onclick="createPost()">Post ✨</button>
   </div>
 
-  <!-- POSTS -->
+  <!-- 🆕 USER POSTS -->
   <div id="postsContainer"></div>
+
+  <!-- 🔽 YOUR ORIGINAL CARDS (UNCHANGED) -->
+
+  <div class="card" data-category="gloomy">
+    <img src="images/book.jpg">
+    <div class="card-content">
+      <h3>📖 Book</h3>
+      <p>"for when you want to escape"</p>
+      <button>♡ save</button>
+    </div>
+  </div>
+
+  <div class="card" data-category="soft">
+    <img src="images/cafe.jpg">
+    <div class="card-content">
+      <h3>☕ Café</h3>
+      <p>"Quiet cozy corner"</p>
+      <button>♡ save</button>
+    </div>
+  </div>
 
 </main>
 
@@ -82,9 +106,8 @@
 const firebaseConfig = {
   apiKey: "YOUR_REAL_API_KEY",
   authDomain: "solite-d9bdb.firebaseapp.com",
-  projectId: "solite-d9bdb",
+  projectId: "solite-d9bdb"
 };
-
 firebase.initializeApp(firebaseConfig);
 </script>
 

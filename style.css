@@ -69,3 +69,49 @@ body.dark .card,
 body.dark .create-post {
   background: #2c2c2c;
 }
+/* DROPDOWN SCROLL */
+.dropdown-content {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* MENU PROFILE */
+.menu-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+}
+
+/* MENU BUTTONS */
+.menu-btn {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.logout {
+  color: red;
+}
+
+/* CREATE POST */
+.create-post {
+  background: white;
+  padding: 15px;
+  border-radius: 15px;
+  margin-bottom: 20px;
+}
+
+/* DARK MODE */
+body.dark {
+  background: #1e1e1e;
+  color: white;
+}
+
+body.dark .card,
+body.dark .create-post {
+  background: #2c2c2c;
+}
