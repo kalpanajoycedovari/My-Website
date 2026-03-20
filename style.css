@@ -1,8 +1,9 @@
+/* BODY */
 body {
   margin: 0;
-  background: #0d0d0d;
-  color: #eee;
-  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, #fff7f3, #eaf7f0);
+  color: #4a4a4a;
+  font-family: 'Poppins', sans-serif;
 }
 
 /* HEADER */
@@ -13,26 +14,53 @@ body {
 
 .top h1 {
   font-family: 'Playfair Display', serif;
-  font-size: 2rem;
+  font-size: 2.8rem;
+  color: #ff9f7a;
 }
 
-.top-bar {
-  margin-top: 1rem;
+.top p {
+  color: #8b8b8b;
+  font-size: 0.95rem;
 }
 
+/* NAV */
+nav {
+  margin-top: 10px;
+}
+
+nav a {
+  text-decoration: none;
+  margin: 10px;
+  color: #4a4a4a;
+  font-weight: 500;
+}
+
+nav a:hover {
+  color: #ff9f7a;
+}
+
+/* SEARCH BAR */
 .top-bar input {
-  padding: 10px;
-  border-radius: 20px;
+  padding: 10px 15px;
+  border-radius: 25px;
   border: none;
-  width: 200px;
+  width: 220px;
+  background: #fff;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 }
 
 .top-bar button {
-  padding: 10px 15px;
-  border-radius: 20px;
+  padding: 10px 18px;
+  border-radius: 25px;
   border: none;
   margin-left: 10px;
   cursor: pointer;
+  background: #ffc8a2;
+  color: #fff;
+}
+
+.top-bar button:hover {
+  background: #ff9f7a;
 }
 
 /* FILTERS */
@@ -41,17 +69,17 @@ body {
 }
 
 .filters button {
-  background: #222;
-  color: #ddd;
+  background: #cde7d8;
+  color: #3e5f4e;
   border: none;
-  padding: 8px 14px;
-  margin: 5px;
+  padding: 8px 16px;
+  margin: 6px;
   border-radius: 20px;
   cursor: pointer;
 }
 
 .filters button:hover {
-  background: #444;
+  background: #b7dccc;
 }
 
 /* MASONRY */
@@ -63,16 +91,18 @@ body {
 
 /* CARD */
 .card {
-  background: #111;
-  border-radius: 16px;
+  background: #ffffff;
+  border-radius: 18px;
   overflow: hidden;
   margin-bottom: 1.5rem;
   break-inside: avoid;
   transition: 0.3s ease;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
 }
 
 .card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-6px);
+  box-shadow: 0 12px 25px rgba(0,0,0,0.08);
 }
 
 .card img {
@@ -85,10 +115,16 @@ body {
 }
 
 .card button {
-  background: none;
+  background: #ffc8a2;
   border: none;
-  color: #aaa;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 15px;
   cursor: pointer;
+}
+
+.card button:hover {
+  background: #ff9f7a;
 }
 
 /* RESPONSIVE */
