@@ -1,19 +1,21 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-  // USER SYSTEM
-  const user = localStorage.getItem("user");
+  // PROFILE SYSTEM
+  const profileData = JSON.parse(localStorage.getItem("profile"));
 
-  if (user) {
-    document.getElementById("welcomeUser").innerText = "🌸 Welcome, " + user;
-    document.getElementById("logoutBtn").style.display = "inline-block";
+  if (profileData) {
+    const box = document.getElementById("profileBox");
+
+    box.innerHTML = `
+      <div class="profile">
+        <img src="${profileData.avatar || 'https://via.placeholder.com/80'}">
+        <h3>${profileData.name}</h3>
+        <p>${profileData.bio}</p>
+      </div>
+    `;
   } else {
-    window.location.href = "login.html";
+    window.location.href = "profile.html";
   }
-
-  window.logout = function () {
-    localStorage.removeItem("user");
-    window.location.href = "login.html";
-  };
 
   // RANDOM VIBE
   const vibes = ["rainy day", "soft morning", "nostalgic", "city lights", "cozy"];

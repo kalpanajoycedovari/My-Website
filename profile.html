@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Create Profile</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="login-container">
+  <h1>🌸 Create Your Profile</h1>
+
+  <input type="text" id="name" placeholder="Your name">
+  <input type="text" id="bio" placeholder="Your vibe / bio">
+  <input type="text" id="avatar" placeholder="Image URL (optional)">
+
+  <button onclick="saveProfile()">Save Profile</button>
+</div>
+
+<script>
+function saveProfile() {
+  const profile = {
+    name: document.getElementById("name").value,
+    bio: document.getElementById("bio").value,
+    avatar: document.getElementById("avatar").value
+  };
+
+  if (profile.name.trim() === "") {
+    alert("Name required!");
+    return;
+  }
+
+  localStorage.setItem("profile", JSON.stringify(profile));
+  window.location.href = "index.html";
+}
+</script>
+
+</body>
+</html>
