@@ -8,22 +8,47 @@
 <body>
 
 <div class="login-container">
-  <h1>🌿 Welcome Back</h1>
+  <h1>Welcome!</h1>
 
-  <input type="text" id="username" placeholder="Enter your name">
+  <input type="email" id="email" placeholder="Email">
+  <input type="password" id="password" placeholder="Password">
+
   <button onclick="login()">Login</button>
+  <button onclick="signup()">Sign Up</button>
 </div>
 
-<script>
-function login() {
-  const name = document.getElementById("username").value;
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
-  if (name.trim() !== "") {
-    localStorage.setItem("user", name);
-    window.location.href = "index.html";
-  } else {
-    alert("Please enter your name");
-  }
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDc8vbutr2Sfnb49D58LYDdcxAqdY3sNWo",
+  authDomain: "solite-d9bdb.firebaseapp.com",
+  projectId: "solite-d9bdb"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+function signup() {
+  const email = email.value;
+  const password = password.value;
+
+  auth.createUserWithEmailAndPassword(email, password)
+    .then(() => {
+      alert("Account created!");
+      window.location.href = "profile.html";
+    })
+    .catch(err => alert(err.message));
+}
+
+function login() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  auth.signInWithEmailAndPassword(email, password)
+    .then(() => window.location.href = "index.html")
+    .catch(err => alert(err.message));
 }
 </script>
 

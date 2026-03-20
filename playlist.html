@@ -1,14 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Your Playlist</title>
+  <title>Playlist</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<h1 style="text-align:center;">🎵 Your Playlist</h1>
-
+<h1 style="text-align:center;">Your Playlist</h1>
 <div id="playlistContainer" class="masonry"></div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -40,7 +39,6 @@ firebase.auth().onAuthStateChanged(user => {
         const data = doc.data();
 
         if (data.title.includes("Song") || data.title.includes("Playlist")) {
-
           container.innerHTML += `
             <div class="card">
               <h3>${data.title}</h3>
@@ -48,7 +46,6 @@ firebase.auth().onAuthStateChanged(user => {
             </div>
           `;
         }
-
       });
 
     });
