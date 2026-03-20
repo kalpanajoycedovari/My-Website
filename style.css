@@ -1,10 +1,8 @@
-/* BODY */
 body {
   margin: 0;
   background: linear-gradient(135deg, #fff7f3, #dff3ea);
   color: #4a4a4a;
   font-family: 'Poppins', sans-serif;
-  transition: all 0.2s ease-in-out;
 }
 
 /* HEADER */
@@ -21,19 +19,13 @@ body {
 
 .top p {
   color: #8b8b8b;
-  font-size: 0.95rem;
 }
 
 /* NAV */
-nav {
-  margin-top: 10px;
-}
-
 nav a {
-  text-decoration: none;
   margin: 10px;
+  text-decoration: none;
   color: #4a4a4a;
-  font-weight: 500;
 }
 
 nav a:hover {
@@ -42,90 +34,83 @@ nav a:hover {
 
 /* SEARCH */
 .top-bar input {
-  padding: 10px 15px;
+  padding: 10px;
   border-radius: 25px;
   border: none;
-  width: 220px;
-  background: #fff;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 }
 
 .top-bar button {
-  padding: 10px 18px;
+  padding: 10px;
   border-radius: 25px;
   border: none;
-  margin-left: 10px;
-  cursor: pointer;
   background: #ffc8a2;
-  color: #fff;
-}
-
-.top-bar button:hover {
-  background: #ff9f7a;
+  color: white;
 }
 
 /* FILTERS */
-.filters {
-  margin-top: 1rem;
-}
-
 .filters button {
   background: #a8d5ba;
-  color: #2f4f3e;
   border: none;
   padding: 8px 16px;
-  margin: 6px;
+  margin: 5px;
   border-radius: 20px;
-  cursor: pointer;
-}
-
-.filters button:hover {
-  background: #8fc9a3;
 }
 
 /* MASONRY */
 .masonry {
   column-count: 3;
-  column-gap: 1.5rem;
   padding: 1rem;
 }
 
 /* CARD */
 .card {
-  background: #ffffff;
+  background: white;
   border-radius: 18px;
-  overflow: hidden;
   margin-bottom: 1.5rem;
   break-inside: avoid;
-  transition: 0.3s ease;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-}
-
-.card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 25px rgba(168, 213, 186, 0.4);
+  padding: 10px;
 }
 
 .card img {
   width: 100%;
-  display: block;
+  border-radius: 10px;
 }
 
-.card-content {
-  padding: 0.8rem;
+.card-content p {
+  line-height: 1.5;
 }
 
+/* SPECIAL CARDS */
+.card.music {
+  background: #e8f5ee;
+}
+
+.card.journal {
+  background: #fff0f5;
+}
+
+.card.day {
+  background: #fffaf0;
+}
+
+.card.series {
+  background: #eef7f1;
+}
+
+/* BUTTON */
 .card button {
   background: #ffc8a2;
   border: none;
   color: white;
   padding: 6px 12px;
   border-radius: 15px;
-  cursor: pointer;
 }
 
-.card button:hover {
-  background: #ff9f7a;
+/* COMING SOON */
+.coming-soon {
+  font-size: 0.9rem;
+  color: #8fc9a3;
+  font-style: italic;
 }
 
 /* RESPONSIVE */
@@ -135,24 +120,4 @@ nav a:hover {
 
 @media (max-width: 500px) {
   .masonry { column-count: 1; }
-}
-/* MUSIC CARD SPECIAL STYLE */
-.card.music {
-  background: #e8f5ee;
-}
-
-/* AUDIO PLAYER */
-audio {
-  width: 100%;
-  margin-top: 10px;
-  border-radius: 10px;
-}
-.card-content p {
-  margin-bottom: 8px;
-}
-.coming-soon {
-  font-size: 0.9rem;
-  color: #8fc9a3;
-  margin-top: 8px;
-  font-style: italic;
 }
