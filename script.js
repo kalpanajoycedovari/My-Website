@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const db = firebase.firestore();
 
-  // CHECK LOGIN + LOAD PROFILE
+  // AUTH CHECK
   firebase.auth().onAuthStateChanged(user => {
     if (!user) {
       window.location.href = "profile.html";
@@ -11,7 +11,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // LOAD PROFILE FROM DATABASE
   function loadProfile(uid) {
     db.collection("users").doc(uid).get()
       .then(doc => {
@@ -25,10 +24,41 @@ document.addEventListener("DOMContentLoaded", () => {
               <p>${data.bio}</p>
             </div>
           `;
-        } else {
-          window.location.href = "profile.html";
         }
       });
   }
+
+  // ❤️ SAVE TO FIREBASE
+  document.querySelectorAll(".card button").forEach(btn => {
+
+    if (!btn.classList.contains("toggle-btn")) {
+
+      btn.addEventListener("click", () => {
+
+        const user = firebase.auth().currentUser;
+
+        if (!user) return;
+
+        const card = btn.closest(".card");
+
+        const cardData = {
+          title: card.querySelector("h3").innerText,
+          text: card.querySelector("p").innerText,
+          image: card.querySelector("img") ? card.querySelector("img").src : ""
+        };
+
+        db.collection("users")
+          .doc(user.uid)
+          .collection("saved")
+          .add(cardData)
+          .then(() => {
+            btn.innerText = "❤️ saved";
+          });
+
+      });
+
+    }
+
+  });
 
 });

@@ -1,32 +1,62 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Saved Items</title>
+  <title>Saved</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<header class="top">
-  <h1>❤️ Saved Items</h1>
+<h1 style="text-align:center;">❤️ Your Saved Cards</h1>
 
-  <nav>
-    <a href="index.html">Home</a>
-  </nav>
-</header>
+<div class="masonry" id="savedContainer"></div>
 
-<main class="masonry" id="savedContainer">
-</main>
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
 <script>
-const container = document.getElementById("savedContainer");
-const saved = JSON.parse(localStorage.getItem("savedCards")) || [];
+const firebaseConfig = {
+  apiKey: "AIzaSyDc8vbutr2Sfnb49D58LYDdcxAqdY3sNWo",
+  authDomain: "solite-d9bdb.firebaseapp.com",
+  projectId: "solite-d9bdb"
+};
 
-saved.forEach(card => {
-  const div = document.createElement("div");
-  div.classList.add("card");
-  div.innerHTML = card;
-  container.appendChild(div);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+firebase.auth().onAuthStateChanged(user => {
+
+  if (!user) {
+    window.location.href = "profile.html";
+    return;
+  }
+
+  const container = document.getElementById("savedContainer");
+
+  db.collection("users")
+    .doc(user.uid)
+    .collection("saved")
+    .get()
+    .then(snapshot => {
+
+      snapshot.forEach(doc => {
+        const data = doc.data();
+
+        container.innerHTML += `
+          <div class="card">
+            ${data.image ? `<img src="${data.image}">` : ""}
+            <div class="card-content">
+              <h3>${data.title}</h3>
+              <p>${data.text}</p>
+            </div>
+          </div>
+        `;
+      });
+
+    });
+
 });
 </script>
 
