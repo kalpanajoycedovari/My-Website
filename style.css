@@ -199,3 +199,48 @@ nav a:hover {
 #savedContainer {
   padding: 1rem;
 }
+/* LOGIN PAGE */
+.login-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #fff7f3, #dff3ea);
+}
+
+.login-container input {
+  padding: 10px;
+  margin: 10px;
+  border-radius: 20px;
+  border: none;
+}
+
+.login-container button {
+  padding: 10px 20px;
+  border-radius: 20px;
+  border: none;
+  background: #ffc8a2;
+  color: white;
+}
+
+/* GENERAL */
+.hidden {
+  display: none;
+}
+
+.toggle-btn {
+  background: none;
+  border: none;
+  color: #8fc9a3;
+  cursor: pointer;
+}
+
+.card:hover {
+  transform: scale(1.03);
+}
+
+.coming-soon {
+  color: #8fc9a3;
+  font-style: italic;
+}

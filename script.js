@@ -1,5 +1,20 @@
 document.addEventListener("DOMContentLoaded", () => {
 
+  // USER SYSTEM
+  const user = localStorage.getItem("user");
+
+  if (user) {
+    document.getElementById("welcomeUser").innerText = "🌸 Welcome, " + user;
+    document.getElementById("logoutBtn").style.display = "inline-block";
+  } else {
+    window.location.href = "login.html";
+  }
+
+  window.logout = function () {
+    localStorage.removeItem("user");
+    window.location.href = "login.html";
+  };
+
   // RANDOM VIBE
   const vibes = ["rainy day", "soft morning", "nostalgic", "city lights", "cozy"];
   document.getElementById("randomBtn").onclick = () => {
@@ -18,16 +33,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (btn.innerText === "♡ save") {
           btn.innerText = "❤️ saved";
-
           saved.push(card.innerHTML);
-          localStorage.setItem("savedCards", JSON.stringify(saved));
-
         } else {
           btn.innerText = "♡ save";
           saved.pop();
-          localStorage.setItem("savedCards", JSON.stringify(saved));
         }
 
+        localStorage.setItem("savedCards", JSON.stringify(saved));
       });
 
     }
@@ -40,7 +52,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       document.querySelectorAll(".card").forEach(card => {
         const category = card.getAttribute("data-category");
-
         card.style.display = (filter === "all" || category === filter) ? "block" : "none";
       });
     });
