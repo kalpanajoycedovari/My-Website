@@ -9,9 +9,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // SAVE BUTTON
   document.querySelectorAll(".card button").forEach(btn => {
-    btn.addEventListener("click", () => {
-      btn.innerText = btn.innerText === "♡ save" ? "❤️ saved" : "♡ save";
-    });
+    if (!btn.classList.contains("toggle-btn")) {
+      btn.addEventListener("click", () => {
+        btn.innerText = btn.innerText === "♡ save" ? "❤️ saved" : "♡ save";
+      });
+    }
   });
 
   // FILTER SYSTEM
@@ -39,8 +41,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.querySelectorAll(".card").forEach(card => {
       const text = card.innerText.toLowerCase();
-
       card.style.display = text.includes(value) ? "block" : "none";
+    });
+  });
+
+  // EXPANDABLE JOURNAL
+  document.querySelectorAll(".toggle-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+
+      const card = btn.closest(".card");
+      const preview = card.querySelector(".preview");
+      const full = card.querySelector(".full");
+
+      if (full.classList.contains("hidden")) {
+        full.classList.remove("hidden");
+        preview.style.display = "none";
+        btn.innerText = "Read less";
+      } else {
+        full.classList.add("hidden");
+        preview.style.display = "block";
+        btn.innerText = "Read more";
+      }
+
     });
   });
 

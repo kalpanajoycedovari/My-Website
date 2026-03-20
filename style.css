@@ -133,3 +133,42 @@ nav a:hover {
   color: #8fc9a3;
   font-style: italic;
 }
+.hidden {
+  display: none;
+}
+
+.toggle-btn {
+  background: none;
+  border: none;
+  color: #8fc9a3;
+  cursor: pointer;
+  margin-top: 8px;
+  font-size: 0.9rem;
+}
+/* EXPANDABLE JOURNAL */
+.hidden {
+  display: none;
+}
+
+.toggle-btn {
+  background: none;
+  border: none;
+  color: #8fc9a3;
+  cursor: pointer;
+  margin-top: 8px;
+  font-size: 0.9rem;
+}
+
+/* INTERACTION */
+.card {
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: scale(1.03);
+}
+
+.coming-soon {
+  color: #8fc9a3;
+  font-style: italic;
+}
