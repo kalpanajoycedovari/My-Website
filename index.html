@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-  <title>Crisolite's Corner</title>
+  <title>Solite's Corner</title>
 
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins&family=Playfair+Display&display=swap" rel="stylesheet">
@@ -10,16 +9,14 @@
   <!-- Styles -->
   <link rel="stylesheet" href="style.css">
 
-  <!-- PWA Manifest -->
+  <!-- PWA -->
   <link rel="manifest" href="manifest.json">
-
-  <!-- Theme -->
   <meta name="theme-color" content="#8fbf9f">
 
-  <!-- Mobile Responsive -->
+  <!-- Mobile -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- 🍎 iPhone App Support -->
+  <!-- iPhone -->
   <link rel="apple-touch-icon" href="images/icon-192.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -29,183 +26,69 @@
 
 <header class="top">
   <h1>Solite's Corner</h1>
-  <p>"A small corner for you and just you!"</p>
 
-  <div id="profileBox" class="profile-box"></div>
+  <!-- MENU -->
+  <div class="dropdown">
+    <button class="dropbtn">☰ Menu</button>
 
-  <nav>
-    <div class="dropdown">
-  <button class="dropbtn">☰ Menu</button>
+    <div class="dropdown-content">
 
-  <div class="dropdown-content">
+      <div class="menu-profile" id="menuProfile">
+        <img src="https://via.placeholder.com/40">
+        <span>Loading...</span>
+      </div>
 
-    <!-- 👤 PROFILE TOP -->
-    <div class="menu-profile" id="menuProfile">
-      <img src="https://via.placeholder.com/40">
-      <span>Loading...</span>
+      <a href="index.html">Home</a>
+      <a href="#">Music</a>
+      <a href="#">Stories</a>
+      <a href="#">Cafés</a>
+
+      <button class="menu-btn" onclick="toggleDarkMode()">🌙 Dark Mode</button>
+      <button class="menu-btn logout" onclick="logout()">🚪 Logout</button>
+
     </div>
-
-    <a href="index.html">Home</a>
-    <a href="music.html">Music</a>
-    <a href="stories.html">Stories</a>
-    <a href="cafes.html">Cafés</a>
-    <a href="saved.html">Saved ❤️</a>
-    <a href="playlist.html">Playlist</a>
-
-    <!-- 🌙 DARK MODE -->
-    <button class="menu-btn" onclick="toggleDarkMode()">🌙 Dark Mode</button>
-
-    <!-- 🚪 LOGOUT -->
-    <button class="menu-btn logout" onclick="logout()">🚪 Logout</button>
-
-  </div>
-</div>
-  </nav>
-
-  <div class="top-bar">
-    <input type="text" placeholder="🔍 search..." />
-    <button id="randomBtn">random vibe</button>
-  </div>
-
-  <div class="filters">
-    <button data-filter="all">All</button>
-    <button data-filter="gloomy">Gloomy</button>
-    <button data-filter="soft">Soft</button>
-    <button data-filter="nostalgic">Nostalgic</button>
   </div>
 </header>
 
 <main class="masonry">
 
-  <div class="card" data-category="gloomy">
-    <img src="images/book.jpg">
-    <div class="card-content">
-      <h3>📖 Book</h3>
-      <p>"for when you want to escape"</p>
-      <button>♡ save</button>
-    </div>
+  <!-- ✍️ CREATE POST -->
+  <div class="create-post">
+    <textarea id="postInput" placeholder="yap about your day... 🌙"></textarea>
+
+    <select id="postType">
+      <option value="💬 Yap">💬 Yap</option>
+      <option value="🎧 Song">🎧 Song</option>
+      <option value="📖 Book">📖 Book</option>
+      <option value="☕ Café">☕ Café</option>
+    </select>
+
+    <input type="text" id="extraInput" placeholder="extra (song link, book name...)">
+
+    <button onclick="createPost()">Post ✨</button>
   </div>
 
-  <div class="card" data-category="soft">
-    <img src="images/cafe.jpg">
-    <div class="card-content">
-      <h3>☕ Café</h3>
-      <p>"Quiet cozy corner"</p>
-      <button>♡ save</button>
-    </div>
-  </div>
-
-  <div class="card music" data-category="soft">
-    <div class="card-content">
-      <h3>🎧 Song of the Day</h3>
-      <p>"Until I Found You"</p>
-
-      <iframe style="border-radius:12px"
-        src="https://open.spotify.com/embed/track/3JvKfv6T31zO0ini8iNItO"
-        width="100%" height="80"
-        frameborder="0"
-        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
-      </iframe>
-
-      <button>♡ save</button>
-    </div>
-  </div>
-
-  <div class="card music" data-category="nostalgic">
-    <div class="card-content">
-      <h3>🌙 Midnight Playlist</h3>
-      <p>"for late night thoughts"</p>
-
-      <iframe style="border-radius:12px"
-        src="https://open.spotify.com/embed/playlist/37i9dQZF1DX4WYpdgoIcn6"
-        width="100%" height="100"
-        frameborder="0"
-        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
-      </iframe>
-
-      <button>♡ save</button>
-    </div>
-  </div>
-
-  <div class="card music" data-category="gloomy">
-    <div class="card-content">
-      <h3>☁️ Rainy Vibes</h3>
-      <p>"soft songs for rainy days"</p>
-
-      <iframe style="border-radius:12px"
-        src="https://open.spotify.com/embed/playlist/37i9dQZF1DXbvABJXBIyiY"
-        width="100%" height="100"
-        frameborder="0"
-        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
-      </iframe>
-
-      <button>♡ save</button>
-    </div>
-  </div>
-
-  <div class="card journal" data-category="nostalgic">
-    <div class="card-content">
-      <h3>📝 Journal</h3>
-
-      <p class="preview">"today felt soft and slow..."</p>
-
-      <p class="full hidden">
-        today felt soft and slow. i didn’t rush anything.  
-        i sat with my thoughts, listened to music,  
-        and allowed myself to just exist without pressure.  
-        maybe healing looks like this.
-      </p>
-
-      <button class="toggle-btn">Read more</button>
-    </div>
-  </div>
-
-  <div class="card day" data-category="soft">
-    <div class="card-content">
-      <h3>🌼 My Day</h3>
-      <p>"coffee, music, and quiet moments"</p>
-      <button>♡ save</button>
-    </div>
-  </div>
-
-  <div class="card series" data-category="gloomy">
-    <img src="images/series.jpg">
-    <div class="card-content">
-      <h3>🎬 Series</h3>
-      <p>"comfort show for nights"</p>
-      <button>♡ save</button>
-    </div>
-  </div>
+  <!-- POSTS -->
+  <div id="postsContainer"></div>
 
 </main>
 
-<!-- 🔥 FIREBASE -->
+<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
 <script>
 const firebaseConfig = {
-  apiKey: "AIzaSyDc8vbutr2Sfnb49D58LYDdcxAqdY3sNWo",
+  apiKey: "YOUR_REAL_API_KEY",
   authDomain: "solite-d9bdb.firebaseapp.com",
   projectId: "solite-d9bdb",
-  storageBucket: "solite-d9bdb.firebasestorage.app",
-  messagingSenderId: "933108708137",
-  appId: "1:933108708137:web:e443d5045935fac50cbd38",
-  measurementId: "G-M0008N8CLK"
 };
 
 firebase.initializeApp(firebaseConfig);
 </script>
 
 <script src="script.js"></script>
-
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('service-worker.js')
-    .then(() => console.log("App ready ✨"));
-}
-</script>
 
 </body>
 </html>

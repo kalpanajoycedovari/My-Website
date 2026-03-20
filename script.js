@@ -1,92 +1,3 @@
-document.addEventListener("DOMContentLoaded", () => {
-
-  const db = firebase.firestore();
-
-  firebase.auth().onAuthStateChanged(user => {
-    if (!user) {
-      window.location.href = "login.html";
-    } else {
-      loadProfile(user.uid);
-    }
-  });
-
-  function loadProfile(uid) {
-    db.collection("users").doc(uid).get().then(doc => {
-      if (doc.exists) {
-        const data = doc.data();
-
-        document.getElementById("profileBox").innerHTML = `
-          <div class="profile">
-            <img src="${data.avatar || 'https://via.placeholder.com/80'}">
-            <h3>${data.name}</h3>
-            <p>${data.bio}</p>
-          </div>
-        `;
-      }
-    });
-  }
-
-  // SAVE / UNSAVE
-  document.querySelectorAll(".card button").forEach(btn => {
-
-    if (!btn.classList.contains("toggle-btn")) {
-
-      btn.addEventListener("click", async () => {
-
-        const user = firebase.auth().currentUser;
-        if (!user) return;
-
-        const card = btn.closest(".card");
-        const title = card.querySelector("h3").innerText;
-
-        const snapshot = await db.collection("users")
-          .doc(user.uid)
-          .collection("saved")
-          .where("title", "==", title)
-          .get();
-
-        if (!snapshot.empty) {
-          snapshot.forEach(doc => doc.ref.delete());
-          btn.innerText = "♡ save";
-        } else {
-          db.collection("users")
-            .doc(user.uid)
-            .collection("saved")
-            .add({
-              title,
-              text: card.querySelector("p").innerText,
-              image: card.querySelector("img")?.src || ""
-            });
-
-          btn.innerText = "❤️ saved";
-        }
-
-      });
-
-    }
-
-  });
-
-  // RANDOM VIBE
-  const vibes = ["rainy", "soft", "nostalgic"];
-  document.getElementById("randomBtn").onclick = () => {
-    alert("✨ Try this vibe: " + vibes[Math.floor(Math.random() * vibes.length)]);
-  };
-
-  // FILTERS
-  document.querySelectorAll(".filters button").forEach(btn => {
-    btn.addEventListener("click", () => {
-
-      const filter = btn.dataset.filter;
-
-      document.querySelectorAll(".card").forEach(card => {
-        card.style.display = (filter === "all" || card.dataset.category === filter) ? "block" : "none";
-      });
-
-    });
-  });
-
-});
 // 🌙 DARK MODE
 function toggleDarkMode() {
   document.body.classList.toggle("dark");
@@ -98,7 +9,6 @@ function toggleDarkMode() {
   }
 }
 
-// load dark mode
 if (localStorage.getItem("darkMode") === "on") {
   document.body.classList.add("dark");
 }
@@ -106,28 +16,60 @@ if (localStorage.getItem("darkMode") === "on") {
 // 🚪 LOGOUT
 function logout() {
   firebase.auth().signOut().then(() => {
-    window.location.href = "login.html";
+    alert("Logged out!");
   });
 }
 
-// 👤 LOAD PROFILE IN MENU
-function loadMenuProfile(uid) {
-  firebase.firestore().collection("users").doc(uid).get()
-    .then(doc => {
-      if (doc.exists) {
-        const data = doc.data();
+// ✍️ CREATE POST
+function createPost() {
+  const text = document.getElementById("postInput").value;
+  const type = document.getElementById("postType").value;
+  const extra = document.getElementById("extraInput").value;
 
-        document.getElementById("menuProfile").innerHTML = `
-          <img src="${data.avatar || 'https://via.placeholder.com/40'}">
-          <span>${data.name}</span>
+  const user = firebase.auth().currentUser;
+
+  if (!user) return alert("Login first!");
+
+  firebase.firestore().collection("posts").add({
+    uid: user.uid,
+    text,
+    type,
+    extra,
+    createdAt: new Date()
+  });
+}
+
+// 📡 LOAD POSTS
+function loadPosts() {
+  firebase.firestore().collection("posts")
+    .orderBy("createdAt", "desc")
+    .onSnapshot(snapshot => {
+
+      const container = document.getElementById("postsContainer");
+      container.innerHTML = "";
+
+      snapshot.forEach(doc => {
+        const post = doc.data();
+
+        container.innerHTML += `
+          <div class="card">
+            <h3>${post.type}</h3>
+            <p>${post.text}</p>
+            <small>${post.extra || ""}</small>
+          </div>
         `;
-      }
+      });
     });
 }
 
-// connect with auth
+loadPosts();
+
+// 👤 PROFILE
 firebase.auth().onAuthStateChanged(user => {
   if (user) {
-    loadMenuProfile(user.uid);
+    document.getElementById("menuProfile").innerHTML = `
+      <img src="https://via.placeholder.com/40">
+      <span>${user.email}</span>
+    `;
   }
 });
