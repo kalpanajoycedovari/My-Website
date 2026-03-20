@@ -1,0 +1,101 @@
+body {
+  margin: 0;
+  background: #0d0d0d;
+  color: #eee;
+  font-family: 'Inter', sans-serif;
+}
+
+/* HEADER */
+.top {
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.top h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+}
+
+.top-bar {
+  margin-top: 1rem;
+}
+
+.top-bar input {
+  padding: 10px;
+  border-radius: 20px;
+  border: none;
+  width: 200px;
+}
+
+.top-bar button {
+  padding: 10px 15px;
+  border-radius: 20px;
+  border: none;
+  margin-left: 10px;
+  cursor: pointer;
+}
+
+/* FILTERS */
+.filters {
+  margin-top: 1rem;
+}
+
+.filters button {
+  background: #222;
+  color: #ddd;
+  border: none;
+  padding: 8px 14px;
+  margin: 5px;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.filters button:hover {
+  background: #444;
+}
+
+/* MASONRY */
+.masonry {
+  column-count: 3;
+  column-gap: 1.5rem;
+  padding: 1rem;
+}
+
+/* CARD */
+.card {
+  background: #111;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  break-inside: avoid;
+  transition: 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.card img {
+  width: 100%;
+  display: block;
+}
+
+.card-content {
+  padding: 0.8rem;
+}
+
+.card button {
+  background: none;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .masonry { column-count: 2; }
+}
+
+@media (max-width: 500px) {
+  .masonry { column-count: 1; }
+}
