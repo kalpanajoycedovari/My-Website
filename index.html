@@ -15,7 +15,7 @@
   <h1>Solite's Corner</h1>
   <p>"A small corner for you and just you!"</p>
 
-  <!-- ✅ PROFILE DISPLAY -->
+  <!-- 👤 PROFILE -->
   <div id="profileBox" class="profile-box"></div>
 
   <nav>
@@ -42,6 +42,7 @@
 
 <main class="masonry">
 
+  <!-- 📖 BOOK -->
   <div class="card" data-category="gloomy">
     <img src="images/book.jpg">
     <div class="card-content">
@@ -51,6 +52,7 @@
     </div>
   </div>
 
+  <!-- ☕ CAFE -->
   <div class="card" data-category="soft">
     <img src="images/cafe.jpg">
     <div class="card-content">
@@ -60,17 +62,58 @@
     </div>
   </div>
 
+  <!-- 🎧 SONG OF THE DAY -->
   <div class="card music" data-category="soft">
-    <img src="images/music.jpg">
     <div class="card-content">
-      <h3>🎧 Song</h3>
+      <h3>🎧 Song of the Day</h3>
       <p>"Until I Found You"</p>
-      <p class="coming-soon">🎧 Music coming soon...</p>
+
+      <iframe style="border-radius:12px"
+        src="https://open.spotify.com/embed/track/3JvKfv6T31zO0ini8iNItO"
+        width="100%" height="80"
+        frameBorder="0"
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
+      </iframe>
+
       <button>♡ save</button>
     </div>
   </div>
 
-  <!-- JOURNAL -->
+  <!-- 🌙 MIDNIGHT PLAYLIST -->
+  <div class="card music" data-category="nostalgic">
+    <div class="card-content">
+      <h3>🌙 Midnight Playlist</h3>
+      <p>"for late night thoughts"</p>
+
+      <iframe style="border-radius:12px"
+        src="https://open.spotify.com/embed/playlist/37i9dQZF1DX4WYpdgoIcn6"
+        width="100%" height="100"
+        frameBorder="0"
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
+      </iframe>
+
+      <button>♡ save</button>
+    </div>
+  </div>
+
+  <!-- ☁️ RAINY VIBES -->
+  <div class="card music" data-category="gloomy">
+    <div class="card-content">
+      <h3>☁️ Rainy Vibes</h3>
+      <p>"soft songs for rainy days"</p>
+
+      <iframe style="border-radius:12px"
+        src="https://open.spotify.com/embed/playlist/37i9dQZF1DXbvABJXBIyiY"
+        width="100%" height="100"
+        frameBorder="0"
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
+      </iframe>
+
+      <button>♡ save</button>
+    </div>
+  </div>
+
+  <!-- 📝 JOURNAL -->
   <div class="card journal" data-category="nostalgic">
     <div class="card-content">
       <h3>📝 Journal</h3>
@@ -88,6 +131,7 @@
     </div>
   </div>
 
+  <!-- 🌼 MY DAY -->
   <div class="card day" data-category="soft">
     <div class="card-content">
       <h3>🌼 My Day</h3>
@@ -96,6 +140,7 @@
     </div>
   </div>
 
+  <!-- 🎬 SERIES -->
   <div class="card series" data-category="gloomy">
     <img src="images/series.jpg">
     <div class="card-content">
@@ -107,7 +152,7 @@
 
 </main>
 
-<!-- ✅ FIREBASE (CORRECT VERSION) -->
+<!-- 🔥 FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>

@@ -310,3 +310,16 @@ nav a:hover {
   color: #8fc9a3;
   font-style: italic;
 }
+/* MUSIC CARDS */
+.music iframe {
+  margin-top: 10px;
+}
+
+.music h3 {
+  font-family: 'Playfair Display', serif;
+}
+
+.music p {
+  font-style: italic;
+  color: #6fae8f;
+}
