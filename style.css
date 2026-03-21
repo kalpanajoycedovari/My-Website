@@ -442,3 +442,55 @@ body.dark .menu-btn {
 .save-btn.saved .heart {
   text-shadow: 0 0 10px rgba(255, 77, 109, 0.6);
 }
+/* SAFE ADDITIONS ONLY */
+
+/* CREATE POST */
+.create-post {
+  background: rgba(255,255,255,0.9);
+  padding: 15px;
+  border-radius: 15px;
+  margin-bottom: 20px;
+}
+
+.create-post textarea,
+.create-post input,
+.create-post select {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+}
+
+/* DROPDOWN SCROLL */
+.dropdown-content {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* MENU PROFILE */
+.menu-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+}
+
+/* MENU BUTTONS */
+.menu-btn {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.logout {
+  color: #ff6b6b;
+}
+
+/* 🌙 DARK MODE (non-destructive) */
+body.dark {
+  filter: brightness(0.85);
+}
