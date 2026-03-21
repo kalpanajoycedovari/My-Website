@@ -404,3 +404,7 @@ body.dark .menu-profile span,
 body.dark .menu-btn {
   color: #ddd;
 }
+.top-bar input:focus {
+  width: 260px;
+  transition: 0.3s;
+}

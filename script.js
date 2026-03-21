@@ -131,3 +131,26 @@ firebase.auth().onAuthStateChanged(user => {
     loadMenuProfile(user.uid);
   }
 });
+// 🔍 SEARCH FUNCTION
+const searchInput = document.getElementById("searchInput");
+
+if (searchInput) {
+  searchInput.addEventListener("input", () => {
+
+    const query = searchInput.value.toLowerCase();
+
+    document.querySelectorAll(".card").forEach(card => {
+
+      const title = card.querySelector("h3")?.innerText.toLowerCase() || "";
+      const text = card.querySelector("p")?.innerText.toLowerCase() || "";
+
+      if (title.includes(query) || text.includes(query)) {
+        card.style.display = "block";
+      } else {
+        card.style.display = "none";
+      }
+
+    });
+
+  });
+}
