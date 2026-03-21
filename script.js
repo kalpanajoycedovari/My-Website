@@ -2,6 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const db = firebase.firestore();
 
+  // AUTH CHECK
   firebase.auth().onAuthStateChanged(user => {
     if (!user) {
       window.location.href = "login.html";
@@ -14,7 +15,6 @@ document.addEventListener("DOMContentLoaded", () => {
     db.collection("users").doc(uid).get().then(doc => {
       if (doc.exists) {
         const data = doc.data();
-
         document.getElementById("profileBox").innerHTML = `
           <div class="profile">
             <img src="${data.avatar || 'https://via.placeholder.com/80'}">
@@ -26,7 +26,32 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ❤️ SAVE SYSTEM (UPDATED)
+  // READ MORE TOGGLE
+  document.querySelectorAll(".toggle-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const full = btn.closest(".card").querySelector(".full");
+      full.classList.toggle("hidden");
+      btn.innerText = full.classList.contains("hidden") ? "Read more" : "Read less";
+    });
+  });
+
+  // RANDOM VIBE
+  const vibes = ["rainy", "soft", "nostalgic"];
+  document.getElementById("randomBtn").onclick = () => {
+    alert("✨ Try this vibe: " + vibes[Math.floor(Math.random() * vibes.length)]);
+  };
+
+  // FILTER BUTTONS
+  document.querySelectorAll(".filters button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const filter = btn.dataset.filter;
+      document.querySelectorAll(".card").forEach(card => {
+        card.style.display = (filter === "all" || card.dataset.category === filter) ? "block" : "none";
+      });
+    });
+  });
+
+  // SAVE BUTTONS WITH ANIMATION
   document.querySelectorAll(".save-btn").forEach(btn => {
 
     btn.addEventListener("click", async () => {
@@ -47,7 +72,6 @@ document.addEventListener("DOMContentLoaded", () => {
         snapshot.forEach(doc => doc.ref.delete());
         btn.classList.remove("saved");
         btn.querySelector(".heart").innerText = "♡";
-
       } else {
         db.collection("users")
           .doc(user.uid)
@@ -57,7 +81,6 @@ document.addEventListener("DOMContentLoaded", () => {
             text: card.querySelector("p").innerText,
             image: card.querySelector("img")?.src || ""
           });
-
         btn.classList.add("saved");
         btn.querySelector(".heart").innerText = "❤";
       }
@@ -66,34 +89,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
   });
 
-  // 🔍 SEARCH
-  const searchInput = document.getElementById("searchInput");
+});
 
-  if (searchInput) {
-    searchInput.addEventListener("input", () => {
+// DARK MODE
+function toggleDarkMode() {
+  document.body.classList.toggle("dark");
+  localStorage.setItem("darkMode", document.body.classList.contains("dark") ? "on" : "off");
+}
+if (localStorage.getItem("darkMode") === "on") document.body.classList.add("dark");
 
-      const query = searchInput.value.toLowerCase();
+// LOGOUT
+function logout() {
+  firebase.auth().signOut().then(() => window.location.href = "login.html");
+}
 
-      document.querySelectorAll(".card").forEach(card => {
-
-        const title = card.querySelector("h3")?.innerText.toLowerCase() || "";
-        const text = card.querySelector("p")?.innerText.toLowerCase() || "";
-
-        if (title.includes(query) || text.includes(query)) {
-          card.style.display = "block";
-        } else {
-          card.style.display = "none";
-        }
-
-      });
-
+// MENU PROFILE
+function loadMenuProfile(uid) {
+  firebase.firestore().collection("users").doc(uid).get()
+    .then(doc => {
+      if (doc.exists) {
+        const data = doc.data();
+        document.getElementById("menuProfile").innerHTML = `
+          <img src="${data.avatar || 'https://via.placeholder.com/40'}">
+          <span>${data.name}</span>
+        `;
+      }
     });
-  }
-
-  // 🎲 RANDOM VIBE
-  const vibes = ["rainy", "soft", "nostalgic"];
-  document.getElementById("randomBtn").onclick = () => {
-    alert("✨ Try this vibe: " + vibes[Math.floor(Math.random() * vibes.length)]);
-  };
-
+}
+firebase.auth().onAuthStateChanged(user => {
+  if (user) loadMenuProfile(user.uid);
 });
