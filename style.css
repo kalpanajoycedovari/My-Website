@@ -494,3 +494,67 @@ body.dark .menu-btn {
 body.dark {
   filter: brightness(0.85);
 }
+/* 🧱 POSTS GRID */
+#postsContainer {
+  column-count: 3;
+  column-gap: 15px;
+  margin-top: 20px;
+}
+
+/* 📱 Responsive */
+@media (max-width: 900px) {
+  #postsContainer {
+    column-count: 2;
+  }
+}
+@media (max-width: 500px) {
+  #postsContainer {
+    column-count: 1;
+  }
+}
+
+/* 🧾 POST CARD */
+.post-card {
+  background: white;
+  border-radius: 15px;
+  padding: 12px;
+  margin-bottom: 15px;
+  display: inline-block;
+  width: 100%;
+  break-inside: avoid;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  transition: 0.3s;
+}
+
+.post-card:hover {
+  transform: translateY(-5px);
+}
+
+/* ❤️ LIKE + 💬 COMMENT BAR */
+.post-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.like-btn {
+  cursor: pointer;
+  color: #888;
+}
+
+.like-btn.liked {
+  color: red;
+}
+
+/* 💬 COMMENTS */
+.comments {
+  margin-top: 10px;
+}
+
+.comments input {
+  width: 100%;
+  padding: 6px;
+  margin-top: 5px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}

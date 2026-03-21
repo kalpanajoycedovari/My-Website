@@ -1,12 +1,12 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-  // ✅ AUTH CHECK + PROFILE LOAD
+  // ✅ AUTH CHECK
   firebase.auth().onAuthStateChanged(user => {
     if (!user) {
       window.location.href = "login.html";
     } else {
       loadProfile(user.uid);
-      loadPosts(); // load posts after login
+      loadPosts();
       updateMenuProfile(user);
     }
   });
@@ -125,7 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-// 🌙 DARK MODE (clean single version)
+// 🌙 DARK MODE
 function toggleDarkMode() {
   document.body.classList.toggle("dark");
 
@@ -136,13 +136,13 @@ function toggleDarkMode() {
   }
 }
 
-// APPLY SAVED DARK MODE
+// APPLY SAVED MODE
 if (localStorage.getItem("darkMode") === "on") {
   document.body.classList.add("dark");
 }
 
 
-// 🚪 LOGOUT (clean single version)
+// 🚪 LOGOUT
 function logout() {
   firebase.auth().signOut().then(() => {
     window.location.href = "login.html";
@@ -172,7 +172,7 @@ function createPost() {
 }
 
 
-// 📡 LOAD POSTS
+// 📡 LOAD POSTS (Pinterest + Likes + Comments)
 function loadPosts() {
   firebase.firestore()
     .collection("posts")
@@ -186,16 +186,104 @@ function loadPosts() {
 
       snapshot.forEach(doc => {
         const post = doc.data();
+        const postId = doc.id;
 
         container.innerHTML += `
-          <div class="card">
-            <div class="card-content">
-              <h3>${post.type}</h3>
-              <p>${post.text}</p>
-              <small>${post.extra || ""}</small>
+          <div class="post-card">
+
+            <h3>${post.type}</h3>
+            <p>${post.text}</p>
+            <small>${post.extra || ""}</small>
+
+            <div class="post-actions">
+              <span class="like-btn" onclick="toggleLike('${postId}')">♡ Like</span>
+              <span onclick="toggleComments('${postId}')">💬 Comment</span>
             </div>
+
+            <div class="comments" id="comments-${postId}" style="display:none;">
+              <div id="commentList-${postId}"></div>
+
+              <input type="text" placeholder="write a comment..."
+                onkeypress="addComment(event, '${postId}')">
+            </div>
+
           </div>
         `;
+
+        loadComments(postId);
+      });
+    });
+}
+
+
+// ❤️ LIKE
+function toggleLike(postId) {
+  const user = firebase.auth().currentUser;
+  if (!user) return;
+
+  const ref = firebase.firestore()
+    .collection("posts")
+    .doc(postId)
+    .collection("likes")
+    .doc(user.uid);
+
+  ref.get().then(doc => {
+    if (doc.exists) {
+      ref.delete();
+    } else {
+      ref.set({ liked: true });
+    }
+  });
+}
+
+
+// 💬 TOGGLE COMMENTS
+function toggleComments(postId) {
+  const el = document.getElementById(`comments-${postId}`);
+  el.style.display = (el.style.display === "none") ? "block" : "none";
+}
+
+
+// 💬 ADD COMMENT
+function addComment(e, postId) {
+  if (e.key !== "Enter") return;
+
+  const text = e.target.value;
+  const user = firebase.auth().currentUser;
+  if (!user) return;
+
+  firebase.firestore()
+    .collection("posts")
+    .doc(postId)
+    .collection("comments")
+    .add({
+      text,
+      uid: user.uid,
+      createdAt: new Date()
+    });
+
+  e.target.value = "";
+}
+
+
+// 📡 LOAD COMMENTS
+function loadComments(postId) {
+  firebase.firestore()
+    .collection("posts")
+    .doc(postId)
+    .collection("comments")
+    .orderBy("createdAt")
+    .onSnapshot(snapshot => {
+
+      const list = document.getElementById(`commentList-${postId}`);
+      if (!list) return;
+
+      list.innerHTML = "";
+
+      snapshot.forEach(doc => {
+        const c = doc.data();
+
+        list.innerHTML += `<p>💬 ${c.text}</p>`;
       });
     });
 }
