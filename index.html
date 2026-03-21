@@ -24,6 +24,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
   <script>
     const firebaseConfig = {
@@ -36,8 +37,6 @@
     };
 
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
   </script>
 
 </head>
@@ -48,37 +47,35 @@
   <h1>Solite's Corner</h1>
   <p>"A small corner for you and just you!"</p>
 
-  <!-- PROFILE BOX -->
+  <!-- PROFILE -->
   <div id="profileBox"></div>
 
-  <!-- ✅ SINGLE CLEAN MENU -->
+  <!-- MENU -->
   <div class="dropdown">
     <button class="dropbtn">☰ Menu</button>
 
     <div class="dropdown-content">
 
-      <!-- PROFILE -->
       <div class="menu-profile" id="menuProfile">
         <img src="https://via.placeholder.com/40">
         <span>Loading...</span>
       </div>
 
-      <!-- NAV LINKS -->
       <a href="index.html">Home</a>
       <a href="music.html">Music</a>
       <a href="stories.html">Stories</a>
       <a href="cafes.html">Cafés</a>
       <a href="saved.html">Saved ❤️</a>
       <a href="playlist.html">Playlist</a>
+      <a href="notifications.html">🔔 Notifications</a>
 
-      <!-- FEATURES -->
-      <button class="menu-btn" onclick="toggleDarkMode()">🌙 Dark Mode</button>
-      <button class="menu-btn logout" onclick="logout()">🚪 Logout</button>
+      <button onclick="toggleDarkMode()">🌙 Dark Mode</button>
+      <button onclick="logout()">🚪 Logout</button>
 
     </div>
   </div>
 
-  <!-- SEARCH + RANDOM -->
+  <!-- SEARCH -->
   <div class="top-bar">
     <input type="text" id="searchInput" placeholder="🔍 search..." />
     <button id="randomBtn">random vibe</button>
@@ -91,12 +88,13 @@
     <button data-filter="soft">Soft</button>
     <button data-filter="nostalgic">Nostalgic</button>
   </div>
+
 </header>
 
 <!-- MAIN -->
 <main class="masonry">
 
-  <!-- ✍️ CREATE POST -->
+  <!-- CREATE POST -->
   <div class="create-post">
     <textarea id="postInput" placeholder="yap about your day... 🌙"></textarea>
 
@@ -107,7 +105,8 @@
       <option value="☕ Café">☕ Café</option>
     </select>
 
-    <input type="text" id="extraInput" placeholder="extra (song link, book name...)">
+    <input type="text" id="extraInput" placeholder="extra (song, book, etc)">
+    <input type="file" id="imageInput">
 
     <button onclick="createPost()">Post ✨</button>
   </div>
@@ -141,14 +140,16 @@
       <p>"Until I Found You"</p>
       <iframe style="border-radius:12px"
         src="https://open.spotify.com/embed/track/3JvKfv6T31zO0ini8iNItO"
-        width="100%" height="80" frameborder="0"
-        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
-      </iframe>
-      <button class="save-btn"><span class="heart">♡</span></button>
+        width="100%" height="80"></iframe>
     </div>
   </div>
 
-  <!-- (rest of your cards unchanged) -->
+  <div class="card journal" data-category="nostalgic">
+    <div class="card-content">
+      <h3>📝 Journal</h3>
+      <p>"today felt soft and slow..."</p>
+    </div>
+  </div>
 
 </main>
 

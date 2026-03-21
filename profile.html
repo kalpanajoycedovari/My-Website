@@ -1,62 +1,41 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Create Profile</title>
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<p style="text-align:center;">
-  Not logged in? <a href="login.html">Login here</a>
-</p>
-
-<div class="login-container">
-  <h1>Create Your Profile</h1>
-
-  <input type="text" id="name" placeholder="Your name">
-  <input type="text" id="bio" placeholder="Your vibe / bio">
-  <input type="text" id="avatar" placeholder="Image URL (optional)">
-
-  <button onclick="saveProfile()">Save Profile</button>
-</div>
+<div id="profile"></div>
+<div id="posts"></div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyDc8vbutr2Sfnb49D58LYDdcxAqdY3sNWo",
-  authDomain: "solite-d9bdb.firebaseapp.com",
-  projectId: "solite-d9bdb"
-};
+const params = new URLSearchParams(window.location.search);
+const uid = params.get("uid");
 
-firebase.initializeApp(firebaseConfig);
-
-const auth = firebase.auth();
 const db = firebase.firestore();
 
-function saveProfile() {
-  const user = auth.currentUser;
+db.collection("users").doc(uid).get().then(doc => {
+  const u = doc.data();
 
-  if (!user) {
-    alert("Please login first");
-    return;
-  }
+  document.getElementById("profile").innerHTML = `
+    <img src="${u.avatar}">
+    <h2>${u.name}</h2>
+    <p>${u.bio}</p>
+    <button onclick="followUser('${uid}')">Follow</button>
+  `;
+});
 
-  const profile = {
-    name: name.value,
-    bio: bio.value,
-    avatar: avatar.value
-  };
-
-  db.collection("users").doc(user.uid).set(profile)
-    .then(() => {
-      alert("Profile saved!");
-      window.location.href = "index.html";
-    });
-}
+db.collection("posts").where("uid","==",uid)
+.onSnapshot(snap=>{
+  let html="";
+  snap.forEach(d=>{
+    html+=`<div class="post-card">${d.data().text}</div>`;
+  });
+  document.getElementById("posts").innerHTML=html;
+});
 </script>
 
 </body>

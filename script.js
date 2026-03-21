@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-  // ✅ AUTH CHECK
   firebase.auth().onAuthStateChanged(user => {
     if (!user) {
       window.location.href = "login.html";
@@ -11,7 +10,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // 👤 LOAD PROFILE
   function loadProfile(uid) {
     firebase.firestore().collection("users").doc(uid).get().then(doc => {
       if (doc.exists) {
@@ -33,7 +31,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 👤 MENU PROFILE FALLBACK
   function updateMenuProfile(user) {
     const menu = document.getElementById("menuProfile");
     if (menu) {
@@ -44,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // ❤️ SAVE BUTTON
+  // ❤️ SAVE
   document.querySelectorAll(".save-btn").forEach(btn => {
     btn.addEventListener("click", async () => {
 
@@ -83,20 +80,17 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // 🔍 SEARCH
-  const searchInput = document.getElementById("searchInput");
-  if (searchInput) {
-    searchInput.addEventListener("input", () => {
-      const query = searchInput.value.toLowerCase();
+  document.getElementById("searchInput")?.addEventListener("input", e => {
+    const query = e.target.value.toLowerCase();
 
-      document.querySelectorAll(".card").forEach(card => {
-        const title = card.querySelector("h3")?.innerText.toLowerCase() || "";
-        const text = card.querySelector("p")?.innerText.toLowerCase() || "";
+    document.querySelectorAll(".card").forEach(card => {
+      const title = card.querySelector("h3")?.innerText.toLowerCase() || "";
+      const text = card.querySelector("p")?.innerText.toLowerCase() || "";
 
-        card.style.display =
-          (title.includes(query) || text.includes(query)) ? "block" : "none";
-      });
+      card.style.display =
+        (title.includes(query) || text.includes(query)) ? "block" : "none";
     });
-  }
+  });
 
   // 🎭 FILTERS
   document.querySelectorAll(".filters button").forEach(btn => {
@@ -112,15 +106,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // 🎲 RANDOM VIBE
-  const vibes = ["rainy", "soft", "nostalgic"];
-  const randomBtn = document.getElementById("randomBtn");
-
-  if (randomBtn) {
-    randomBtn.onclick = () => {
-      alert("✨ Try this vibe: " + vibes[Math.floor(Math.random() * vibes.length)]);
-    };
-  }
+  // 🎲 RANDOM
+  document.getElementById("randomBtn")?.addEventListener("click", () => {
+    const vibes = ["rainy", "soft", "nostalgic"];
+    alert("✨ Try: " + vibes[Math.floor(Math.random() * vibes.length)]);
+  });
 
 });
 
@@ -128,15 +118,9 @@ document.addEventListener("DOMContentLoaded", () => {
 // 🌙 DARK MODE
 function toggleDarkMode() {
   document.body.classList.toggle("dark");
-
-  if (document.body.classList.contains("dark")) {
-    localStorage.setItem("darkMode", "on");
-  } else {
-    localStorage.setItem("darkMode", "off");
-  }
+  localStorage.setItem("darkMode",
+    document.body.classList.contains("dark") ? "on" : "off");
 }
-
-// APPLY SAVED MODE
 if (localStorage.getItem("darkMode") === "on") {
   document.body.classList.add("dark");
 }
@@ -150,67 +134,73 @@ function logout() {
 }
 
 
-// ✍️ CREATE POST
+// ✍️ CREATE POST (WITH IMAGE)
 function createPost() {
   const text = document.getElementById("postInput").value;
-  const type = document.getElementById("postType").value;
-  const extra = document.getElementById("extraInput").value;
-
+  const file = document.getElementById("imageInput").files[0];
   const user = firebase.auth().currentUser;
+
   if (!user) return alert("Login first!");
 
+  if (file) {
+    const ref = firebase.storage().ref("posts/" + Date.now());
+
+    ref.put(file).then(snapshot => {
+      snapshot.ref.getDownloadURL().then(url => {
+        savePost(text, user.uid, url);
+      });
+    });
+  } else {
+    savePost(text, user.uid, "");
+  }
+}
+
+function savePost(text, uid, image) {
   firebase.firestore().collection("posts").add({
-    uid: user.uid,
+    uid,
     text,
-    type,
-    extra,
+    image,
     createdAt: new Date()
   });
-
-  document.getElementById("postInput").value = "";
-  document.getElementById("extraInput").value = "";
 }
 
 
-// 📡 LOAD POSTS (Pinterest + Likes + Comments)
+// 📡 POSTS (Pinterest + social)
 function loadPosts() {
-  firebase.firestore()
-    .collection("posts")
+  firebase.firestore().collection("posts")
     .orderBy("createdAt", "desc")
     .onSnapshot(snapshot => {
 
       const container = document.getElementById("postsContainer");
-      if (!container) return;
-
       container.innerHTML = "";
 
       snapshot.forEach(doc => {
         const post = doc.data();
-        const postId = doc.id;
+        const id = doc.id;
 
         container.innerHTML += `
           <div class="post-card">
 
-            <h3>${post.type}</h3>
+            <h4 onclick="goToProfile('${post.uid}')" style="cursor:pointer;">👤 View User</h4>
+
             <p>${post.text}</p>
-            <small>${post.extra || ""}</small>
+            ${post.image ? `<img src="${post.image}" style="width:100%; border-radius:10px;">` : ""}
 
             <div class="post-actions">
-              <span class="like-btn" onclick="toggleLike('${postId}')">♡ Like</span>
-              <span onclick="toggleComments('${postId}')">💬 Comment</span>
+              <span onclick="toggleLike('${id}')">❤️ Like</span>
+              <span onclick="toggleComments('${id}')">💬 Comment</span>
             </div>
 
-            <div class="comments" id="comments-${postId}" style="display:none;">
-              <div id="commentList-${postId}"></div>
-
-              <input type="text" placeholder="write a comment..."
-                onkeypress="addComment(event, '${postId}')">
+            <div id="comments-${id}" style="display:none;">
+              <div id="list-${id}"></div>
+              <input placeholder="comment..."
+                onkeypress="addComment(event,'${id}')">
             </div>
 
           </div>
         `;
 
-        loadComments(postId);
+        loadComments(id);
       });
     });
 }
@@ -219,71 +209,78 @@ function loadPosts() {
 // ❤️ LIKE
 function toggleLike(postId) {
   const user = firebase.auth().currentUser;
-  if (!user) return;
-
-  const ref = firebase.firestore()
-    .collection("posts")
-    .doc(postId)
-    .collection("likes")
-    .doc(user.uid);
-
-  ref.get().then(doc => {
-    if (doc.exists) {
-      ref.delete();
-    } else {
-      ref.set({ liked: true });
-    }
-  });
-}
-
-
-// 💬 TOGGLE COMMENTS
-function toggleComments(postId) {
-  const el = document.getElementById(`comments-${postId}`);
-  el.style.display = (el.style.display === "none") ? "block" : "none";
-}
-
-
-// 💬 ADD COMMENT
-function addComment(e, postId) {
-  if (e.key !== "Enter") return;
-
-  const text = e.target.value;
-  const user = firebase.auth().currentUser;
-  if (!user) return;
 
   firebase.firestore()
     .collection("posts")
     .doc(postId)
+    .collection("likes")
+    .doc(user.uid)
+    .set({ liked: true });
+}
+
+
+// 💬 COMMENTS
+function toggleComments(id) {
+  const el = document.getElementById("comments-" + id);
+  el.style.display = el.style.display === "none" ? "block" : "none";
+}
+
+function addComment(e, id) {
+  if (e.key !== "Enter") return;
+
+  firebase.firestore()
+    .collection("posts")
+    .doc(id)
     .collection("comments")
     .add({
-      text,
-      uid: user.uid,
+      text: e.target.value,
       createdAt: new Date()
     });
 
   e.target.value = "";
 }
 
-
-// 📡 LOAD COMMENTS
-function loadComments(postId) {
+function loadComments(id) {
   firebase.firestore()
     .collection("posts")
-    .doc(postId)
+    .doc(id)
     .collection("comments")
-    .orderBy("createdAt")
     .onSnapshot(snapshot => {
 
-      const list = document.getElementById(`commentList-${postId}`);
-      if (!list) return;
-
-      list.innerHTML = "";
-
+      let html = "";
       snapshot.forEach(doc => {
-        const c = doc.data();
-
-        list.innerHTML += `<p>💬 ${c.text}</p>`;
+        html += `<p>💬 ${doc.data().text}</p>`;
       });
+
+      document.getElementById("list-" + id).innerHTML = html;
+    });
+}
+
+
+// 👤 PROFILE PAGE NAV
+function goToProfile(uid) {
+  window.location.href = `profile.html?uid=${uid}`;
+}
+
+
+// ➕ FOLLOW
+function followUser(targetUid) {
+  const user = firebase.auth().currentUser;
+
+  firebase.firestore()
+    .collection("users")
+    .doc(targetUid)
+    .collection("followers")
+    .doc(user.uid)
+    .set({ followed: true });
+
+  // 🔔 notification
+  firebase.firestore()
+    .collection("users")
+    .doc(targetUid)
+    .collection("notifications")
+    .add({
+      text: "Someone followed you ❤️",
+      createdAt: new Date()
     });
 }
