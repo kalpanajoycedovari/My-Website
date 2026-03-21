@@ -408,3 +408,37 @@ body.dark .menu-btn {
   width: 260px;
   transition: 0.3s;
 }
+/* ❤️ HEART BUTTON */
+.save-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+/* HEART STYLE */
+.heart {
+  display: inline-block;
+  transition: transform 0.2s ease, color 0.3s ease;
+  color: #ff8c6b;
+}
+
+/* ACTIVE STATE */
+.save-btn.saved .heart {
+  color: #ff4d6d;
+  transform: scale(1.3);
+}
+
+/* POP ANIMATION */
+@keyframes pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.6); }
+  100% { transform: scale(1.3); }
+}
+
+.save-btn.saved .heart {
+  animation: pop 0.3s ease;
+}
+.save-btn.saved .heart {
+  text-shadow: 0 0 10px rgba(255, 77, 109, 0.6);
+}
