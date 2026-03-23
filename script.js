@@ -14,39 +14,42 @@ document.addEventListener("DOMContentLoaded", () => {
       currentUser = user;
       loadProfile(user.uid);
       loadPosts();
+      loadNotifications();
     }
   });
 
   // PROFILE
-  function loadProfile(uid) {
-    db.collection("users").doc(uid).get().then(doc => {
-      if (doc.exists) {
-        const data = doc.data();
+  async function loadProfile(uid) {
+    const doc = await db.collection("users").doc(uid).get();
+    if (!doc.exists) return;
 
-        document.getElementById("profileBox").innerHTML = `
-          <div class="profile">
-            <img src="${data.avatar || 'https://via.placeholder.com/80'}">
-            <h3>${data.name}</h3>
-            <p>${data.bio}</p>
-          </div>
-        `;
+    const data = doc.data();
 
-        document.getElementById("menuProfile").innerHTML = `
-          <img src="${data.avatar || 'https://via.placeholder.com/40'}">
-          <span>${data.name}</span>
-        `;
-      }
-    });
+    document.getElementById("profileBox").innerHTML = `
+      <div class="profile">
+        <img src="${data.avatar || 'https://via.placeholder.com/80'}">
+        <h3>${data.name}</h3>
+        <p>${data.bio}</p>
+      </div>
+    `;
+
+    document.getElementById("menuProfile").innerHTML = `
+      <img src="${data.avatar || 'https://via.placeholder.com/40'}">
+      <span>${data.name}</span>
+    `;
   }
 
-  // CREATE POST (WITH IMAGE)
+  // CREATE POST
   window.createPost = async function () {
     const text = document.getElementById("postInput").value;
     const type = document.getElementById("postType").value;
     const extra = document.getElementById("extraInput").value;
     const file = document.getElementById("imageInput").files[0];
 
-    if (!text) return alert("Write something first!");
+    if (!text) return alert("Write something!");
+
+    const userDoc = await db.collection("users").doc(currentUser.uid).get();
+    const userData = userDoc.data();
 
     let imageUrl = "";
 
@@ -58,6 +61,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     await db.collection("posts").add({
       uid: currentUser.uid,
+      username: userData.name,
+      avatar: userData.avatar || "",
       text,
       type,
       extra,
@@ -89,12 +94,22 @@ document.addEventListener("DOMContentLoaded", () => {
           container.innerHTML += `
             <div class="post-card">
 
-              <div style="display:flex; justify-content:space-between;">
-                <h4 onclick="goToProfile('${post.uid}')" style="cursor:pointer;">👤 View User</h4>
+              <div class="post-header">
+                <h4 onclick="goToProfile('${post.uid}')">
+                  <img src="${post.avatar || 'https://via.placeholder.com/30'}" class="avatar">
+                  ${post.username || "User"}
+                </h4>
 
-                ${currentUser.uid === post.uid ? 
-                  `<button onclick="deletePost('${id}')" style="background:none;border:none;cursor:pointer;">🗑</button>` 
-                  : ""}
+                ${currentUser.uid === post.uid ? `
+                  <div>
+                    <button onclick="editPost('${id}','${post.text}')">✏️</button>
+                    <button onclick="deletePost('${id}')">🗑</button>
+                  </div>
+                ` : ""}
+
+                ${currentUser.uid !== post.uid ? `
+                  <button onclick="followUser('${post.uid}')">Follow</button>
+                ` : ""}
               </div>
 
               <p>${post.type}</p>
@@ -108,7 +123,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 <span onclick="toggleLike('${id}')">
                   ${liked ? "❤️" : "🤍"} ${post.likes?.length || 0}
                 </span>
-                <span onclick="toggleComments('${id}')">💬 Comment</span>
+
+                <span onclick="toggleComments('${id}'); loadComments('${id}')">
+                  💬 Comment
+                </span>
               </div>
 
               <div id="comments-${id}" style="display:none;">
@@ -122,39 +140,6 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   }
 
-  // SEARCH
-  const searchInput = document.getElementById("searchInput");
-  if (searchInput) {
-    searchInput.addEventListener("input", () => {
-      const query = searchInput.value.toLowerCase();
-
-      document.querySelectorAll(".post-card, .card").forEach(card => {
-        const text = card.innerText.toLowerCase();
-        card.style.display = text.includes(query) ? "block" : "none";
-      });
-    });
-  }
-
-  // FILTERS
-  document.querySelectorAll(".filters button").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const filter = btn.dataset.filter;
-
-      document.querySelectorAll(".card").forEach(card => {
-        card.style.display =
-          filter === "all" || card.dataset.category === filter
-            ? "block"
-            : "none";
-      });
-    });
-  });
-
-  // RANDOM
-  document.getElementById("randomBtn").onclick = () => {
-    const vibes = ["rainy", "soft", "nostalgic"];
-    alert("✨ Try this vibe: " + vibes[Math.floor(Math.random() * 3)]);
-  };
-
 });
 
 
@@ -164,8 +149,7 @@ function toggleLike(postId) {
   const ref = firebase.firestore().collection("posts").doc(postId);
 
   ref.get().then(doc => {
-    const data = doc.data();
-    let likes = data.likes || [];
+    let likes = doc.data().likes || [];
 
     if (likes.includes(user.uid)) {
       likes = likes.filter(id => id !== user.uid);
@@ -178,12 +162,40 @@ function toggleLike(postId) {
 }
 
 
-// 💬 COMMENTS
-function toggleComments(id) {
-  const el = document.getElementById("comments-" + id);
-  el.style.display = el.style.display === "none" ? "block" : "none";
+// 💬 COMMENTS LOAD
+function loadComments(postId) {
+  const user = firebase.auth().currentUser;
+
+  firebase.firestore()
+    .collection("posts")
+    .doc(postId)
+    .collection("comments")
+    .orderBy("createdAt", "asc")
+    .onSnapshot(snapshot => {
+
+      const list = document.getElementById("list-" + postId);
+      list.innerHTML = "";
+
+      snapshot.forEach(doc => {
+        const c = doc.data();
+        const id = doc.id;
+
+        list.innerHTML += `
+          <div class="comment">
+            <span><b>${c.user}</b>: ${c.text}</span>
+
+            ${c.uid === user.uid ? 
+              `<button onclick="deleteComment('${postId}','${id}')">🗑</button>` 
+              : ""
+            }
+          </div>
+        `;
+      });
+    });
 }
 
+
+// 💬 ADD COMMENT
 function addComment(e, postId) {
   if (e.key !== "Enter") return;
 
@@ -197,10 +209,36 @@ function addComment(e, postId) {
     .add({
       text,
       user: user.email,
+      uid: user.uid,
       createdAt: new Date()
     });
 
   e.target.value = "";
+}
+
+
+// 🗑 DELETE COMMENT
+function deleteComment(postId, commentId) {
+  if (!confirm("Delete this comment?")) return;
+
+  firebase.firestore()
+    .collection("posts")
+    .doc(postId)
+    .collection("comments")
+    .doc(commentId)
+    .delete();
+}
+
+
+// ✏️ EDIT POST
+function editPost(id, oldText) {
+  const newText = prompt("Edit your post:", oldText);
+  if (!newText) return;
+
+  firebase.firestore()
+    .collection("posts")
+    .doc(id)
+    .update({ text: newText });
 }
 
 
@@ -215,6 +253,50 @@ function deletePost(postId) {
 }
 
 
+// 👥 FOLLOW
+function followUser(uid) {
+  const user = firebase.auth().currentUser;
+
+  firebase.firestore()
+    .collection("users")
+    .doc(uid)
+    .collection("followers")
+    .doc(user.uid)
+    .set({ uid: user.uid });
+
+  firebase.firestore()
+    .collection("notifications")
+    .add({
+      to: uid,
+      from: user.uid,
+      type: "follow",
+      createdAt: new Date()
+    });
+}
+
+
+// 🔔 NOTIFICATIONS
+function loadNotifications() {
+  const user = firebase.auth().currentUser;
+
+  firebase.firestore()
+    .collection("notifications")
+    .where("to", "==", user.uid)
+    .orderBy("createdAt", "desc")
+    .onSnapshot(snapshot => {
+
+      const box = document.getElementById("notificationsBox");
+      if (!box) return;
+
+      box.innerHTML = "";
+
+      snapshot.forEach(doc => {
+        box.innerHTML += `<div class="notif">🔔 New follower</div>`;
+      });
+    });
+}
+
+
 // 👤 PROFILE NAV
 function goToProfile(uid) {
   window.location.href = "profile.html?uid=" + uid;
@@ -224,11 +306,8 @@ function goToProfile(uid) {
 // 🌙 DARK MODE
 function toggleDarkMode() {
   document.body.classList.toggle("dark");
-
-  localStorage.setItem(
-    "darkMode",
-    document.body.classList.contains("dark") ? "on" : "off"
-  );
+  localStorage.setItem("darkMode",
+    document.body.classList.contains("dark") ? "on" : "off");
 }
 
 if (localStorage.getItem("darkMode") === "on") {
