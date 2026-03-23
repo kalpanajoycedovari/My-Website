@@ -558,3 +558,22 @@ body.dark {
   border-radius: 8px;
   border: 1px solid #ddd;
 }
+/* 🎵 FLOATING PLAYER */
+#musicPlayer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: #111;
+  color: white;
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  z-index: 999;
+}
+
+#musicPlayer img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  margin-right: 10px;
+}
