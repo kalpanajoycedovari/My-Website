@@ -1,17 +1,25 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-  firebase.auth().onAuthStateChanged(user => {
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+  const storage = firebase.storage();
+
+  let currentUser = null;
+
+  // AUTH
+  auth.onAuthStateChanged(user => {
     if (!user) {
       window.location.href = "login.html";
     } else {
+      currentUser = user;
       loadProfile(user.uid);
       loadPosts();
-      updateMenuProfile(user);
     }
   });
 
+  // PROFILE
   function loadProfile(uid) {
-    firebase.firestore().collection("users").doc(uid).get().then(doc => {
+    db.collection("users").doc(uid).get().then(doc => {
       if (doc.exists) {
         const data = doc.data();
 
@@ -31,96 +39,198 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function updateMenuProfile(user) {
-    const menu = document.getElementById("menuProfile");
-    if (menu) {
-      menu.innerHTML = `
-        <img src="https://via.placeholder.com/40">
-        <span>${user.email}</span>
-      `;
+  // CREATE POST (WITH IMAGE)
+  window.createPost = async function () {
+    const text = document.getElementById("postInput").value;
+    const type = document.getElementById("postType").value;
+    const extra = document.getElementById("extraInput").value;
+    const file = document.getElementById("imageInput").files[0];
+
+    if (!text) return alert("Write something first!");
+
+    let imageUrl = "";
+
+    if (file) {
+      const ref = storage.ref("posts/" + Date.now());
+      await ref.put(file);
+      imageUrl = await ref.getDownloadURL();
     }
+
+    await db.collection("posts").add({
+      uid: currentUser.uid,
+      text,
+      type,
+      extra,
+      image: imageUrl,
+      likes: [],
+      createdAt: new Date()
+    });
+
+    document.getElementById("postInput").value = "";
+    document.getElementById("extraInput").value = "";
+    document.getElementById("imageInput").value = "";
+  };
+
+  // LOAD POSTS
+  function loadPosts() {
+    db.collection("posts")
+      .orderBy("createdAt", "desc")
+      .onSnapshot(snapshot => {
+
+        const container = document.getElementById("postsContainer");
+        container.innerHTML = "";
+
+        snapshot.forEach(doc => {
+          const post = doc.data();
+          const id = doc.id;
+
+          const liked = post.likes?.includes(currentUser.uid);
+
+          container.innerHTML += `
+            <div class="post-card">
+
+              <div style="display:flex; justify-content:space-between;">
+                <h4 onclick="goToProfile('${post.uid}')" style="cursor:pointer;">👤 View User</h4>
+
+                ${currentUser.uid === post.uid ? 
+                  `<button onclick="deletePost('${id}')" style="background:none;border:none;cursor:pointer;">🗑</button>` 
+                  : ""}
+              </div>
+
+              <p>${post.type}</p>
+              <p>${post.text}</p>
+
+              ${post.image ? `<img src="${post.image}" class="post-img">` : ""}
+
+              <small>${post.extra || ""}</small>
+
+              <div class="post-actions">
+                <span onclick="toggleLike('${id}')">
+                  ${liked ? "❤️" : "🤍"} ${post.likes?.length || 0}
+                </span>
+                <span onclick="toggleComments('${id}')">💬 Comment</span>
+              </div>
+
+              <div id="comments-${id}" style="display:none;">
+                <div id="list-${id}"></div>
+                <input placeholder="comment..." onkeypress="addComment(event,'${id}')">
+              </div>
+
+            </div>
+          `;
+        });
+      });
   }
 
-  // ❤️ SAVE
-  document.querySelectorAll(".save-btn").forEach(btn => {
-    btn.addEventListener("click", async () => {
+  // SEARCH
+  const searchInput = document.getElementById("searchInput");
+  if (searchInput) {
+    searchInput.addEventListener("input", () => {
+      const query = searchInput.value.toLowerCase();
 
-      const user = firebase.auth().currentUser;
-      if (!user) return;
-
-      const card = btn.closest(".card");
-      const title = card.querySelector("h3").innerText;
-
-      const snapshot = await firebase.firestore()
-        .collection("users")
-        .doc(user.uid)
-        .collection("saved")
-        .where("title", "==", title)
-        .get();
-
-      if (!snapshot.empty) {
-        snapshot.forEach(doc => doc.ref.delete());
-        btn.classList.remove("saved");
-        btn.querySelector(".heart").innerText = "♡";
-      } else {
-        firebase.firestore()
-          .collection("users")
-          .doc(user.uid)
-          .collection("saved")
-          .add({
-            title,
-            text: card.querySelector("p").innerText,
-            image: card.querySelector("img")?.src || ""
-          });
-
-        btn.classList.add("saved");
-        btn.querySelector(".heart").innerText = "❤";
-      }
+      document.querySelectorAll(".post-card, .card").forEach(card => {
+        const text = card.innerText.toLowerCase();
+        card.style.display = text.includes(query) ? "block" : "none";
+      });
     });
-  });
+  }
 
-  // 🔍 SEARCH
-  document.getElementById("searchInput")?.addEventListener("input", e => {
-    const query = e.target.value.toLowerCase();
-
-    document.querySelectorAll(".card").forEach(card => {
-      const title = card.querySelector("h3")?.innerText.toLowerCase() || "";
-      const text = card.querySelector("p")?.innerText.toLowerCase() || "";
-
-      card.style.display =
-        (title.includes(query) || text.includes(query)) ? "block" : "none";
-    });
-  });
-
-  // 🎭 FILTERS
+  // FILTERS
   document.querySelectorAll(".filters button").forEach(btn => {
     btn.addEventListener("click", () => {
       const filter = btn.dataset.filter;
 
       document.querySelectorAll(".card").forEach(card => {
         card.style.display =
-          (filter === "all" || card.dataset.category === filter)
+          filter === "all" || card.dataset.category === filter
             ? "block"
             : "none";
       });
     });
   });
 
-  // 🎲 RANDOM
-  document.getElementById("randomBtn")?.addEventListener("click", () => {
+  // RANDOM
+  document.getElementById("randomBtn").onclick = () => {
     const vibes = ["rainy", "soft", "nostalgic"];
-    alert("✨ Try: " + vibes[Math.floor(Math.random() * vibes.length)]);
-  });
+    alert("✨ Try this vibe: " + vibes[Math.floor(Math.random() * 3)]);
+  };
 
 });
+
+
+// ❤️ LIKE
+function toggleLike(postId) {
+  const user = firebase.auth().currentUser;
+  const ref = firebase.firestore().collection("posts").doc(postId);
+
+  ref.get().then(doc => {
+    const data = doc.data();
+    let likes = data.likes || [];
+
+    if (likes.includes(user.uid)) {
+      likes = likes.filter(id => id !== user.uid);
+    } else {
+      likes.push(user.uid);
+    }
+
+    ref.update({ likes });
+  });
+}
+
+
+// 💬 COMMENTS
+function toggleComments(id) {
+  const el = document.getElementById("comments-" + id);
+  el.style.display = el.style.display === "none" ? "block" : "none";
+}
+
+function addComment(e, postId) {
+  if (e.key !== "Enter") return;
+
+  const text = e.target.value;
+  const user = firebase.auth().currentUser;
+
+  firebase.firestore()
+    .collection("posts")
+    .doc(postId)
+    .collection("comments")
+    .add({
+      text,
+      user: user.email,
+      createdAt: new Date()
+    });
+
+  e.target.value = "";
+}
+
+
+// 🗑 DELETE POST
+function deletePost(postId) {
+  if (!confirm("Delete this post?")) return;
+
+  firebase.firestore()
+    .collection("posts")
+    .doc(postId)
+    .delete();
+}
+
+
+// 👤 PROFILE NAV
+function goToProfile(uid) {
+  window.location.href = "profile.html?uid=" + uid;
+}
 
 
 // 🌙 DARK MODE
 function toggleDarkMode() {
   document.body.classList.toggle("dark");
-  localStorage.setItem("darkMode",
-    document.body.classList.contains("dark") ? "on" : "off");
+
+  localStorage.setItem(
+    "darkMode",
+    document.body.classList.contains("dark") ? "on" : "off"
+  );
 }
+
 if (localStorage.getItem("darkMode") === "on") {
   document.body.classList.add("dark");
 }
@@ -131,156 +241,4 @@ function logout() {
   firebase.auth().signOut().then(() => {
     window.location.href = "login.html";
   });
-}
-
-
-// ✍️ CREATE POST (WITH IMAGE)
-function createPost() {
-  const text = document.getElementById("postInput").value;
-  const file = document.getElementById("imageInput").files[0];
-  const user = firebase.auth().currentUser;
-
-  if (!user) return alert("Login first!");
-
-  if (file) {
-    const ref = firebase.storage().ref("posts/" + Date.now());
-
-    ref.put(file).then(snapshot => {
-      snapshot.ref.getDownloadURL().then(url => {
-        savePost(text, user.uid, url);
-      });
-    });
-  } else {
-    savePost(text, user.uid, "");
-  }
-}
-
-function savePost(text, uid, image) {
-  firebase.firestore().collection("posts").add({
-    uid,
-    text,
-    image,
-    createdAt: new Date()
-  });
-}
-
-
-// 📡 POSTS (Pinterest + social)
-function loadPosts() {
-  firebase.firestore().collection("posts")
-    .orderBy("createdAt", "desc")
-    .onSnapshot(snapshot => {
-
-      const container = document.getElementById("postsContainer");
-      container.innerHTML = "";
-
-      snapshot.forEach(doc => {
-        const post = doc.data();
-        const id = doc.id;
-
-        container.innerHTML += `
-          <div class="post-card">
-
-            <h4 onclick="goToProfile('${post.uid}')" style="cursor:pointer;">👤 View User</h4>
-
-            <p>${post.text}</p>
-            ${post.image ? `<img src="${post.image}" style="width:100%; border-radius:10px;">` : ""}
-
-            <div class="post-actions">
-              <span onclick="toggleLike('${id}')">❤️ Like</span>
-              <span onclick="toggleComments('${id}')">💬 Comment</span>
-            </div>
-
-            <div id="comments-${id}" style="display:none;">
-              <div id="list-${id}"></div>
-              <input placeholder="comment..."
-                onkeypress="addComment(event,'${id}')">
-            </div>
-
-          </div>
-        `;
-
-        loadComments(id);
-      });
-    });
-}
-
-
-// ❤️ LIKE
-function toggleLike(postId) {
-  const user = firebase.auth().currentUser;
-
-  firebase.firestore()
-    .collection("posts")
-    .doc(postId)
-    .collection("likes")
-    .doc(user.uid)
-    .set({ liked: true });
-}
-
-
-// 💬 COMMENTS
-function toggleComments(id) {
-  const el = document.getElementById("comments-" + id);
-  el.style.display = el.style.display === "none" ? "block" : "none";
-}
-
-function addComment(e, id) {
-  if (e.key !== "Enter") return;
-
-  firebase.firestore()
-    .collection("posts")
-    .doc(id)
-    .collection("comments")
-    .add({
-      text: e.target.value,
-      createdAt: new Date()
-    });
-
-  e.target.value = "";
-}
-
-function loadComments(id) {
-  firebase.firestore()
-    .collection("posts")
-    .doc(id)
-    .collection("comments")
-    .onSnapshot(snapshot => {
-
-      let html = "";
-      snapshot.forEach(doc => {
-        html += `<p>💬 ${doc.data().text}</p>`;
-      });
-
-      document.getElementById("list-" + id).innerHTML = html;
-    });
-}
-
-
-// 👤 PROFILE PAGE NAV
-function goToProfile(uid) {
-  window.location.href = `profile.html?uid=${uid}`;
-}
-
-
-// ➕ FOLLOW
-function followUser(targetUid) {
-  const user = firebase.auth().currentUser;
-
-  firebase.firestore()
-    .collection("users")
-    .doc(targetUid)
-    .collection("followers")
-    .doc(user.uid)
-    .set({ followed: true });
-
-  // 🔔 notification
-  firebase.firestore()
-    .collection("users")
-    .doc(targetUid)
-    .collection("notifications")
-    .add({
-      text: "Someone followed you ❤️",
-      createdAt: new Date()
-    });
 }
