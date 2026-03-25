@@ -11,7 +11,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // ✅ PROFILE LOAD
+  // ==========================
+  // 👤 PROFILE LOAD
+  // ==========================
   function loadProfile(uid) {
     firebase.firestore().collection("users").doc(uid).get().then(doc => {
       if (doc.exists) {
@@ -33,7 +35,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // ==========================
   // ❤️ SAVE POSTS
+  // ==========================
   document.querySelectorAll(".save-btn").forEach(btn => {
     btn.addEventListener("click", async () => {
       const user = firebase.auth().currentUser;
@@ -68,7 +72,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // ==========================
   // 🔍 SEARCH
+  // ==========================
   const searchInput = document.getElementById("searchInput");
   if (searchInput) {
     searchInput.addEventListener("input", () => {
@@ -81,7 +87,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // ==========================
   // 🎯 FILTER
+  // ==========================
   document.querySelectorAll(".filters button").forEach(btn => {
     btn.addEventListener("click", () => {
       const filter = btn.dataset.filter;
@@ -95,7 +103,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // ==========================
   // 🎲 RANDOM MOOD
+  // ==========================
   const moods = ["sad", "calm", "love"];
   document.getElementById("randomBtn").onclick = () => {
     const mood = moods[Math.floor(Math.random() * moods.length)];
@@ -105,7 +115,9 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
+// ==========================
 // 🌙 DARK MODE
+// ==========================
 function toggleDarkMode() {
   document.body.classList.toggle("dark");
   localStorage.setItem("darkMode",
@@ -117,7 +129,10 @@ if (localStorage.getItem("darkMode") === "on") {
   document.body.classList.add("dark");
 }
 
+
+// ==========================
 // 🚪 LOGOUT
+// ==========================
 function logout() {
   firebase.auth().signOut().then(() => {
     window.location.href = "login.html";
@@ -126,16 +141,13 @@ function logout() {
 
 
 // ==========================
-// 🎧 SPOTIFY FEATURES
+// 🎧 SPOTIFY
 // ==========================
-
-// 🎧 Extract ID
 function getSpotifyTrackId(url) {
   const match = url.match(/track\/([a-zA-Z0-9]+)/);
   return match ? match[1] : null;
 }
 
-// 🎧 Fetch song data
 async function fetchSpotifyData(trackId) {
   const res = await fetch(`https://open.spotify.com/oembed?url=https://open.spotify.com/track/${trackId}`);
   return await res.json();
@@ -143,7 +155,7 @@ async function fetchSpotifyData(trackId) {
 
 
 // ==========================
-// ✍️ CREATE POST
+// ✍️ CREATE POST (UPDATED)
 // ==========================
 async function createPost() {
   const text = document.getElementById("postInput").value;
@@ -152,6 +164,13 @@ async function createPost() {
 
   const user = firebase.auth().currentUser;
   if (!user) return alert("Login first!");
+
+  const userDoc = await firebase.firestore()
+    .collection("users")
+    .doc(user.uid)
+    .get();
+
+  const userData = userDoc.data();
 
   let songData = null;
 
@@ -164,6 +183,7 @@ async function createPost() {
 
   firebase.firestore().collection("posts").add({
     uid: user.uid,
+    username: userData.name || "User",
     text,
     type,
     extra,
@@ -179,9 +199,21 @@ async function createPost() {
 
 
 // ==========================
-// 📡 LOAD POSTS
+// 📡 LOAD POSTS (FOLLOW FEED)
 // ==========================
-function loadPosts() {
+async function loadPosts() {
+  const user = firebase.auth().currentUser;
+  if (!user) return;
+
+  const followingSnap = await firebase.firestore()
+    .collection("users")
+    .doc(user.uid)
+    .collection("following")
+    .get();
+
+  const followingIds = followingSnap.docs.map(doc => doc.id);
+  followingIds.push(user.uid);
+
   firebase.firestore().collection("posts")
     .orderBy("createdAt", "desc")
     .onSnapshot(snapshot => {
@@ -193,24 +225,30 @@ function loadPosts() {
         const post = doc.data();
         const id = doc.id;
 
+        if (!followingIds.includes(post.uid)) return;
+
         container.innerHTML += `
           <div class="card">
 
-            <div class="card-content">
+            <div class="user-info" onclick="goToProfile('${post.uid}')">
+              <img src="https://via.placeholder.com/40">
+              <span>${post.username}</span>
+              <button onclick="event.stopPropagation(); followUser('${post.uid}')">Follow</button>
+            </div>
 
+            <div class="card-content">
               <h3>${post.type}</h3>
               <p>${post.text}</p>
 
               ${post.songEmbed ? `
-                <div onclick="playSong('${post.songTitle}','${post.songThumbnail}')">
-                  <img src="${post.songThumbnail}" style="width:100%">
+                <div class="music-card" onclick="playSong('${post.songTitle}','${post.songThumbnail}')">
+                  <img src="${post.songThumbnail}" class="music-thumb">
                   <p>${post.songTitle}</p>
                   <iframe src="${post.songEmbed.replace("open.spotify.com","open.spotify.com/embed")}" width="100%" height="80"></iframe>
                 </div>
               ` : ""}
 
               <button onclick="saveToPlaylist(${JSON.stringify(post)})">➕ Playlist</button>
-
               <button onclick="deletePost('${id}')">🗑 Delete</button>
 
             </div>
@@ -230,7 +268,40 @@ function deletePost(id) {
 
 
 // ==========================
-// 🎵 FLOATING PLAYER
+// 👥 FOLLOW SYSTEM
+// ==========================
+async function followUser(targetUid) {
+  const user = firebase.auth().currentUser;
+  if (!user || user.uid === targetUid) return;
+
+  const ref = firebase.firestore();
+
+  const followingRef = ref.collection("users")
+    .doc(user.uid)
+    .collection("following")
+    .doc(targetUid);
+
+  const followerRef = ref.collection("users")
+    .doc(targetUid)
+    .collection("followers")
+    .doc(user.uid);
+
+  const doc = await followingRef.get();
+
+  if (doc.exists) {
+    await followingRef.delete();
+    await followerRef.delete();
+    alert("Unfollowed");
+  } else {
+    await followingRef.set({ createdAt: new Date() });
+    await followerRef.set({ createdAt: new Date() });
+    alert("Followed");
+  }
+}
+
+
+// ==========================
+// 🎵 PLAYER
 // ==========================
 function playSong(title, img) {
   document.getElementById("playerTitle").innerText = title;
@@ -239,7 +310,7 @@ function playSong(title, img) {
 
 
 // ==========================
-// 📀 PLAYLIST SYSTEM
+// 📀 PLAYLIST
 // ==========================
 function saveToPlaylist(post) {
   const user = firebase.auth().currentUser;
@@ -264,7 +335,7 @@ function loadPlaylist() {
 
 
 // ==========================
-// 🌈 MOOD RECOMMENDATION
+// 🌈 MOOD
 // ==========================
 function recommendMood(mood) {
   firebase.firestore().collection("posts").get().then(snapshot => {
@@ -281,4 +352,12 @@ function recommendMood(mood) {
 
     alert("🎧 Try: " + (match?.songTitle || "No match found"));
   });
+}
+
+
+// ==========================
+// 👤 PROFILE NAV
+// ==========================
+function goToProfile(uid) {
+  window.location.href = `profile.html?uid=${uid}`;
 }
