@@ -742,3 +742,24 @@ button:hover {
   margin: 8px;
   border-radius: 10px;
 }
+.create-post {
+  background: linear-gradient(135deg, #ff9a9e, #fad0c4, #fbc2eb, #a6c1ee);
+  background-size: 300% 300%;
+  animation: gradientMove 8s ease infinite;
+  padding: 20px;
+  border-radius: 20px;
+}
+
+@keyframes gradientMove {
+  0% { background-position: 0% }
+  50% { background-position: 100% }
+  100% { background-position: 0% }
+}
+.create-post input,
+.create-post textarea,
+.create-post select {
+  background: rgba(255,255,255,0.7);
+  border: none;
+  border-radius: 12px;
+  padding: 10px;
+}
