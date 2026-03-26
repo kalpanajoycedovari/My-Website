@@ -763,3 +763,16 @@ button:hover {
   border-radius: 12px;
   padding: 10px;
 }
+.cafe-card {
+  background: #fff;
+  padding: 15px;
+  border-radius: 20px;
+  margin: 15px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+}
+
+.cafe-img {
+  width: 100%;
+  border-radius: 15px;
+  margin: 10px 0;
+}

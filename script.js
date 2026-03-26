@@ -343,3 +343,98 @@ if (window.location.pathname.includes("song.html")) {
     if (user) loadSongPage();
   });
 }
+async function addCafe() {
+  const name = document.getElementById("cafeName").value;
+  const location = document.getElementById("cafeLocation").value;
+  const file = document.getElementById("cafeImage").files[0];
+
+  let imageUrl = "";
+
+  if (file) {
+    const ref = firebase.storage().ref().child("cafes/" + Date.now());
+    await ref.put(file);
+    imageUrl = await ref.getDownloadURL();
+  }
+
+  await db.collection("cafes").add({
+    name,
+    location,
+    imageUrl,
+    createdAt: Date.now()
+  });
+
+  loadCafes();
+}
+function loadCafes() {
+  db.collection("cafes")
+    .orderBy("createdAt", "desc")
+    .onSnapshot(snapshot => {
+
+      const container = document.getElementById("cafesContainer");
+      container.innerHTML = "";
+
+      snapshot.forEach(doc => {
+        const cafe = doc.data();
+        const id = doc.id;
+
+        container.innerHTML += `
+          <div class="cafe-card">
+
+            <h3>${cafe.name}</h3>
+
+            <img src="${cafe.imageUrl}" class="cafe-img">
+
+            <!-- MAP -->
+            <iframe 
+              src="${cafe.location.replace("https://www.google.com/maps","https://www.google.com/maps/embed")}"
+              width="100%" height="200">
+            </iframe>
+
+            <!-- COMMENTS -->
+            <div id="cafeComments-${id}"></div>
+
+            <input id="cafeInput-${id}" placeholder="write your thoughts...">
+            <button onclick="addCafeComment('${id}')">Post</button>
+
+          </div>
+        `;
+
+        loadCafeComments(id);
+      });
+    });
+}
+function addCafeComment(cafeId) {
+  const text = document.getElementById(`cafeInput-${cafeId}`).value;
+
+  db.collection("cafes")
+    .doc(cafeId)
+    .collection("comments")
+    .add({
+      text,
+      createdAt: Date.now()
+    });
+
+  document.getElementById(`cafeInput-${cafeId}`).value = "";
+}
+function loadCafeComments(cafeId) {
+  db.collection("cafes")
+    .doc(cafeId)
+    .collection("comments")
+    .orderBy("createdAt")
+    .onSnapshot(snapshot => {
+
+      const container = document.getElementById(`cafeComments-${cafeId}`);
+      container.innerHTML = "";
+
+      snapshot.forEach(doc => {
+        const c = doc.data();
+
+        container.innerHTML += `
+          <div class="comment">${c.text}</div>
+        `;
+      });
+    });
+}
+if (window.location.pathname.includes("cafes.html")) {
+  loadCafes();
+}
