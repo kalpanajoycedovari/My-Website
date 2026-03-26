@@ -689,3 +689,38 @@ button:hover {
   height: 40px;
   border-radius: 50%;
 }
+/* PROFILE HEADER */
+.profile-header {
+  text-align: center;
+  padding: 20px;
+}
+
+.profile-header img {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+}
+
+/* STATS */
+.profile-stats {
+  display: flex;
+  justify-content: space-around;
+  text-align: center;
+  margin: 20px 0;
+}
+
+.profile-stats span {
+  font-weight: bold;
+  font-size: 18px;
+}
+
+/* POSTS GRID */
+.profile-grid {
+  column-count: 3;
+  column-gap: 10px;
+  padding: 10px;
+}
+
+.profile-grid .card {
+  margin-bottom: 10px;
+}
