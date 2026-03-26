@@ -776,3 +776,36 @@ button:hover {
   border-radius: 15px;
   margin: 10px 0;
 }
+#cafesContainer {
+  column-count: 3;
+  column-gap: 15px;
+  padding: 10px;
+}
+
+.cafe-card {
+  display: inline-block;
+  width: 100%;
+  margin-bottom: 15px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  transition: 0.3s;
+}
+
+.cafe-card:hover {
+  transform: translateY(-5px) scale(1.02);
+}
+
+.cafe-img {
+  width: 100%;
+  display: block;
+}
+.cafe-card h3 {
+  padding: 10px;
+  font-family: 'Playfair Display', serif;
+}
+
+.rating {
+  padding: 10px;
+}

@@ -1,10 +1,10 @@
 
-//  FIREBASE INIT
+// 🔥 FIREBASE INIT
 const db = firebase.firestore();
 const auth = firebase.auth();
 
 // ==========================
-//  AUTH STATE
+// 🔐 AUTH STATE
 // ==========================
 auth.onAuthStateChanged(user => {
   if (user) {
@@ -35,7 +35,7 @@ function loadUserProfile(user) {
 }
 
 // ==========================
-//  CREATING POST
+// ✏️ CREATE POST
 // ==========================
 async function createPost() {
   const user = auth.currentUser;
@@ -54,33 +54,10 @@ async function createPost() {
     imageUrl = await ref.getDownloadURL();
   }
 
-  // 🎧 Spotify Auto Fetch
   let songTitle = extra;
   let songEmbed = "";
   let songThumbnail = "";
 
-  if (type.includes("Song") && extra) {
-    try {
-      const res = await fetch(`https://api.spotify.com/v1/search?q=${extra}&type=track&limit=1`, {
-        headers: {
-          Authorization: "Bearer YOUR_SPOTIFY_TOKEN"
-        }
-      });
-
-      const data = await res.json();
-      const track = data.tracks.items[0];
-
-      if (track) {
-        songTitle = track.name;
-        songEmbed = track.external_urls.spotify;
-        songThumbnail = track.album.images[0].url;
-      }
-    } catch (e) {
-      console.log("Spotify fetch failed");
-    }
-  }
-
-  // 👤 get username
   const userDoc = await db.collection("users").doc(user.uid).get();
   const username = userDoc.data().username;
 
@@ -129,12 +106,10 @@ function loadPosts() {
           html += `<img src="${post.imageUrl}">`;
         }
 
-        // 🎧 MUSIC CARD CLICKABLE
-        if (post.type.includes("Song") && post.songEmbed) {
+        if (post.type.includes("Song") && post.extra) {
           html += `
             <div class="music-card" onclick="openSongPage('${id}')">
-              <img src="${post.songThumbnail}" class="music-thumb">
-              <p>${post.songTitle}</p>
+              <p>🎧 ${post.extra}</p>
             </div>
           `;
         }
@@ -193,28 +168,19 @@ function loadComments(postId) {
         const c = doc.data();
 
         container.innerHTML += `
-          <div class="comment">
-            <p>${c.text}</p>
-          </div>
+          <div class="comment">${c.text}</div>
         `;
       });
     });
 }
 
 // ==========================
-// 🎧 SONG PAGE NAVIGATION
+// 🎧 SONG PAGE
 // ==========================
 function openSongPage(postId) {
   window.location.href = `song.html?id=${postId}`;
 }
 
-function goBack() {
-  window.history.back();
-}
-
-// ==========================
-// 🎵 LOAD SONG PAGE
-// ==========================
 function loadSongPage() {
   const params = new URLSearchParams(window.location.search);
   const id = params.get("id");
@@ -226,16 +192,10 @@ function loadSongPage() {
 
     document.getElementById("songPage").innerHTML = `
       <h2>🎧 Song of the Day</h2>
-      <h3>${post.songTitle}</h3>
-
-      <img src="${post.songThumbnail}" style="width:200px">
-
-      <iframe src="${post.songEmbed.replace("open.spotify.com","open.spotify.com/embed")}"
-        width="100%" height="80"></iframe>
+      <h3>${post.extra}</h3>
 
       <div class="lyrics-box">
-        <h4>✨ Lyrics / Feelings</h4>
-        <p>${post.lyrics || "No lyrics added yet"}</p>
+        <p>${post.lyrics || "No lyrics added"}</p>
       </div>
     `;
   });
@@ -243,14 +203,10 @@ function loadSongPage() {
   loadSongComments(id);
 }
 
-// ==========================
-// 💬 SONG COMMENTS
-// ==========================
 function addSongComment() {
   const params = new URLSearchParams(window.location.search);
   const postId = params.get("id");
 
-  const user = auth.currentUser;
   const text = document.getElementById("commentInput").value;
 
   if (!text) return;
@@ -260,7 +216,6 @@ function addSongComment() {
     .collection("comments")
     .add({
       text,
-      uid: user.uid,
       createdAt: Date.now()
     });
 
@@ -279,18 +234,13 @@ function loadSongComments(postId) {
 
       snapshot.forEach(doc => {
         const c = doc.data();
-
-        container.innerHTML += `
-          <div class="comment">
-            <p>${c.text}</p>
-          </div>
-        `;
+        container.innerHTML += `<div class="comment">${c.text}</div>`;
       });
     });
 }
 
 // ==========================
-// 👥 FOLLOW SYSTEM
+// 👥 FOLLOW
 // ==========================
 function followUser(targetUid) {
   const user = auth.currentUser;
@@ -299,11 +249,8 @@ function followUser(targetUid) {
     .doc(targetUid)
     .collection("followers")
     .doc(user.uid)
-    .set({
-      uid: user.uid
-    });
+    .set({ uid: user.uid });
 
-  // 🔔 Notification
   db.collection("users")
     .doc(targetUid)
     .collection("notifications")
@@ -314,35 +261,8 @@ function followUser(targetUid) {
 }
 
 // ==========================
-// 🚪 LOGOUT
+// ☕ CAFES SYSTEM
 // ==========================
-function logout() {
-  auth.signOut();
-}
-
-// ==========================
-// 🌙 DARK MODE
-// ==========================
-function toggleDarkMode() {
-  document.body.classList.toggle("dark");
-}
-
-// ==========================
-// 🎵 FLOATING PLAYER (basic)
-// ==========================
-function playSong(title, img) {
-  document.getElementById("playerTitle").innerText = title;
-  document.getElementById("playerImg").src = img;
-}
-
-// ==========================
-// 🚀 AUTO LOAD SONG PAGE
-// ==========================
-if (window.location.pathname.includes("song.html")) {
-  auth.onAuthStateChanged(user => {
-    if (user) loadSongPage();
-  });
-}
 async function addCafe() {
   const name = document.getElementById("cafeName").value;
   const location = document.getElementById("cafeLocation").value;
@@ -360,11 +280,14 @@ async function addCafe() {
     name,
     location,
     imageUrl,
-    createdAt: Date.now()
+    createdAt: Date.now(),
+    rating: 0,
+    ratingCount: 0
   });
 
   loadCafes();
 }
+
 function loadCafes() {
   db.collection("cafes")
     .orderBy("createdAt", "desc")
@@ -379,23 +302,23 @@ function loadCafes() {
 
         container.innerHTML += `
           <div class="cafe-card">
-
             <h3>${cafe.name}</h3>
 
             <img src="${cafe.imageUrl}" class="cafe-img">
 
-            <!-- MAP -->
-            <iframe 
-              src="${cafe.location.replace("https://www.google.com/maps","https://www.google.com/maps/embed")}"
-              width="100%" height="200">
-            </iframe>
+            <iframe src="${cafe.location}" width="100%" height="200"></iframe>
 
-            <!-- COMMENTS -->
+            <div class="rating">
+              ⭐ ${cafe.rating ? cafe.rating.toFixed(1) : 0} (${cafe.ratingCount || 0})
+              <button onclick="rateCafe('${id}', 5)">⭐</button>
+              <button onclick="rateCafe('${id}', 4)">⭐</button>
+              <button onclick="rateCafe('${id}', 3)">⭐</button>
+            </div>
+
             <div id="cafeComments-${id}"></div>
 
-            <input id="cafeInput-${id}" placeholder="write your thoughts...">
+            <input id="cafeInput-${id}" placeholder="your thoughts...">
             <button onclick="addCafeComment('${id}')">Post</button>
-
           </div>
         `;
 
@@ -403,6 +326,24 @@ function loadCafes() {
       });
     });
 }
+
+function rateCafe(cafeId, value) {
+  const ref = db.collection("cafes").doc(cafeId);
+
+  db.runTransaction(async (t) => {
+    const doc = await t.get(ref);
+    const data = doc.data();
+
+    const newCount = (data.ratingCount || 0) + 1;
+    const newRating = ((data.rating || 0) * (newCount - 1) + value) / newCount;
+
+    t.update(ref, {
+      rating: newRating,
+      ratingCount: newCount
+    });
+  });
+}
+
 function addCafeComment(cafeId) {
   const text = document.getElementById(`cafeInput-${cafeId}`).value;
 
@@ -416,6 +357,7 @@ function addCafeComment(cafeId) {
 
   document.getElementById(`cafeInput-${cafeId}`).value = "";
 }
+
 function loadCafeComments(cafeId) {
   db.collection("cafes")
     .doc(cafeId)
@@ -428,13 +370,36 @@ function loadCafeComments(cafeId) {
 
       snapshot.forEach(doc => {
         const c = doc.data();
-
-        container.innerHTML += `
-          <div class="comment">${c.text}</div>
-        `;
+        container.innerHTML += `<div class="comment">${c.text}</div>`;
       });
     });
 }
+
+// 📍 LOCATION
+function getNearbyCafes() {
+  navigator.geolocation.getCurrentPosition(pos => {
+    alert(`Lat: ${pos.coords.latitude}, Lng: ${pos.coords.longitude}`);
+  });
+}
+
+// ==========================
+// 🚀 AUTO LOAD CAFES
+// ==========================
 if (window.location.pathname.includes("cafes.html")) {
   loadCafes();
 }
+
+// ==========================
+// 🌙 DARK MODE
+// ==========================
+function toggleDarkMode() {
+  document.body.classList.toggle("dark");
+}
+
+// ==========================
+// 🚪 LOGOUT
+// ==========================
+function logout() {
+  auth.signOut();
+}
+
