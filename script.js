@@ -1,15 +1,14 @@
-// ==========================
-// 🔥 FIREBASE INIT
-// ==========================
+
+//  FIREBASE INIT
 const db = firebase.firestore();
-const storage = firebase.storage();
+const auth = firebase.auth();
 
 // ==========================
-// 👤 AUTH STATE
+//  AUTH STATE
 // ==========================
-firebase.auth().onAuthStateChanged(user => {
+auth.onAuthStateChanged(user => {
   if (user) {
-    loadUserData(user);
+    loadUserProfile(user);
     loadPosts();
   } else {
     window.location.href = "login.html";
@@ -17,61 +16,92 @@ firebase.auth().onAuthStateChanged(user => {
 });
 
 // ==========================
-// 👤 LOAD USER DATA
+// 👤 USER PROFILE
 // ==========================
-function loadUserData(user) {
+function loadUserProfile(user) {
   db.collection("users").doc(user.uid).get().then(doc => {
     const data = doc.data();
 
     document.getElementById("profileBox").innerHTML = `
-      <div onclick="goToProfile('${user.uid}')">
-        <img src="${data.avatar || 'https://via.placeholder.com/40'}">
-        <span>${data.name}</span>
-      </div>
+      <img src="${data.photo || 'https://via.placeholder.com/40'}">
+      <span>${data.username || "User"}</span>
     `;
 
     document.getElementById("menuProfile").innerHTML = `
-      <img src="${data.avatar || 'https://via.placeholder.com/40'}">
-      <span>${data.name}</span>
+      <img src="${data.photo || 'https://via.placeholder.com/40'}">
+      <span>${data.username || "User"}</span>
     `;
   });
 }
 
 // ==========================
-// ➕ CREATE POST
+//  CREATING POST
 // ==========================
 async function createPost() {
-  const user = firebase.auth().currentUser;
+  const user = auth.currentUser;
 
   const text = document.getElementById("postInput").value;
   const type = document.getElementById("postType").value;
   const extra = document.getElementById("extraInput").value;
-  const file = document.getElementById("imageInput").files[0];
-
-  if (!text) return alert("Write something!");
+  const lyrics = document.getElementById("lyricsInput")?.value || "";
 
   let imageUrl = "";
 
+  const file = document.getElementById("imageInput").files[0];
   if (file) {
-    const ref = storage.ref("posts/" + Date.now());
+    const ref = firebase.storage().ref().child("posts/" + Date.now());
     await ref.put(file);
     imageUrl = await ref.getDownloadURL();
   }
 
+  // 🎧 Spotify Auto Fetch
+  let songTitle = extra;
+  let songEmbed = "";
+  let songThumbnail = "";
+
+  if (type.includes("Song") && extra) {
+    try {
+      const res = await fetch(`https://api.spotify.com/v1/search?q=${extra}&type=track&limit=1`, {
+        headers: {
+          Authorization: "Bearer YOUR_SPOTIFY_TOKEN"
+        }
+      });
+
+      const data = await res.json();
+      const track = data.tracks.items[0];
+
+      if (track) {
+        songTitle = track.name;
+        songEmbed = track.external_urls.spotify;
+        songThumbnail = track.album.images[0].url;
+      }
+    } catch (e) {
+      console.log("Spotify fetch failed");
+    }
+  }
+
+  // 👤 get username
   const userDoc = await db.collection("users").doc(user.uid).get();
+  const username = userDoc.data().username;
 
   await db.collection("posts").add({
-    uid: user.uid,
-    username: userDoc.data().name,
     text,
     type,
     extra,
+    lyrics,
     imageUrl,
+    songTitle,
+    songEmbed,
+    songThumbnail,
+    uid: user.uid,
+    username,
     createdAt: Date.now()
   });
 
   document.getElementById("postInput").value = "";
   document.getElementById("extraInput").value = "";
+  if (document.getElementById("lyricsInput"))
+    document.getElementById("lyricsInput").value = "";
 }
 
 // ==========================
@@ -88,39 +118,83 @@ function loadPosts() {
       snapshot.forEach(doc => {
         const post = doc.data();
         const id = doc.id;
-        const user = firebase.auth().currentUser;
+
+        let html = `
+          <div class="card">
+            <h4>@${post.username}</h4>
+            <p>${post.text}</p>
+        `;
+
+        if (post.imageUrl) {
+          html += `<img src="${post.imageUrl}">`;
+        }
+
+        // 🎧 MUSIC CARD CLICKABLE
+        if (post.type.includes("Song") && post.songEmbed) {
+          html += `
+            <div class="music-card" onclick="openSongPage('${id}')">
+              <img src="${post.songThumbnail}" class="music-thumb">
+              <p>${post.songTitle}</p>
+            </div>
+          `;
+        }
+
+        html += `
+          <div class="actions">
+            <button onclick="followUser('${post.uid}')">Follow</button>
+          </div>
+
+          <div id="comments-${id}"></div>
+
+          <input id="commentInput-${id}" placeholder="comment...">
+          <button onclick="addComment('${id}')">Post</button>
+        </div>
+        `;
+
+        container.innerHTML += html;
+
+        loadComments(id);
+      });
+    });
+}
+
+// ==========================
+// 💬 COMMENTS (HOME)
+// ==========================
+function addComment(postId) {
+  const user = auth.currentUser;
+  const text = document.getElementById(`commentInput-${postId}`).value;
+
+  if (!text) return;
+
+  db.collection("posts")
+    .doc(postId)
+    .collection("comments")
+    .add({
+      text,
+      uid: user.uid,
+      createdAt: Date.now()
+    });
+
+  document.getElementById(`commentInput-${postId}`).value = "";
+}
+
+function loadComments(postId) {
+  db.collection("posts")
+    .doc(postId)
+    .collection("comments")
+    .orderBy("createdAt")
+    .onSnapshot(snapshot => {
+
+      const container = document.getElementById(`comments-${postId}`);
+      container.innerHTML = "";
+
+      snapshot.forEach(doc => {
+        const c = doc.data();
 
         container.innerHTML += `
-          <div class="card">
-            
-            <div class="post-header">
-              <strong onclick="goToProfile('${post.uid}')">
-                ${post.username}
-              </strong>
-            </div>
-
-            ${post.imageUrl ? `<img src="${post.imageUrl}">` : ""}
-
-            <div class="card-content">
-              <p>${post.text}</p>
-              <small>${post.type} • ${post.extra}</small>
-
-              <div class="post-actions">
-
-                ${
-                  user.uid === post.uid
-                    ? `
-                    <button onclick="deletePost('${id}')">🗑 Delete</button>
-                    <button onclick="editPost('${id}', \`${post.text}\`)">✏ Edit</button>
-                  `
-                    : ""
-                }
-
-                <button onclick="openComments('${id}')">💬</button>
-
-              </div>
-            </div>
-
+          <div class="comment">
+            <p>${c.text}</p>
           </div>
         `;
       });
@@ -128,95 +202,122 @@ function loadPosts() {
 }
 
 // ==========================
-// 🗑 DELETE POST
+// 🎧 SONG PAGE NAVIGATION
 // ==========================
-function deletePost(id) {
-  if (confirm("Delete this post?")) {
-    db.collection("posts").doc(id).delete();
-  }
+function openSongPage(postId) {
+  window.location.href = `song.html?id=${postId}`;
+}
+
+function goBack() {
+  window.history.back();
 }
 
 // ==========================
-// ✏ EDIT POST
+// 🎵 LOAD SONG PAGE
 // ==========================
-function editPost(id, oldText) {
-  const newText = prompt("Edit your post:", oldText);
-  if (!newText) return;
+function loadSongPage() {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
 
-  db.collection("posts").doc(id).update({
-    text: newText
+  if (!id) return;
+
+  db.collection("posts").doc(id).get().then(doc => {
+    const post = doc.data();
+
+    document.getElementById("songPage").innerHTML = `
+      <h2>🎧 Song of the Day</h2>
+      <h3>${post.songTitle}</h3>
+
+      <img src="${post.songThumbnail}" style="width:200px">
+
+      <iframe src="${post.songEmbed.replace("open.spotify.com","open.spotify.com/embed")}"
+        width="100%" height="80"></iframe>
+
+      <div class="lyrics-box">
+        <h4>✨ Lyrics / Feelings</h4>
+        <p>${post.lyrics || "No lyrics added yet"}</p>
+      </div>
+    `;
   });
+
+  loadSongComments(id);
 }
 
 // ==========================
-// 💬 COMMENTS
+// 💬 SONG COMMENTS
 // ==========================
-function openComments(postId) {
-  const text = prompt("Write a comment:");
-  if (!text) return;
+function addSongComment() {
+  const params = new URLSearchParams(window.location.search);
+  const postId = params.get("id");
 
-  const user = firebase.auth().currentUser;
+  const user = auth.currentUser;
+  const text = document.getElementById("commentInput").value;
+
+  if (!text) return;
 
   db.collection("posts")
     .doc(postId)
     .collection("comments")
     .add({
-      uid: user.uid,
       text,
+      uid: user.uid,
+      createdAt: Date.now()
+    });
+
+  document.getElementById("commentInput").value = "";
+}
+
+function loadSongComments(postId) {
+  db.collection("posts")
+    .doc(postId)
+    .collection("comments")
+    .orderBy("createdAt")
+    .onSnapshot(snapshot => {
+
+      const container = document.getElementById("comments");
+      container.innerHTML = "";
+
+      snapshot.forEach(doc => {
+        const c = doc.data();
+
+        container.innerHTML += `
+          <div class="comment">
+            <p>${c.text}</p>
+          </div>
+        `;
+      });
+    });
+}
+
+// ==========================
+// 👥 FOLLOW SYSTEM
+// ==========================
+function followUser(targetUid) {
+  const user = auth.currentUser;
+
+  db.collection("users")
+    .doc(targetUid)
+    .collection("followers")
+    .doc(user.uid)
+    .set({
+      uid: user.uid
+    });
+
+  // 🔔 Notification
+  db.collection("users")
+    .doc(targetUid)
+    .collection("notifications")
+    .add({
+      text: "Someone followed you!",
       createdAt: Date.now()
     });
 }
 
 // ==========================
-// ❌ DELETE COMMENT
+// 🚪 LOGOUT
 // ==========================
-function deleteComment(postId, commentId) {
-  db.collection("posts")
-    .doc(postId)
-    .collection("comments")
-    .doc(commentId)
-    .delete();
-}
-
-// ==========================
-// ❤️ FOLLOW SYSTEM
-// ==========================
-async function followUser(targetUid) {
-  const user = firebase.auth().currentUser;
-
-  await db.collection("users")
-    .doc(targetUid)
-    .collection("followers")
-    .doc(user.uid)
-    .set({});
-
-  await db.collection("users")
-    .doc(user.uid)
-    .collection("following")
-    .doc(targetUid)
-    .set({});
-
-  addNotification(targetUid, "started following you");
-}
-
-// ==========================
-// 🔔 NOTIFICATIONS
-// ==========================
-function addNotification(uid, text) {
-  db.collection("users")
-    .doc(uid)
-    .collection("notifications")
-    .add({
-      text,
-      time: Date.now()
-    });
-}
-
-// ==========================
-// 👤 PROFILE NAVIGATION
-// ==========================
-function goToProfile(uid) {
-  window.location.href = `profile.html?uid=${uid}`;
+function logout() {
+  auth.signOut();
 }
 
 // ==========================
@@ -227,56 +328,18 @@ function toggleDarkMode() {
 }
 
 // ==========================
-// 🚪 LOGOUT
+// 🎵 FLOATING PLAYER (basic)
 // ==========================
-function logout() {
-  firebase.auth().signOut();
+function playSong(title, img) {
+  document.getElementById("playerTitle").innerText = title;
+  document.getElementById("playerImg").src = img;
 }
 
 // ==========================
-// 👤 PROFILE PAGE LOAD
+// 🚀 AUTO LOAD SONG PAGE
 // ==========================
-function loadUserProfile() {
-  const params = new URLSearchParams(window.location.search);
-  const uid = params.get("uid");
-
-  if (!uid) return;
-
-  db.collection("users").doc(uid).get().then(doc => {
-    const data = doc.data();
-
-    document.getElementById("profileHeader").innerHTML = `
-      <img src="${data.avatar || 'https://via.placeholder.com/100'}">
-      <h2>${data.name}</h2>
-      <p>${data.bio || ""}</p>
-    `;
-  });
-
-  db.collection("posts")
-    .where("uid", "==", uid)
-    .onSnapshot(snapshot => {
-
-      const container = document.getElementById("userPosts");
-      container.innerHTML = "";
-
-      document.getElementById("postCount").innerText = snapshot.size;
-
-      snapshot.forEach(doc => {
-        const post = doc.data();
-
-        container.innerHTML += `
-          <div class="card">
-            ${post.imageUrl ? `<img src="${post.imageUrl}">` : ""}
-            <p>${post.text}</p>
-          </div>
-        `;
-      });
-    });
-}
-
-// AUTO LOAD PROFILE PAGE
-if (window.location.pathname.includes("profile.html")) {
-  firebase.auth().onAuthStateChanged(user => {
-    if (user) loadUserProfile();
+if (window.location.pathname.includes("song.html")) {
+  auth.onAuthStateChanged(user => {
+    if (user) loadSongPage();
   });
 }
