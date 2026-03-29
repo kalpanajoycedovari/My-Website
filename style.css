@@ -810,3 +810,35 @@ body {
   0%, 100% { opacity: var(--op-high); }
   50%       { opacity: var(--op-low); }
 }
+/* ===================== */
+/* DROPDOWN FIX */
+/* ===================== */
+.dropdown-content {
+  max-height: 380px;
+  overflow-y: auto;
+  display: none;
+  opacity: 1;
+  transform: none;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+.dropdown-content button {
+  width: 100%;
+  padding: 11px 16px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  color: #4a7c59;
+  font-size: 0.9rem;
+  border-radius: 0;
+  display: block;
+}
+
+.dropdown-content button:hover {
+  background: #e2f4de;
+  color: #2e3d2f;
+}
