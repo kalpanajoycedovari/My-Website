@@ -5,12 +5,11 @@
   <title>Solite's Corner</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&family=Caveat:wght@400;600&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="style.css">
 
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#8fbf9f">
+  <meta name="theme-color" content="#f7efe6">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <link rel="apple-touch-icon" href="images/icon-192.png">
@@ -23,10 +22,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
   <script src="firebase-config.js"></script>
-
-  <script>
-    firebase.initializeApp(firebaseConfig);
-  </script>
+  <script>firebase.initializeApp(firebaseConfig);</script>
 
 </head>
 
@@ -37,13 +33,14 @@
 <header class="top">
   <h1>Solite's Corner</h1>
   <p>"A small corner for you and just you!"</p>
+
   <div class="top-divider">
-  <div class="top-divider-line"></div>
-  <div class="top-divider-dot"></div>
-  <div class="top-divider-dot"></div>
-  <div class="top-divider-dot"></div>
-  <div class="top-divider-line"></div>
-</div>
+    <div class="top-divider-line"></div>
+    <div class="top-divider-dot"></div>
+    <div class="top-divider-dot"></div>
+    <div class="top-divider-dot"></div>
+    <div class="top-divider-line"></div>
+  </div>
 
   <div id="profileBox"></div>
 
@@ -51,7 +48,6 @@
     <button class="dropbtn">☰ Menu</button>
     <div class="dropdown-content">
       <div class="menu-profile" id="menuProfile">
-        <img src="https://via.placeholder.com/40">
         <span>Loading...</span>
       </div>
       <a href="index.html">Home</a>
@@ -68,8 +64,10 @@
   </div>
 
   <div class="top-bar">
-    <input type="text" id="searchInput" placeholder="🔍 search..." />
-    <button id="randomBtn">random vibe</button>
+    <div class="search-wrap">
+      <input type="text" id="searchInput" placeholder="search vibes...">
+    </div>
+    <button id="randomBtn">✦ random vibe</button>
   </div>
 
   <div class="filters">
@@ -83,6 +81,7 @@
 
 <main class="masonry">
 
+  <!-- CREATE POST -->
   <div class="create-post">
     <textarea id="postInput" placeholder="yap about your day... 🌙"></textarea>
     <select id="postType">
@@ -97,46 +96,127 @@
     <button onclick="createPost()">Post ✨</button>
   </div>
 
+  <!-- DYNAMIC POSTS FEED -->
   <div id="postsContainer"></div>
 
+  <!-- STATIC MOOD CARDS — varied sizes + character -->
+
   <div class="card" data-category="gloomy">
-    <img src="images/book.jpg">
+    <div style="height:140px;background:linear-gradient(135deg,#e8ddd0,#d4c4b0);display:flex;align-items:center;justify-content:center;font-size:40px;">📖</div>
     <div class="card-content">
-      <h3>📖 Book</h3>
-      <p>"for when you want to escape"</p>
-      <button class="save-btn"><span class="heart">♡</span></button>
+      <h3>lost in a book</h3>
+      <p>"for when you want to disappear into another world entirely"</p>
+      <div class="card-note">"highly recommend"</div>
+      <span class="card-tag">gloomy</span>
+    </div>
+  </div>
+
+  <div class="card journal" data-category="nostalgic">
+    <div class="card-content" style="padding:20px;">
+      <h3>📝 today's journal</h3>
+      <p style="font-style:italic;">"today felt soft and slow, like honey dripping from a spoon on a sunday morning..."</p>
+      <div class="card-note">— 3 days ago</div>
+      <span class="card-tag">nostalgic</span>
     </div>
   </div>
 
   <div class="card" data-category="soft">
-    <img src="images/cafe.jpg">
+    <div style="height:100px;background:linear-gradient(135deg,#f0e0cc,#e0c8b0);display:flex;align-items:center;justify-content:center;font-size:32px;">☕</div>
     <div class="card-content">
-      <h3>☕ Café</h3>
-      <p>"Quiet cozy corner"</p>
-      <button class="save-btn"><span class="heart">♡</span></button>
+      <h3>favourite café</h3>
+      <p>"quiet corner, warm light, the smell of espresso"</p>
+      <span class="card-tag">soft</span>
     </div>
   </div>
 
   <div class="card music" data-category="soft">
     <div class="card-content">
-      <h3>🎧 Song of the Day</h3>
+      <h3>🎧 song of the day</h3>
       <p>"Until I Found You"</p>
-      <iframe style="border-radius:12px"
+      <div class="card-note">"feels like autumn rain"</div>
+      <iframe style="border-radius:12px;margin-top:10px;"
         src="https://open.spotify.com/embed/track/3JvKfv6T31zO0ini8iNItO"
-        width="100%" height="80"></iframe>
+        width="100%" height="80" frameborder="0"
+        allow="encrypted-media"></iframe>
+      <span class="card-tag">soft</span>
+    </div>
+  </div>
+
+  <div class="card" data-category="nostalgic">
+    <div style="height:80px;background:linear-gradient(135deg,#dcc8b0,#c8a888);display:flex;align-items:center;justify-content:center;font-size:28px;">🌼</div>
+    <div class="card-content">
+      <h3>daily vibe</h3>
+      <p>"cozy, a little melancholy, nostalgic for something you can't name"</p>
+      <span class="card-tag">nostalgic</span>
+    </div>
+  </div>
+
+  <div class="card" data-category="gloomy">
+    <div class="card-content" style="padding:20px;">
+      <h3>🌙 late night thoughts</h3>
+      <p>"it's 2am and everything feels bigger than it probably is"</p>
+      <div class="card-note">"you're not alone"</div>
+      <span class="card-tag">gloomy</span>
+    </div>
+  </div>
+
+  <div class="card" data-category="soft">
+    <div style="height:120px;background:linear-gradient(135deg,#f5e8d8,#e8d4c0);display:flex;align-items:center;justify-content:center;font-size:36px;">🎵</div>
+    <div class="card-content">
+      <h3>sunday playlist</h3>
+      <p>"songs for slow mornings and warm cups of something"</p>
+      <div class="card-note">12 songs ✦</div>
+      <span class="card-tag">soft</span>
     </div>
   </div>
 
   <div class="card journal" data-category="nostalgic">
+    <div class="card-content" style="padding:20px;">
+      <h3>✉️ a letter to no one</h3>
+      <p style="font-style:italic;">"I keep thinking about the version of myself from three years ago and wondering what she'd think of all this..."</p>
+      <span class="card-tag">nostalgic</span>
+    </div>
+  </div>
+
+  <div class="card" data-category="gloomy">
+    <div style="height:90px;background:linear-gradient(135deg,#d8ccc0,#c4b4a4);display:flex;align-items:center;justify-content:center;font-size:30px;">🫖</div>
     <div class="card-content">
-      <h3>📝 Journal</h3>
-      <p>"today felt soft and slow..."</p>
+      <h3>rainy day ritual</h3>
+      <p>"tea, a blanket, and pretending the outside world doesn't exist"</p>
+      <span class="card-tag">gloomy</span>
+    </div>
+  </div>
+
+  <div class="card" data-category="soft">
+    <div class="card-content" style="padding:20px;">
+      <h3>🌸 small joys</h3>
+      <p>"finding the perfect song at the perfect moment. sunlight through curtains. a message from an old friend."</p>
+      <div class="card-note">"collect them all"</div>
+      <span class="card-tag">soft</span>
+    </div>
+  </div>
+
+  <div class="card" data-category="nostalgic">
+    <div style="height:110px;background:linear-gradient(135deg,#e8d8c8,#d8c4b0);display:flex;align-items:center;justify-content:center;font-size:34px;">📷</div>
+    <div class="card-content">
+      <h3>film photos</h3>
+      <p>"grainy, warm, imperfect — just like the memories they hold"</p>
+      <span class="card-tag">nostalgic</span>
+    </div>
+  </div>
+
+  <div class="card music" data-category="gloomy">
+    <div class="card-content" style="padding:20px;">
+      <h3>🎶 currently on repeat</h3>
+      <p>"that one song you play when you need to feel something but don't know what"</p>
+      <div class="card-note">"you know the one"</div>
+      <span class="card-tag">gloomy</span>
     </div>
   </div>
 
 </main>
 
-<div id="musicPlayer">
+<div id="musicPlayer" style="display:none;">
   <img id="playerImg" src="">
   <div>
     <p id="playerTitle">No song playing</p>
@@ -149,67 +229,40 @@
 (function() {
   const container = document.getElementById('daisy-bg');
   const count = 36;
-
   function makeDaisy(size) {
     const ns = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(ns, 'svg');
     svg.setAttribute('width', size * 2.6);
     svg.setAttribute('height', size * 2.6);
     svg.setAttribute('viewBox', '-20 -20 40 40');
-
-    const angles = [0, 45, 90, 135, 180, 225, 270, 315];
-    angles.forEach(a => {
+    [0,45,90,135,180,225,270,315].forEach(a => {
       const el = document.createElementNS(ns, 'ellipse');
-      el.setAttribute('cx', 0);
-      el.setAttribute('cy', -size);
-      el.setAttribute('rx', size * 0.44);
-      el.setAttribute('ry', size * 0.77);
+      el.setAttribute('cx', 0); el.setAttribute('cy', -size);
+      el.setAttribute('rx', size * 0.44); el.setAttribute('ry', size * 0.77);
       el.setAttribute('fill', '#fffef0');
       el.setAttribute('transform', `rotate(${a})`);
       svg.appendChild(el);
     });
-
     const c1 = document.createElementNS(ns, 'circle');
     c1.setAttribute('cx', 0); c1.setAttribute('cy', 0);
-    c1.setAttribute('r', size * 0.55);
-    c1.setAttribute('fill', '#f5d76e');
+    c1.setAttribute('r', size * 0.55); c1.setAttribute('fill', '#f5d76e');
     svg.appendChild(c1);
-
     const c2 = document.createElementNS(ns, 'circle');
     c2.setAttribute('cx', 0); c2.setAttribute('cy', 0);
-    c2.setAttribute('r', size * 0.28);
-    c2.setAttribute('fill', '#e8c94a');
+    c2.setAttribute('r', size * 0.28); c2.setAttribute('fill', '#e8c94a');
     svg.appendChild(c2);
-
     return svg;
   }
-
   for (let i = 0; i < count; i++) {
     const wrapper = document.createElement('div');
     wrapper.classList.add('daisy');
-
-    const size     = 5 + Math.random() * 7;
-    const opHigh   = (0.25 + Math.random() * 0.35).toFixed(2);
-    const opLow    = (parseFloat(opHigh) * 0.3).toFixed(2);
-    const dur      = (3 + Math.random() * 5).toFixed(1);
-    const blinkDur = (2 + Math.random() * 4).toFixed(1);
-    const delay    = (Math.random() * 6).toFixed(1);
-    const left     = (Math.random() * 100).toFixed(1);
-    const top      = (Math.random() * 100).toFixed(1);
-
-    wrapper.style.cssText = `
-      left: ${left}%;
-      top: ${top}%;
-      --op-high: ${opHigh};
-      --op-low: ${opLow};
-      animation-duration: ${dur}s;
-      animation-delay: -${delay}s;
-    `;
-
+    const size = 5 + Math.random() * 7;
+    const opHigh = (0.25 + Math.random() * 0.35).toFixed(2);
+    const opLow  = (parseFloat(opHigh) * 0.3).toFixed(2);
+    wrapper.style.cssText = `left:${(Math.random()*100).toFixed(1)}%;top:${(Math.random()*100).toFixed(1)}%;--op-high:${opHigh};--op-low:${opLow};animation-duration:${(3+Math.random()*5).toFixed(1)}s;animation-delay:-${(Math.random()*6).toFixed(1)}s;`;
     const svg = makeDaisy(size);
-    svg.style.animationDuration = `${blinkDur}s`;
-    svg.style.animationDelay    = `-${delay}s`;
-
+    svg.style.animationDuration = `${(2+Math.random()*4).toFixed(1)}s`;
+    svg.style.animationDelay    = `-${(Math.random()*6).toFixed(1)}s`;
     wrapper.appendChild(svg);
     container.appendChild(wrapper);
   }
