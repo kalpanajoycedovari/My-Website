@@ -817,3 +817,35 @@ body.dark .top p   { color: #c8a070; }
   z-index: 99999 !important;
   width: 220px;
 }
+/* ===================== */
+/* DROPDOWN POSITION FIX */
+/* ===================== */
+.dropdown {
+  position: static;
+}
+
+.dropdown-content {
+  position: fixed !important;
+  top: 200px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  max-height: 55vh !important;
+  overflow-y: auto !important;
+  z-index: 99999 !important;
+  width: 220px;
+}
+
+.card,
+.post-card,
+.cafe-card,
+.create-post,
+main,
+.masonry {
+  z-index: 1 !important;
+  position: relative;
+}
+
+header.top {
+  z-index: 9999;
+  position: relative;
+}
