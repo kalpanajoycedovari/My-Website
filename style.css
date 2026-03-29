@@ -849,3 +849,30 @@ header.top {
   z-index: 9999;
   position: relative;
 }
+/* ===================== */
+/* FEED TABS */
+/* ===================== */
+.feed-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 1rem;
+  position: relative;
+  z-index: 1;
+}
+.feed-tab {
+  background: rgba(255,255,255,0.72);
+  border: 1.5px solid #e0c8b0;
+  color: #7a4a2a;
+  padding: 7px 20px;
+  border-radius: 24px;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  transition: 0.2s;
+}
+.feed-tab.active {
+  background: linear-gradient(135deg, #c8855c, #a05530);
+  color: white;
+  border-color: #c8855c;
+  box-shadow: 0 3px 10px rgba(160,85,48,0.25);
+}

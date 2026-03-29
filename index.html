@@ -98,10 +98,16 @@
     <button onclick="createPost()">Post ✨</button>
   </div>
 
+  <!-- FEED TABS -->
+  <div class="feed-tabs">
+    <button class="feed-tab active" id="tabEveryone" onclick="switchFeed('everyone')">✦ everyone</button>
+    <button class="feed-tab" id="tabFollowing" onclick="switchFeed('following')">🌼 following</button>
+  </div>
+
   <!-- DYNAMIC POSTS FEED -->
   <div id="postsContainer"></div>
 
-  <!-- STATIC MOOD CARDS — varied sizes + character -->
+  <!-- STATIC MOOD CARDS -->
 
   <div class="card" data-category="gloomy">
     <div style="height:140px;background:linear-gradient(135deg,#e8ddd0,#d4c4b0);display:flex;align-items:center;justify-content:center;font-size:40px;">📖</div>

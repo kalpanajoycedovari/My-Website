@@ -33,18 +33,13 @@ function loadUserProfile(user) {
   db.collection('users').doc(user.uid).get().then(doc => {
     const data = doc.exists ? doc.data() : {};
     const username = data.username || null;
-
-    if (!username) {
-      showUsernamePrompt(user);
-      return;
-    }
-
+    if (!username) { showUsernamePrompt(user); return; }
     renderProfileBox(username);
   });
 }
 
 function renderProfileBox(username) {
-  const profileBox = document.getElementById('profileBox');
+  const profileBox  = document.getElementById('profileBox');
   const menuProfile = document.getElementById('menuProfile');
 
   if (profileBox) {
@@ -69,15 +64,9 @@ function renderProfileBox(username) {
 
 function showUsernamePrompt(user) {
   if (document.getElementById('usernameOverlay')) return;
-
   const overlay = document.createElement('div');
   overlay.id = 'usernameOverlay';
-  overlay.style.cssText = `
-    position:fixed;inset:0;background:rgba(60,20,5,0.55);
-    display:flex;align-items:center;justify-content:center;
-    z-index:99999;backdrop-filter:blur(6px);
-  `;
-
+  overlay.style.cssText = `position:fixed;inset:0;background:rgba(60,20,5,0.55);display:flex;align-items:center;justify-content:center;z-index:99999;backdrop-filter:blur(6px);`;
   overlay.innerHTML = `
     <div style="background:#fdf5ec;border-radius:24px;padding:32px 28px;max-width:340px;width:90%;text-align:center;border:1px solid #e0c8b0;box-shadow:0 20px 60px rgba(100,50,10,0.2);">
       <div style="font-family:'Playfair Display',serif;font-style:italic;font-size:1.5rem;color:#5c3317;margin-bottom:6px;">welcome to Solite 🌼</div>
@@ -91,16 +80,14 @@ function showUsernamePrompt(user) {
       </div>
     </div>
   `;
-
   document.body.appendChild(overlay);
   setTimeout(() => document.getElementById('usernameInput')?.focus(), 100);
 }
 
 function saveUsername(uid) {
-  const input = document.getElementById('usernameInput');
-  const raw   = input ? input.value.trim() : '';
+  const input    = document.getElementById('usernameInput');
+  const raw      = input ? input.value.trim() : '';
   const username = raw.replace(/[^a-zA-Z0-9_.]/g, '') || 'solite_friend';
-
   db.collection('users').doc(uid).set({ username }, { merge: true }).then(() => {
     document.getElementById('usernameOverlay')?.remove();
     renderProfileBox(username);
@@ -127,10 +114,10 @@ function injectFloatingBtn() {
   fab.style.cssText = `
     position:fixed;bottom:90px;right:24px;
     width:52px;height:52px;border-radius:50%;
-    background:linear-gradient(135deg,#a8d8a0,#6dbf86);
+    background:linear-gradient(135deg,#c8855c,#a05530);
     color:white;font-size:28px;line-height:52px;
     text-align:center;cursor:pointer;z-index:9999;
-    box-shadow:0 6px 20px rgba(80,140,90,0.35);
+    box-shadow:0 6px 20px rgba(160,85,48,0.35);
     transition:transform 0.2s;user-select:none;
   `;
   fab.onmouseenter = () => fab.style.transform = 'scale(1.1)';
@@ -140,11 +127,7 @@ function injectFloatingBtn() {
 
   const menu = document.createElement('div');
   menu.id = 'fabMenu';
-  menu.style.cssText = `
-    position:fixed;bottom:152px;right:18px;
-    display:none;flex-direction:column;gap:10px;
-    z-index:9998;align-items:flex-end;
-  `;
+  menu.style.cssText = `position:fixed;bottom:152px;right:18px;display:none;flex-direction:column;gap:10px;z-index:9998;align-items:flex-end;`;
   menu.innerHTML = `
     <a href="stories.html" style="${fabItemStyle()}">📖 write a story</a>
     <a href="cafes.html"   style="${fabItemStyle()}">☕ add a café</a>
@@ -155,20 +138,14 @@ function injectFloatingBtn() {
 }
 
 function fabItemStyle() {
-  return `
-    background:rgba(255,255,255,0.95);color:#4a7c59;
-    padding:8px 16px;border-radius:24px;font-size:0.88rem;
-    box-shadow:0 4px 14px rgba(80,140,90,0.15);
-    text-decoration:none;white-space:nowrap;
-    font-family:'DM Sans',sans-serif;
-  `;
+  return `background:rgba(255,255,255,0.95);color:#5c3317;padding:8px 16px;border-radius:24px;font-size:0.88rem;box-shadow:0 4px 14px rgba(160,85,48,0.15);text-decoration:none;white-space:nowrap;font-family:'DM Sans',sans-serif;`;
 }
 
 function toggleFabMenu() {
   const menu = document.getElementById('fabMenu');
   const fab  = document.getElementById('fabBtn');
   const open = menu.style.display === 'flex';
-  menu.style.display = open ? 'none' : 'flex';
+  menu.style.display  = open ? 'none' : 'flex';
   fab.style.transform = open ? 'scale(1) rotate(0deg)' : 'scale(1.1) rotate(45deg)';
 }
 
@@ -199,7 +176,7 @@ async function createPost() {
   }
 
   const userDoc  = await db.collection('users').doc(user.uid).get();
-  const username = userDoc.exists ? (userDoc.data().username || userDoc.data().name || 'anonymous') : 'anonymous';
+  const username = userDoc.exists ? (userDoc.data().username || 'anonymous') : 'anonymous';
 
   await db.collection('posts').add({
     text, type, extra, lyrics, imageUrl,
@@ -216,50 +193,110 @@ async function createPost() {
 }
 
 // ==========================
-// LOAD POSTS
+// FEED SWITCHING
+// ==========================
+let currentFeed  = 'everyone';
+let feedListener = null;
+
+function switchFeed(type) {
+  currentFeed = type;
+  document.getElementById('tabEveryone')?.classList.toggle('active', type === 'everyone');
+  document.getElementById('tabFollowing')?.classList.toggle('active', type === 'following');
+  if (feedListener) { feedListener(); feedListener = null; }
+  if (type === 'everyone') { loadPosts(); } else { loadFollowingFeed(); }
+}
+
+// ==========================
+// LOAD POSTS (everyone)
 // ==========================
 function loadPosts() {
-  db.collection('posts')
+  if (feedListener) { feedListener(); feedListener = null; }
+
+  feedListener = db.collection('posts')
     .orderBy('createdAt', 'desc')
     .onSnapshot(snapshot => {
       const container = document.getElementById('postsContainer');
       container.innerHTML = '';
 
-      snapshot.forEach(doc => {
-        const post = doc.data();
-        const id   = doc.id;
-        const user = auth.currentUser;
-        const liked = user && post.likes && post.likes.includes(user.uid);
+      if (snapshot.empty) {
+        container.innerHTML = `<div style="text-align:center;font-family:'Caveat',cursive;color:#b07858;font-size:1.2rem;padding:30px;">no posts yet 🌸<br><span style="font-size:0.9rem;">be the first to yap something</span></div>`;
+        return;
+      }
 
-        const card = document.createElement('div');
-        card.className = 'post-card';
-        card.innerHTML = `
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-            <a href="profile.html?uid=${post.uid}" style="font-weight:500;color:#4a7c59;font-size:0.88rem;text-decoration:none;">@${post.username}</a>
-            <span style="font-size:0.75rem;color:#b0ccb3;">${post.type || ''}</span>
-          </div>
-          <p style="color:#2e3d2f;font-size:0.92rem;line-height:1.6;">${post.text}</p>
-          ${post.imageUrl ? `<img src="${post.imageUrl}" style="width:100%;border-radius:12px;margin-top:8px;">` : ''}
-          ${post.extra && post.type && post.type.includes('Song') ? `<div class="music-card"><p>🎧 ${post.extra}</p></div>` : ''}
-          <div class="post-actions" style="margin-top:10px;">
-            <button class="like-btn ${liked ? 'liked' : ''}" onclick="toggleLike('${id}', ${liked})">
-              ${liked ? '❤️' : '🤍'} <span id="likeCount-${id}">${post.likes ? post.likes.length : 0}</span>
-            </button>
-            <button onclick="toggleComments('${id}')">💬 comments</button>
-            <button onclick="followUser('${post.uid}')" style="font-size:0.8rem;padding:5px 10px;">+ follow</button>
-          </div>
-          <div id="commentBox-${id}" style="display:none;margin-top:10px;">
-            <div id="comments-${id}"></div>
-            <div style="display:flex;gap:8px;margin-top:8px;">
-              <input id="commentInput-${id}" placeholder="say something..." style="flex:1;padding:7px 10px;border-radius:10px;border:1px solid #c5e0bc;font-family:'DM Sans',sans-serif;">
-              <button onclick="addComment('${id}')">send</button>
-            </div>
-          </div>
-        `;
-        container.appendChild(card);
-        loadComments(id);
-      });
+      snapshot.forEach(doc => renderPost(doc, container));
     });
+}
+
+// ==========================
+// LOAD FOLLOWING FEED
+// ==========================
+async function loadFollowingFeed() {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const container = document.getElementById('postsContainer');
+  container.innerHTML = `<div style="text-align:center;font-family:'Caveat',cursive;color:#b07858;font-size:1.1rem;padding:20px;">loading... 🌼</div>`;
+
+  const followingSnap = await db.collection('users').doc(user.uid).collection('following').get();
+
+  if (followingSnap.empty) {
+    container.innerHTML = `<div style="text-align:center;font-family:'Caveat',cursive;color:#b07858;font-size:1.2rem;padding:30px;">you're not following anyone yet 🌸<br><span style="font-size:0.9rem;">follow people to see their posts here</span></div>`;
+    return;
+  }
+
+  const followingUids = followingSnap.docs.map(d => d.id);
+
+  if (feedListener) { feedListener(); feedListener = null; }
+
+  feedListener = db.collection('posts')
+    .where('uid', 'in', followingUids.slice(0, 10))
+    .orderBy('createdAt', 'desc')
+    .onSnapshot(snapshot => {
+      container.innerHTML = '';
+      if (snapshot.empty) {
+        container.innerHTML = `<div style="text-align:center;font-family:'Caveat',cursive;color:#b07858;font-size:1.2rem;padding:30px;">none of your people have posted yet 🌸<br><span style="font-size:0.9rem;">check back soon</span></div>`;
+        return;
+      }
+      snapshot.forEach(doc => renderPost(doc, container));
+    });
+}
+
+// ==========================
+// RENDER A SINGLE POST
+// ==========================
+function renderPost(doc, container) {
+  const post  = doc.data();
+  const id    = doc.id;
+  const user  = auth.currentUser;
+  const liked = user && post.likes && post.likes.includes(user.uid);
+
+  const card = document.createElement('div');
+  card.className = 'post-card';
+  card.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <a href="profile.html?uid=${post.uid}" style="font-family:'Caveat',cursive;font-size:1.1rem;color:#5c3317;text-decoration:none;">@${post.username || 'anonymous'}</a>
+      <span style="font-size:0.75rem;color:#c8a888;font-family:'DM Sans',sans-serif;">${post.type || ''}</span>
+    </div>
+    <p style="color:#3d2010;font-size:0.92rem;line-height:1.65;">${post.text}</p>
+    ${post.imageUrl ? `<img src="${post.imageUrl}" style="width:100%;border-radius:12px;margin-top:8px;">` : ''}
+    ${post.extra && post.type && post.type.includes('Song') ? `<div class="music-card"><p>🎧 ${post.extra}</p></div>` : ''}
+    <div class="post-actions" style="margin-top:10px;">
+      <button class="like-btn ${liked ? 'liked' : ''}" onclick="toggleLike('${id}', ${liked})">
+        ${liked ? '❤️' : '🤍'} <span id="likeCount-${id}">${post.likes ? post.likes.length : 0}</span>
+      </button>
+      <button onclick="toggleComments('${id}')">💬 comments</button>
+      ${user && user.uid !== post.uid ? `<button onclick="followUser('${post.uid}')" style="font-size:0.8rem;padding:5px 12px;">+ follow</button>` : ''}
+    </div>
+    <div id="commentBox-${id}" style="display:none;margin-top:10px;">
+      <div id="comments-${id}"></div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <input id="commentInput-${id}" placeholder="say something..." style="flex:1;padding:7px 10px;border-radius:10px;border:1.5px solid #e0c8b0;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.85);color:#3d2010;">
+        <button onclick="addComment('${id}')">send</button>
+      </div>
+    </div>
+  `;
+  container.appendChild(card);
+  loadComments(id);
 }
 
 // ==========================
@@ -304,9 +341,9 @@ function loadComments(postId) {
       if (!container) return;
       container.innerHTML = '';
       snapshot.forEach(doc => {
-        const c = doc.data();
+        const c   = doc.data();
         const div = document.createElement('div');
-        div.className = 'comment';
+        div.className   = 'comment';
         div.textContent = c.text;
         container.appendChild(div);
       });
@@ -374,20 +411,13 @@ function logout() {
 function showEditUsername() {
   const user = auth.currentUser;
   if (!user) return;
-
   if (document.getElementById('editUsernameOverlay')) return;
 
   db.collection('users').doc(user.uid).get().then(doc => {
     const current = doc.exists ? (doc.data().username || '') : '';
-
     const overlay = document.createElement('div');
     overlay.id = 'editUsernameOverlay';
-    overlay.style.cssText = `
-      position:fixed;inset:0;background:rgba(60,20,5,0.55);
-      display:flex;align-items:center;justify-content:center;
-      z-index:99999;backdrop-filter:blur(6px);
-    `;
-
+    overlay.style.cssText = `position:fixed;inset:0;background:rgba(60,20,5,0.55);display:flex;align-items:center;justify-content:center;z-index:99999;backdrop-filter:blur(6px);`;
     overlay.innerHTML = `
       <div style="background:#fdf5ec;border-radius:24px;padding:32px 28px;max-width:340px;width:90%;text-align:center;border:1px solid #e0c8b0;box-shadow:0 20px 60px rgba(100,50,10,0.2);">
         <div style="font-family:'Playfair Display',serif;font-style:italic;font-size:1.4rem;color:#5c3317;margin-bottom:6px;">change your name 🌼</div>
@@ -401,38 +431,22 @@ function showEditUsername() {
         </div>
       </div>
     `;
-
     document.body.appendChild(overlay);
-    setTimeout(() => {
-      const input = document.getElementById('editUsernameInput');
-      if (input) { input.focus(); input.select(); }
-    }, 100);
+    setTimeout(() => { const i = document.getElementById('editUsernameInput'); if (i) { i.focus(); i.select(); } }, 100);
   });
 }
 
 function updateUsername(uid) {
-  const input = document.getElementById('editUsernameInput');
-  const raw   = input ? input.value.trim() : '';
+  const input    = document.getElementById('editUsernameInput');
+  const raw      = input ? input.value.trim() : '';
   const username = raw.replace(/[^a-zA-Z0-9_.]/g, '');
-
-  if (!username) {
-    input.style.borderColor = '#c8855c';
-    input.placeholder = 'please enter something 🌼';
-    return;
-  }
+  if (!username) { input.style.borderColor = '#c8855c'; input.placeholder = 'please enter something 🌼'; return; }
 
   db.collection('users').doc(uid).set({ username }, { merge: true }).then(() => {
     document.getElementById('editUsernameOverlay')?.remove();
     renderProfileBox(username);
-
     const notice = document.createElement('div');
-    notice.style.cssText = `
-      position:fixed;bottom:100px;left:50%;transform:translateX(-50%);
-      background:#fdf5ec;border:1px solid #e0c8b0;border-radius:24px;
-      padding:10px 24px;font-family:'Caveat',cursive;font-size:1.1rem;
-      color:#5c3317;box-shadow:0 6px 20px rgba(100,50,10,0.15);
-      z-index:99999;animation:fadeInPage 0.3s ease;
-    `;
+    notice.style.cssText = `position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#fdf5ec;border:1px solid #e0c8b0;border-radius:24px;padding:10px 24px;font-family:'Caveat',cursive;font-size:1.1rem;color:#5c3317;box-shadow:0 6px 20px rgba(100,50,10,0.15);z-index:99999;`;
     notice.textContent = `you're now @${username} 🌼`;
     document.body.appendChild(notice);
     setTimeout(() => notice.remove(), 3000);
@@ -440,7 +454,7 @@ function updateUsername(uid) {
 }
 
 // ==========================
-// MUSIC PLAYER (hide when empty)
+// MUSIC PLAYER
 // ==========================
 document.addEventListener('DOMContentLoaded', () => {
   const player = document.getElementById('musicPlayer');
@@ -454,25 +468,19 @@ function showMusicPlayer(title, imgSrc) {
   document.getElementById('playerImg').src = imgSrc || '';
   player.style.display = 'flex';
 }
+
 // ==========================
 // INVITE SYSTEM
 // ==========================
 function showInviteLink() {
   const user = auth.currentUser;
   if (!user) return;
-
   const link = `https://kalpanajoycedovari.github.io/My-Website/invite.html?ref=${user.uid}`;
-
   if (document.getElementById('inviteOverlay')) return;
 
   const overlay = document.createElement('div');
   overlay.id = 'inviteOverlay';
-  overlay.style.cssText = `
-    position:fixed;inset:0;background:rgba(60,20,5,0.55);
-    display:flex;align-items:center;justify-content:center;
-    z-index:99999;backdrop-filter:blur(6px);
-  `;
-
+  overlay.style.cssText = `position:fixed;inset:0;background:rgba(60,20,5,0.55);display:flex;align-items:center;justify-content:center;z-index:99999;backdrop-filter:blur(6px);`;
   overlay.innerHTML = `
     <div style="background:#fdf5ec;border-radius:24px;padding:32px 28px;max-width:380px;width:90%;text-align:center;border:1px solid #e0c8b0;box-shadow:0 20px 60px rgba(100,50,10,0.2);">
       <div style="font-family:'Playfair Display',serif;font-style:italic;font-size:1.4rem;color:#5c3317;margin-bottom:6px;">invite someone 🌼</div>
@@ -485,7 +493,6 @@ function showInviteLink() {
       <div id="copiedMsg" style="font-family:'Caveat',cursive;font-size:1rem;color:#c8855c;margin-top:10px;display:none;">copied! now share it 🌸</div>
     </div>
   `;
-
   document.body.appendChild(overlay);
 }
 
