@@ -1,66 +1,142 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Login</title>
+  <title>Login — Solite</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&family=Caveat:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <script src="firebase-config.js"></script>
+  <script>firebase.initializeApp(firebaseConfig);</script>
 </head>
 
 <body>
+<div id="daisy-bg"></div>
 
 <div class="login-container">
   <h1>🌸 Welcome</h1>
+  <p style="font-family:'Caveat',cursive;color:#b07858;font-size:1rem;margin-bottom:16px;">"a small corner for you"</p>
 
   <input type="email" id="email" placeholder="Email" required>
   <input type="password" id="password" placeholder="Password (min 6 chars)" required>
 
   <button onclick="login()">Login</button>
-  <button onclick="signup()">Sign Up</button>
+
+  <p id="capMsg" style="display:none;font-family:'Caveat',cursive;color:#b07858;font-size:1rem;margin-top:8px;">"we're at capacity for now — check back soon 🌸"</p>
+  <button id="signupBtn" onclick="signup()">Sign Up</button>
 </div>
 
-<!-- FIREBASE -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script>
+const auth = firebase.auth();
+const db   = firebase.firestore();
 
-<script src="firebase-config.js"></script>
+async function checkCap() {
+  try {
+    const doc   = await db.collection('meta').doc('stats').get();
+    const count = doc.exists ? (doc.data().memberCount || 0) : 0;
+    if (count >= 900) {
+      const btn = document.getElementById('signupBtn');
+      btn.disabled    = true;
+      btn.textContent = 'Solite is full for now 🌸';
+      btn.style.opacity = '0.6';
+      document.getElementById('capMsg').style.display = 'block';
+    }
+  } catch(e) {}
+}
+
+checkCap();
+
+async function signup() {
+  try {
+    const doc   = await db.collection('meta').doc('stats').get();
+    const count = doc.exists ? (doc.data().memberCount || 0) : 0;
+    if (count >= 900) {
+      alert('Solite is at capacity for now 🌸 we will open again soon');
+      return;
+    }
+  } catch(e) {}
+
+  const email    = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+
+  if (!email || !password) { alert('Please fill in both fields'); return; }
+  if (password.length < 6) { alert('Password must be at least 6 characters'); return; }
+
+  auth.createUserWithEmailAndPassword(email, password)
+    .then(cred => {
+      db.collection('users').doc(cred.user.uid).set({
+        email,
+        joinedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+
+      db.collection('meta').doc('stats').set({
+        memberCount: firebase.firestore.FieldValue.increment(1)
+      }, { merge: true });
+
+      alert('✨ Account created!');
+      window.location.href = 'index.html';
+    })
+    .catch(err => alert('Error: ' + err.message));
+}
+
+function login() {
+  const email    = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+
+  if (!email || !password) { alert('Please fill in both fields'); return; }
+
+  auth.signInWithEmailAndPassword(email, password)
+    .then(() => window.location.href = 'index.html')
+    .catch(err => alert('Error: ' + err.message));
+}
+</script>
 
 <script>
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-
-// SIGN UP
-function signup() {
-  const emailValue = document.getElementById("email").value;
-  const passwordValue = document.getElementById("password").value;
-
-  if (passwordValue.length < 6) {
-    alert("Password must be at least 6 characters");
-    return;
+(function() {
+  const container = document.getElementById('daisy-bg');
+  const count = 20;
+  function makeDaisy(size) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('width', size * 2.6);
+    svg.setAttribute('height', size * 2.6);
+    svg.setAttribute('viewBox', '-20 -20 40 40');
+    [0,45,90,135,180,225,270,315].forEach(a => {
+      const el = document.createElementNS(ns, 'ellipse');
+      el.setAttribute('cx', 0); el.setAttribute('cy', -size);
+      el.setAttribute('rx', size * 0.44); el.setAttribute('ry', size * 0.77);
+      el.setAttribute('fill', '#fffef0');
+      el.setAttribute('transform', `rotate(${a})`);
+      svg.appendChild(el);
+    });
+    const c1 = document.createElementNS(ns, 'circle');
+    c1.setAttribute('cx', 0); c1.setAttribute('cy', 0);
+    c1.setAttribute('r', size * 0.55); c1.setAttribute('fill', '#f5d76e');
+    svg.appendChild(c1);
+    const c2 = document.createElementNS(ns, 'circle');
+    c2.setAttribute('cx', 0); c2.setAttribute('cy', 0);
+    c2.setAttribute('r', size * 0.28); c2.setAttribute('fill', '#e8c94a');
+    svg.appendChild(c2);
+    return svg;
   }
-
-  auth.createUserWithEmailAndPassword(emailValue, passwordValue)
-    .then(() => {
-      alert("✨ Account created!");
-      window.location.href = "profile.html";
-    })
-    .catch(err => {
-      alert("Error: " + err.message);
-    });
-}
-
-// LOGIN
-function login() {
-  const emailValue = document.getElementById("email").value;
-  const passwordValue = document.getElementById("password").value;
-
-  auth.signInWithEmailAndPassword(emailValue, passwordValue)
-    .then(() => {
-      window.location.href = "index.html";
-    })
-    .catch(err => {
-      alert("Error: " + err.message);
-    });
-}
+  for (let i = 0; i < count; i++) {
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('daisy');
+    const size = 5 + Math.random() * 7;
+    const opHigh = (0.25 + Math.random() * 0.35).toFixed(2);
+    const opLow  = (parseFloat(opHigh) * 0.3).toFixed(2);
+    wrapper.style.cssText = `left:${(Math.random()*100).toFixed(1)}%;top:${(Math.random()*100).toFixed(1)}%;--op-high:${opHigh};--op-low:${opLow};animation-duration:${(3+Math.random()*5).toFixed(1)}s;animation-delay:-${(Math.random()*6).toFixed(1)}s;`;
+    const svg = makeDaisy(size);
+    svg.style.animationDuration = `${(2+Math.random()*4).toFixed(1)}s`;
+    svg.style.animationDelay    = `-${(Math.random()*6).toFixed(1)}s`;
+    wrapper.appendChild(svg);
+    container.appendChild(wrapper);
+  }
+})();
 </script>
 
 </body>
