@@ -1,24 +1,222 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Music</title>
+  <title>Music — Solite</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="firebase-config.js"></script>
+  <script>firebase.initializeApp(firebaseConfig);</script>
 </head>
+
 <body>
+<div id="daisy-bg"></div>
 
-<nav>
-  <a href="index.html">Home</a>
-</nav>
-
-<header>
-  <h1>🎧 Music I Love</h1>
+<header class="top">
+  <h1>🎧 Music</h1>
+  <p>"songs that feel like a feeling"</p>
+  <nav style="margin-top:10px;">
+    <a href="index.html" style="color:#4a7c59;text-decoration:none;font-size:0.9rem;">← back home</a>
+  </nav>
 </header>
 
-<section>
-  <h2>Song of the Week</h2>
-  <p>Add your favorite song here!</p>
-</section>
+<main style="max-width:700px;margin:0 auto;padding:1.5rem;">
+
+  <!-- SHARE A SONG -->
+  <div class="create-post" id="shareBox" style="display:none;">
+    <h3 style="font-family:'Playfair Display',serif;color:#4a7c59;margin-bottom:8px;">share a song 🎵</h3>
+    <input type="text" id="songTitle" placeholder="song title + artist">
+    <input type="text" id="spotifyLink" placeholder="spotify link (optional)">
+    <input type="text" id="songFeelings" placeholder="how does this song make you feel...">
+    <button onclick="sharePost()">Share ✨</button>
+  </div>
+
+  <p id="loginMsg" style="text-align:center;color:#7aaa82;font-size:0.9rem;margin:1rem 0;display:none;">
+    <a href="login.html" style="color:#4a7c59;">Login</a> to share songs and react to posts.
+  </p>
+
+  <!-- FEED -->
+  <div id="musicFeed"></div>
+
+</main>
+
+<script>
+const db = firebase.firestore();
+let currentUser = null;
+
+firebase.auth().onAuthStateChanged(user => {
+  currentUser = user;
+  if (user) {
+    document.getElementById('shareBox').style.display = 'block';
+  } else {
+    document.getElementById('loginMsg').style.display = 'block';
+  }
+  loadFeed();
+});
+
+function sharePost() {
+  if (!currentUser) return;
+  const title    = document.getElementById('songTitle').value.trim();
+  const spotify  = document.getElementById('spotifyLink').value.trim();
+  const feelings = document.getElementById('songFeelings').value.trim();
+  if (!title) return alert('Please add a song title!');
+
+  db.collection('music').add({
+    uid:       currentUser.uid,
+    email:     currentUser.email,
+    title,
+    spotify,
+    feelings,
+    likes:     [],
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(() => {
+    document.getElementById('songTitle').value    = '';
+    document.getElementById('spotifyLink').value  = '';
+    document.getElementById('songFeelings').value = '';
+  });
+}
+
+function loadFeed() {
+  const feed = document.getElementById('musicFeed');
+  db.collection('music')
+    .orderBy('createdAt', 'desc')
+    .onSnapshot(snap => {
+      feed.innerHTML = '';
+      snap.forEach(doc => {
+        const d = doc.data();
+        const id = doc.id;
+        const liked = currentUser && d.likes && d.likes.includes(currentUser.uid);
+        const spotifyId = extractSpotifyId(d.spotify);
+
+        const card = document.createElement('div');
+        card.className = 'post-card';
+        card.innerHTML = `
+          <h3 style="font-family:'Playfair Display',serif;color:#4a7c59;">${d.title}</h3>
+          ${d.feelings ? `<p style="color:#6a8f6e;font-size:0.88rem;margin:6px 0;">"${d.feelings}"</p>` : ''}
+          ${spotifyId ? `<iframe style="border-radius:12px;margin-top:8px;" src="https://open.spotify.com/embed/track/${spotifyId}" width="100%" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>` : ''}
+          <div class="post-actions" style="margin-top:10px;">
+            <button class="like-btn ${liked ? 'liked' : ''}" onclick="toggleLike('${id}', ${liked})">
+              ${liked ? '❤️' : '🤍'} ${d.likes ? d.likes.length : 0}
+            </button>
+            <button onclick="toggleComments('${id}')">💬 comments</button>
+          </div>
+          <div id="comments-${id}" style="display:none;">
+            <div id="commentList-${id}"></div>
+            ${currentUser ? `
+              <div style="display:flex;gap:8px;margin-top:8px;">
+                <input id="commentInput-${id}" placeholder="add a comment..." style="flex:1;padding:7px 10px;border-radius:10px;border:1px solid #c5e0bc;font-family:'DM Sans',sans-serif;">
+                <button onclick="addComment('${id}')">send</button>
+              </div>` : ''}
+          </div>
+        `;
+        feed.appendChild(card);
+      });
+    });
+}
+
+function extractSpotifyId(url) {
+  if (!url) return null;
+  const match = url.match(/track\/([a-zA-Z0-9]+)/);
+  return match ? match[1] : null;
+}
+
+function toggleLike(id, liked) {
+  if (!currentUser) return alert('Login to like posts!');
+  const ref = db.collection('music').doc(id);
+  if (liked) {
+    ref.update({ likes: firebase.firestore.FieldValue.arrayRemove(currentUser.uid) });
+  } else {
+    ref.update({ likes: firebase.firestore.FieldValue.arrayUnion(currentUser.uid) });
+  }
+}
+
+function toggleComments(id) {
+  const box = document.getElementById(`comments-${id}`);
+  if (box.style.display === 'none') {
+    box.style.display = 'block';
+    loadComments(id);
+  } else {
+    box.style.display = 'none';
+  }
+}
+
+function loadComments(postId) {
+  const list = document.getElementById(`commentList-${postId}`);
+  db.collection('music').doc(postId).collection('comments')
+    .orderBy('createdAt', 'asc')
+    .onSnapshot(snap => {
+      list.innerHTML = '';
+      snap.forEach(doc => {
+        const d = doc.data();
+        const c = document.createElement('div');
+        c.className = 'comment';
+        c.innerHTML = `<strong style="color:#4a7c59;font-size:0.82rem;">${d.email}</strong><p style="font-size:0.88rem;margin-top:2px;">${d.text}</p>`;
+        list.appendChild(c);
+      });
+    });
+}
+
+function addComment(postId) {
+  if (!currentUser) return;
+  const input = document.getElementById(`commentInput-${postId}`);
+  const text  = input.value.trim();
+  if (!text) return;
+  db.collection('music').doc(postId).collection('comments').add({
+    uid:       currentUser.uid,
+    email:     currentUser.email,
+    text,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(() => input.value = '');
+}
+</script>
+
+<script>
+(function() {
+  const container = document.getElementById('daisy-bg');
+  const count = 36;
+  function makeDaisy(size) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('width', size * 2.6);
+    svg.setAttribute('height', size * 2.6);
+    svg.setAttribute('viewBox', '-20 -20 40 40');
+    [0,45,90,135,180,225,270,315].forEach(a => {
+      const el = document.createElementNS(ns, 'ellipse');
+      el.setAttribute('cx', 0); el.setAttribute('cy', -size);
+      el.setAttribute('rx', size * 0.44); el.setAttribute('ry', size * 0.77);
+      el.setAttribute('fill', '#fffef0');
+      el.setAttribute('transform', `rotate(${a})`);
+      svg.appendChild(el);
+    });
+    const c1 = document.createElementNS(ns, 'circle');
+    c1.setAttribute('cx', 0); c1.setAttribute('cy', 0);
+    c1.setAttribute('r', size * 0.55); c1.setAttribute('fill', '#f5d76e');
+    svg.appendChild(c1);
+    const c2 = document.createElementNS(ns, 'circle');
+    c2.setAttribute('cx', 0); c2.setAttribute('cy', 0);
+    c2.setAttribute('r', size * 0.28); c2.setAttribute('fill', '#e8c94a');
+    svg.appendChild(c2);
+    return svg;
+  }
+  for (let i = 0; i < count; i++) {
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('daisy');
+    const size = 5 + Math.random() * 7;
+    const opHigh = (0.25 + Math.random() * 0.35).toFixed(2);
+    const opLow  = (parseFloat(opHigh) * 0.3).toFixed(2);
+    wrapper.style.cssText = `left:${(Math.random()*100).toFixed(1)}%;top:${(Math.random()*100).toFixed(1)}%;--op-high:${opHigh};--op-low:${opLow};animation-duration:${(3+Math.random()*5).toFixed(1)}s;animation-delay:-${(Math.random()*6).toFixed(1)}s;`;
+    const svg = makeDaisy(size);
+    svg.style.animationDuration = `${(2+Math.random()*4).toFixed(1)}s`;
+    svg.style.animationDelay    = `-${(Math.random()*6).toFixed(1)}s`;
+    wrapper.appendChild(svg);
+    container.appendChild(wrapper);
+  }
+})();
+</script>
 
 </body>
 </html>
