@@ -1,64 +1,296 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Profile</title>
+  <title>Profile — Solite</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
   <script src="firebase-config.js"></script>
+  <script>firebase.initializeApp(firebaseConfig);</script>
 
-  <script>
-    firebase.initializeApp(firebaseConfig);
-  </script>
-
+  <style>
+    .profile-wrap { max-width: 680px; margin: 0 auto; padding: 1.5rem; }
+    .avatar-ring { width: 90px; height: 90px; border-radius: 50%; border: 3px solid #a8d8a0; object-fit: cover; cursor: pointer; }
+    .tab-bar { display: flex; gap: 8px; margin: 1.2rem 0; flex-wrap: wrap; }
+    .tab { background: rgba(255,255,255,0.7); border: 1.5px solid #c5e0bc; color: #4a7c59; padding: 7px 18px; border-radius: 24px; cursor: pointer; font-size: 0.88rem; transition: 0.2s; }
+    .tab.active, .tab:hover { background: #6dbf86; color: white; border-color: #6dbf86; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .stat-box { display: flex; gap: 24px; margin: 12px 0; flex-wrap: wrap; }
+    .stat { text-align: center; }
+    .stat strong { display: block; font-size: 1.2rem; color: #4a7c59; }
+    .stat span { font-size: 0.78rem; color: #9ab89e; }
+    .edit-input { width: 100%; padding: 9px 12px; border-radius: 12px; border: 1.5px solid #c5e0bc; margin-top: 8px; font-family: 'DM Sans', sans-serif; background: rgba(255,255,255,0.8); color: #2e3d2f; }
+    .follow-btn { padding: 8px 22px; border-radius: 24px; font-size: 0.88rem; cursor: pointer; transition: 0.2s; }
+    .follow-btn.following { background: #e2f4de; color: #4a7c59; border: 1.5px solid #c5e0bc; }
+    .follow-btn.not-following { background: linear-gradient(135deg, #a8d8a0, #6dbf86); color: white; border: none; }
+    .post-tab-card { background: rgba(255,255,255,0.85); border-radius: 16px; padding: 14px; margin-bottom: 14px; box-shadow: 0 4px 14px rgba(80,140,90,0.09); }
+    .avatar-upload { display: none; }
+  </style>
 </head>
-<body>
 
-<div id="profile"></div>
-<div id="posts"></div>
+<body>
+<div id="daisy-bg"></div>
+
+<header class="top">
+  <h1>🌸 Profile</h1>
+  <p>"your little corner of solite"</p>
+  <nav style="margin-top:10px;">
+    <a href="index.html" style="color:#4a7c59;text-decoration:none;font-size:0.9rem;">← back home</a>
+  </nav>
+</header>
+
+<div class="profile-wrap">
+
+  <!-- PROFILE HEADER -->
+  <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:1rem;">
+    <div style="position:relative;">
+      <img id="avatarImg" class="avatar-ring" src="https://via.placeholder.com/90" alt="avatar">
+      <input type="file" id="avatarUpload" class="avatar-upload" accept="image/*" onchange="uploadAvatar(this)">
+      <div id="editAvatarHint" style="display:none;position:absolute;bottom:0;right:0;background:#6dbf86;color:white;border-radius:50%;width:24px;height:24px;font-size:14px;text-align:center;line-height:24px;cursor:pointer;" onclick="document.getElementById('avatarUpload').click()">✎</div>
+    </div>
+    <div style="flex:1;">
+      <h2 id="displayName" style="font-family:'Playfair Display',serif;color:#4a7c59;font-size:1.4rem;"></h2>
+      <p id="displayBio" style="color:#7aaa82;font-size:0.88rem;margin-top:4px;"></p>
+      <div class="stat-box" id="statBox"></div>
+      <div id="actionBtns" style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;"></div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('posts')">posts</button>
+    <button class="tab" onclick="switchTab('music')">music</button>
+    <button class="tab" onclick="switchTab('stories')">stories</button>
+    <button class="tab" onclick="switchTab('cafes')">cafés</button>
+  </div>
+
+  <!-- EDIT PANEL (own profile only) -->
+  <div id="editPanel" style="display:none;background:rgba(255,255,255,0.8);border-radius:16px;padding:16px;margin-bottom:1rem;">
+    <h3 style="font-family:'Playfair Display',serif;color:#4a7c59;margin-bottom:4px;">edit profile</h3>
+    <input class="edit-input" id="editName" placeholder="display name">
+    <textarea class="edit-input" id="editBio" placeholder="a little about you..." style="min-height:70px;margin-top:8px;resize:none;"></textarea>
+    <button onclick="saveProfile()" style="margin-top:10px;">save ✨</button>
+  </div>
+
+  <!-- TAB PANELS -->
+  <div id="tab-posts" class="tab-panel active"><div id="postsList"></div></div>
+  <div id="tab-music" class="tab-panel"><div id="musicList"></div></div>
+  <div id="tab-stories" class="tab-panel"><div id="storiesList"></div></div>
+  <div id="tab-cafes" class="tab-panel"><div id="cafesList"></div></div>
+
+</div>
 
 <script>
-const params = new URLSearchParams(window.location.search);
-const uid = params.get("uid");
-
-if (!uid) {
-  window.location.href = "login.html";
-}
-
 const db = firebase.firestore();
+let currentUser  = null;
+let profileUid   = null;
+let isOwnProfile = false;
+let activeTab    = 'posts';
 
-db.collection("users").doc(uid).get().then(doc => {
-  if (!doc.exists) {
-    document.getElementById("profile").innerHTML = "<p>User not found 🌸</p>";
+firebase.auth().onAuthStateChanged(async user => {
+  currentUser = user;
+  const params = new URLSearchParams(window.location.search);
+  profileUid   = params.get('uid') || (user ? user.uid : null);
+
+  if (!profileUid) {
+    window.location.href = 'login.html';
     return;
   }
 
-  const u = doc.data();
-
-  document.getElementById("profile").innerHTML = `
-    <img src="${u.avatar || 'https://via.placeholder.com/80'}">
-    <h2>${u.name || 'Unknown user'}</h2>
-    <p>${u.bio || ''}</p>
-    <button onclick="followUser('${uid}')">Follow</button>
-  `;
+  isOwnProfile = user && user.uid === profileUid;
+  await loadProfile();
+  loadTab('posts');
 });
 
-db.collection("posts").where("uid", "==", uid)
-  .onSnapshot(snap => {
-    if (snap.empty) {
-      document.getElementById("posts").innerHTML = "<p>No posts yet 🌸</p>";
-      return;
-    }
-    let html = "";
-    snap.forEach(d => {
-      html += `<div class="post-card">${d.data().text}</div>`;
-    });
-    document.getElementById("posts").innerHTML = html;
+async function loadProfile() {
+  const doc = await db.collection('users').doc(profileUid).get();
+  let data = doc.exists ? doc.data() : {};
+
+  const name   = data.name   || 'solite member';
+  const bio    = data.bio    || '';
+  const avatar = data.avatar || 'https://via.placeholder.com/90';
+
+  document.getElementById('avatarImg').src   = avatar;
+  document.getElementById('displayName').textContent = name;
+  document.getElementById('displayBio').textContent  = bio;
+
+  const [postsSnap, followersSnap, followingSnap] = await Promise.all([
+    db.collection('posts').where('uid', '==', profileUid).get(),
+    db.collection('users').doc(profileUid).collection('followers').get(),
+    db.collection('users').doc(profileUid).collection('following').get()
+  ]);
+
+  document.getElementById('statBox').innerHTML = `
+    <div class="stat"><strong>${postsSnap.size}</strong><span>posts</span></div>
+    <div class="stat"><strong>${followersSnap.size}</strong><span>followers</span></div>
+    <div class="stat"><strong>${followingSnap.size}</strong><span>following</span></div>
+  `;
+
+  const btns = document.getElementById('actionBtns');
+  btns.innerHTML = '';
+
+  if (isOwnProfile) {
+    document.getElementById('editAvatarHint').style.display = 'block';
+    const editBtn = document.createElement('button');
+    editBtn.textContent = 'edit profile';
+    editBtn.className   = 'follow-btn not-following';
+    editBtn.onclick     = toggleEditPanel;
+    btns.appendChild(editBtn);
+
+    const ep = document.getElementById('editPanel');
+    document.getElementById('editName').value = name;
+    document.getElementById('editBio').value  = bio;
+    ep.style.display = 'block';
+  } else if (currentUser) {
+    const isFollowing = (await db.collection('users').doc(profileUid)
+      .collection('followers').doc(currentUser.uid).get()).exists;
+
+    const followBtn = document.createElement('button');
+    followBtn.className   = isFollowing ? 'follow-btn following' : 'follow-btn not-following';
+    followBtn.textContent = isFollowing ? 'following ✓' : 'follow';
+    followBtn.onclick     = () => toggleFollow(followBtn, isFollowing);
+    btns.appendChild(followBtn);
+  }
+}
+
+function toggleEditPanel() {
+  const ep = document.getElementById('editPanel');
+  ep.style.display = ep.style.display === 'none' ? 'block' : 'none';
+}
+
+async function saveProfile() {
+  if (!isOwnProfile) return;
+  const name = document.getElementById('editName').value.trim();
+  const bio  = document.getElementById('editBio').value.trim();
+  await db.collection('users').doc(currentUser.uid).set({ name, bio }, { merge: true });
+  document.getElementById('displayName').textContent = name;
+  document.getElementById('displayBio').textContent  = bio;
+  alert('Profile saved 🌸');
+}
+
+function uploadAvatar(input) {
+  if (!input.files[0] || !isOwnProfile) return;
+  const reader = new FileReader();
+  reader.onload = async e => {
+    const dataUrl = e.target.result;
+    await db.collection('users').doc(currentUser.uid).set({ avatar: dataUrl }, { merge: true });
+    document.getElementById('avatarImg').src = dataUrl;
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+async function toggleFollow(btn, wasFollowing) {
+  if (!currentUser) return;
+  const followerRef = db.collection('users').doc(profileUid).collection('followers').doc(currentUser.uid);
+  const followingRef = db.collection('users').doc(currentUser.uid).collection('following').doc(profileUid);
+  if (wasFollowing) {
+    await Promise.all([followerRef.delete(), followingRef.delete()]);
+    btn.className   = 'follow-btn not-following';
+    btn.textContent = 'follow';
+  } else {
+    await Promise.all([followerRef.set({ uid: currentUser.uid }), followingRef.set({ uid: profileUid })]);
+    btn.className   = 'follow-btn following';
+    btn.textContent = 'following ✓';
+  }
+  loadProfile();
+}
+
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['posts','music','stories','cafes'][i] === tab);
   });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  loadTab(tab);
+}
+
+function loadTab(tab) {
+  const collections = { posts: 'posts', music: 'music', stories: 'stories', cafes: 'cafes' };
+  const listIds     = { posts: 'postsList', music: 'musicList', stories: 'storiesList', cafes: 'cafesList' };
+  const col  = collections[tab];
+  const list = document.getElementById(listIds[tab]);
+  list.innerHTML = '<p style="color:#9ab89e;font-size:0.88rem;">loading...</p>';
+
+  db.collection(col).where('uid', '==', profileUid)
+    .orderBy('createdAt', 'desc')
+    .get()
+    .then(snap => {
+      list.innerHTML = '';
+      if (snap.empty) {
+        list.innerHTML = `<p style="color:#9ab89e;font-size:0.88rem;text-align:center;">nothing here yet 🌸</p>`;
+        return;
+      }
+      snap.forEach(doc => {
+        const d    = doc.data();
+        const card = document.createElement('div');
+        card.className = 'post-tab-card';
+
+        if (tab === 'posts') {
+          card.innerHTML = `<p style="color:#4a7c59;font-size:0.88rem;">${d.text || ''}</p><p style="font-size:0.75rem;color:#b0ccb3;margin-top:6px;">${d.type || ''}</p>`;
+        } else if (tab === 'music') {
+          card.innerHTML = `<h3 style="font-family:'Playfair Display',serif;color:#4a7c59;font-size:1rem;">${d.title || ''}</h3>${d.feelings ? `<p style="font-size:0.85rem;color:#7aaa82;">"${d.feelings}"</p>` : ''}`;
+        } else if (tab === 'stories') {
+          const preview = d.body ? d.body.slice(0, 100) + (d.body.length > 100 ? '...' : '') : '';
+          card.innerHTML = `<h3 style="font-family:'Playfair Display',serif;color:#4a7c59;font-size:1rem;">${d.title || ''}</h3><p style="font-size:0.85rem;color:#7aaa82;margin-top:4px;">${preview}</p>`;
+        } else if (tab === 'cafes') {
+          const stars = '★'.repeat(d.rating || 0) + '☆'.repeat(5 - (d.rating || 0));
+          card.innerHTML = `<h3 style="font-family:'Playfair Display',serif;color:#4a7c59;font-size:1rem;">${d.name || ''}</h3>${d.city ? `<p style="font-size:0.78rem;color:#9ab89e;">📍 ${d.city}</p>` : ''}<div style="color:#f5d76e;font-size:0.9rem;">${stars}</div>`;
+        }
+
+        list.appendChild(card);
+      });
+    });
+}
+</script>
+
+<script>
+(function() {
+  const container = document.getElementById('daisy-bg');
+  const count = 36;
+  function makeDaisy(size) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('width', size * 2.6);
+    svg.setAttribute('height', size * 2.6);
+    svg.setAttribute('viewBox', '-20 -20 40 40');
+    [0,45,90,135,180,225,270,315].forEach(a => {
+      const el = document.createElementNS(ns, 'ellipse');
+      el.setAttribute('cx', 0); el.setAttribute('cy', -size);
+      el.setAttribute('rx', size * 0.44); el.setAttribute('ry', size * 0.77);
+      el.setAttribute('fill', '#fffef0');
+      el.setAttribute('transform', `rotate(${a})`);
+      svg.appendChild(el);
+    });
+    const c1 = document.createElementNS(ns, 'circle');
+    c1.setAttribute('cx', 0); c1.setAttribute('cy', 0);
+    c1.setAttribute('r', size * 0.55); c1.setAttribute('fill', '#f5d76e');
+    svg.appendChild(c1);
+    const c2 = document.createElementNS(ns, 'circle');
+    c2.setAttribute('cx', 0); c2.setAttribute('cy', 0);
+    c2.setAttribute('r', size * 0.28); c2.setAttribute('fill', '#e8c94a');
+    svg.appendChild(c2);
+    return svg;
+  }
+  for (let i = 0; i < count; i++) {
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('daisy');
+    const size = 5 + Math.random() * 7;
+    const opHigh = (0.25 + Math.random() * 0.35).toFixed(2);
+    const opLow  = (parseFloat(opHigh) * 0.3).toFixed(2);
+    wrapper.style.cssText = `left:${(Math.random()*100).toFixed(1)}%;top:${(Math.random()*100).toFixed(1)}%;--op-high:${opHigh};--op-low:${opLow};animation-duration:${(3+Math.random()*5).toFixed(1)}s;animation-delay:-${(Math.random()*6).toFixed(1)}s;`;
+    const svg = makeDaisy(size);
+    svg.style.animationDuration = `${(2+Math.random()*4).toFixed(1)}s`;
+    svg.style.animationDelay    = `-${(Math.random()*6).toFixed(1)}s`;
+    wrapper.appendChild(svg);
+    container.appendChild(wrapper);
+  }
+})();
 </script>
 
 </body>
