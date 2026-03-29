@@ -218,12 +218,10 @@ function loadPosts() {
     .onSnapshot(snapshot => {
       const container = document.getElementById('postsContainer');
       container.innerHTML = '';
-
       if (snapshot.empty) {
         container.innerHTML = `<div style="text-align:center;font-family:'Caveat',cursive;color:#b07858;font-size:1.2rem;padding:30px;">no posts yet 🌸<br><span style="font-size:0.9rem;">be the first to yap something</span></div>`;
         return;
       }
-
       snapshot.forEach(doc => renderPost(doc, container));
     });
 }
@@ -246,7 +244,6 @@ async function loadFollowingFeed() {
   }
 
   const followingUids = followingSnap.docs.map(d => d.id);
-
   if (feedListener) { feedListener(); feedListener = null; }
 
   feedListener = db.collection('posts')
@@ -517,10 +514,10 @@ function showAddFriend() {
     <div style="background:#fdf5ec;border-radius:24px;padding:28px;max-width:360px;width:90%;border:1px solid #e0c8b0;box-shadow:0 20px 60px rgba(100,50,10,0.2);">
       <div style="font-family:'Playfair Display',serif;font-style:italic;font-size:1.4rem;color:#5c3317;margin-bottom:4px;text-align:center;">find someone 🌼</div>
       <div style="font-family:'Caveat',cursive;font-size:1rem;color:#b07858;margin-bottom:16px;text-align:center;">search by username</div>
-      <input id="friendSearchInput" placeholder="@username..."
+      <input id="friendSearchInput" placeholder="type a username..."
         style="width:100%;padding:11px 16px;border-radius:14px;border:1.5px solid #e0c8b0;font-family:'DM Sans',sans-serif;font-size:0.9rem;color:#3d2010;background:rgba(255,255,255,0.85);box-sizing:border-box;margin-bottom:10px;"
         oninput="searchFriends(this.value)">
-      <div id="friendResults" style="margin-bottom:12px;"></div>
+      <div id="friendResults" style="margin-bottom:12px;max-height:200px;overflow-y:auto;"></div>
       <button onclick="document.getElementById('addFriendOverlay').remove()" style="width:100%;padding:10px;background:rgba(255,255,255,0.8);color:#7a4a2a;border:1.5px solid #e0c8b0;">close</button>
     </div>
   `;
@@ -530,44 +527,53 @@ function showAddFriend() {
 
 async function searchFriends(query) {
   const results = document.getElementById('friendResults');
+  if (!results) return;
   results.innerHTML = '';
-  if (!query || query.replace('@','').length < 2) return;
 
-  const clean = query.replace('@', '').toLowerCase();
-  const user  = auth.currentUser;
+  const clean = query.replace('@', '').trim().toLowerCase();
+  if (clean.length < 1) return;
 
-  const snap = await db.collection('users')
-    .where('usernameLower', '>=', clean)
-    .where('usernameLower', '<=', clean + '\uf8ff')
-    .limit(8).get();
+  const user = auth.currentUser;
+  if (!user) return;
 
-  if (snap.empty) {
-    results.innerHTML = `<div style="font-family:'Caveat',cursive;color:#b07858;font-size:1rem;padding:8px;text-align:center;">no one found 🌸</div>`;
-    return;
-  }
+  try {
+    const snap = await db.collection('users')
+      .where('usernameLower', '>=', clean)
+      .where('usernameLower', '<=', clean + '\uf8ff')
+      .limit(8).get();
 
-  for (const doc of snap.docs) {
-    if (doc.id === user.uid) continue;
+    if (snap.empty) {
+      results.innerHTML = `<div style="font-family:'Caveat',cursive;color:#b07858;font-size:1rem;padding:8px;text-align:center;">no one found 🌸</div>`;
+      return;
+    }
 
-    const username = doc.data().username || 'solite member';
-    const isFriend = (await db.collection('users').doc(user.uid)
-      .collection('friends').doc(doc.id).get()).exists;
+    for (const doc of snap.docs) {
+      if (doc.id === user.uid) continue;
 
-    const div = document.createElement('div');
-    div.style.cssText = `display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:12px;margin-bottom:6px;background:rgba(255,255,255,0.7);border:1px solid #f0dfd0;`;
-    div.innerHTML = `
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#c8855c,#a05530);display:flex;align-items:center;justify-content:center;color:white;font-family:'Caveat',cursive;font-size:1.1rem;">
-          ${username.charAt(0).toUpperCase()}
+      const data     = doc.data();
+      const username = data.username || 'solite member';
+      const isFriend = (await db.collection('users').doc(user.uid)
+        .collection('friends').doc(doc.id).get()).exists;
+
+      const div = document.createElement('div');
+      div.style.cssText = `display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:12px;margin-bottom:6px;background:rgba(255,255,255,0.7);border:1px solid #f0dfd0;`;
+      div.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#c8855c,#a05530);display:flex;align-items:center;justify-content:center;color:white;font-family:'Caveat',cursive;font-size:1.1rem;flex-shrink:0;">
+            ${username.charAt(0).toUpperCase()}
+          </div>
+          <span style="font-family:'Caveat',cursive;font-size:1.1rem;color:#5c3317;">@${username}</span>
         </div>
-        <a href="profile.html?uid=${doc.id}" style="font-family:'Caveat',cursive;font-size:1.1rem;color:#5c3317;text-decoration:none;">@${username}</a>
-      </div>
-      <button id="addBtn-${doc.id}" onclick="addFriend('${doc.id}', '${username}')"
-        style="font-size:0.8rem;padding:6px 14px;${isFriend ? 'background:rgba(255,255,255,0.8);color:#7a4a2a;border:1.5px solid #e0c8b0;' : ''}">
-        ${isFriend ? 'friends ✓' : '+ add friend'}
-      </button>
-    `;
-    results.appendChild(div);
+        <button id="addBtn-${doc.id}" onclick="addFriend('${doc.id}', '${username}')"
+          style="font-size:0.8rem;padding:6px 14px;flex-shrink:0;${isFriend ? 'background:rgba(255,255,255,0.8);color:#7a4a2a;border:1.5px solid #e0c8b0;' : ''}">
+          ${isFriend ? 'friends ✓' : '+ add friend'}
+        </button>
+      `;
+      results.appendChild(div);
+    }
+  } catch(e) {
+    results.innerHTML = `<div style="font-family:'Caveat',cursive;color:#b07858;font-size:1rem;padding:8px;text-align:center;">something went wrong 🌸</div>`;
+    console.error('Search error:', e);
   }
 }
 
