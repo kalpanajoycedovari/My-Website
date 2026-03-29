@@ -800,3 +800,20 @@ body.dark .top p   { color: #c8a070; }
   overflow-y: auto;
   z-index: 99999;
 }
+/* ===================== */
+/* DROPDOWN POSITION FIX */
+/* ===================== */
+.dropdown {
+  position: static;
+}
+
+.dropdown-content {
+  position: fixed !important;
+  top: 200px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  max-height: 55vh !important;
+  overflow-y: scroll !important;
+  z-index: 99999 !important;
+  width: 220px;
+}
