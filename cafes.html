@@ -1,40 +1,266 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Cafés</title>
+  <title>Cafés — Solite</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
-
   <script src="firebase-config.js"></script>
+  <script>firebase.initializeApp(firebaseConfig);</script>
 
-  <script>
-    firebase.initializeApp(firebaseConfig);
-  </script>
-
+  <style>
+    .stars { color: #f5d76e; font-size: 1.1rem; cursor: pointer; }
+    .stars span { transition: transform 0.15s; display: inline-block; }
+    .stars span:hover { transform: scale(1.3); }
+    .cafe-tag { display: inline-block; background: #e2f4de; color: #4a7c59; font-size: 0.75rem; padding: 3px 10px; border-radius: 20px; margin: 4px 4px 0 0; }
+    .cafe-grid { column-count: 2; column-gap: 1.2rem; }
+    @media(max-width:600px) { .cafe-grid { column-count: 1; } }
+  </style>
 </head>
 
 <body>
+<div id="daisy-bg"></div>
 
-<h1>☕ Café Vibes</h1>
+<header class="top">
+  <h1>☕ Cafés</h1>
+  <p>"cozy corners worth finding"</p>
+  <nav style="margin-top:10px;">
+    <a href="index.html" style="color:#4a7c59;text-decoration:none;font-size:0.9rem;">← back home</a>
+  </nav>
+</header>
 
-<!-- ADD CAFE -->
-<div class="create-post">
-  <input id="cafeName" placeholder="Cafe name">
-  <input id="cafeLocation" placeholder="Google Maps link">
-  <input type="file" id="cafeImage">
+<main style="max-width:800px;margin:0 auto;padding:1.5rem;">
 
-  <button onclick="addCafe()">Add Café ✨</button>
-</div>
+  <!-- ADD A CAFE -->
+  <div class="create-post" id="addBox" style="display:none;">
+    <h3 style="font-family:'Playfair Display',serif;color:#4a7c59;margin-bottom:8px;">add a café ☕</h3>
+    <input type="text" id="cafeName" placeholder="café name">
+    <input type="text" id="cafeCity" placeholder="city / area">
+    <input type="url" id="cafeMap" placeholder="google maps link (optional)">
+    <input type="text" id="cafeVibe" placeholder="vibe — quiet, cozy, aesthetic... (comma separated)">
+    <textarea id="cafeNote" placeholder="what made it special..."></textarea>
+    <div style="margin-top:8px;">
+      <span style="color:#4a7c59;font-size:0.9rem;">your rating: </span>
+      <span class="stars" id="starPicker">
+        <span onclick="setRating(1)">★</span>
+        <span onclick="setRating(2)">★</span>
+        <span onclick="setRating(3)">★</span>
+        <span onclick="setRating(4)">★</span>
+        <span onclick="setRating(5)">★</span>
+      </span>
+      <span id="ratingLabel" style="font-size:0.85rem;color:#7aaa82;margin-left:6px;"></span>
+    </div>
+    <button onclick="addCafe()" style="margin-top:12px;">Add Café ✨</button>
+  </div>
 
-<!-- CAFES LIST -->
-<div id="cafesContainer"></div>
+  <p id="loginMsg" style="text-align:center;color:#7aaa82;font-size:0.9rem;margin:1rem 0;display:none;">
+    <a href="login.html" style="color:#4a7c59;">Login</a> to add cafés and leave reactions.
+  </p>
 
-<script src="script.js"></script>
+  <!-- FEED -->
+  <div id="cafeGrid" class="cafe-grid"></div>
+
+</main>
+
+<script>
+const db = firebase.firestore();
+let currentUser = null;
+let selectedRating = 0;
+
+firebase.auth().onAuthStateChanged(user => {
+  currentUser = user;
+  if (user) {
+    document.getElementById('addBox').style.display = 'block';
+  } else {
+    document.getElementById('loginMsg').style.display = 'block';
+  }
+  loadFeed();
+});
+
+function setRating(n) {
+  selectedRating = n;
+  const stars = document.querySelectorAll('#starPicker span');
+  stars.forEach((s, i) => s.style.color = i < n ? '#f5d76e' : '#ccc');
+  const labels = ['', 'not my vibe', 'it was okay', 'pretty cozy', 'loved it', 'absolute fave ☕'];
+  document.getElementById('ratingLabel').textContent = labels[n];
+}
+
+function addCafe() {
+  if (!currentUser) return;
+  const name  = document.getElementById('cafeName').value.trim();
+  const city  = document.getElementById('cafeCity').value.trim();
+  const map   = document.getElementById('cafeMap').value.trim();
+  const vibe  = document.getElementById('cafeVibe').value.split(',').map(t => t.trim()).filter(Boolean);
+  const note  = document.getElementById('cafeNote').value.trim();
+  if (!name) return alert('Please add a café name!');
+
+  db.collection('cafes').add({
+    uid:       currentUser.uid,
+    email:     currentUser.email,
+    name,
+    city,
+    map,
+    vibe,
+    note,
+    rating:    selectedRating,
+    likes:     [],
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(() => {
+    document.getElementById('cafeName').value  = '';
+    document.getElementById('cafeCity').value  = '';
+    document.getElementById('cafeMap').value   = '';
+    document.getElementById('cafeVibe').value  = '';
+    document.getElementById('cafeNote').value  = '';
+    selectedRating = 0;
+    setRating(0);
+    document.getElementById('ratingLabel').textContent = '';
+  });
+}
+
+function loadFeed() {
+  const grid = document.getElementById('cafeGrid');
+  db.collection('cafes')
+    .orderBy('createdAt', 'desc')
+    .onSnapshot(snap => {
+      grid.innerHTML = '';
+      snap.forEach(doc => {
+        const d    = doc.data();
+        const id   = doc.id;
+        const liked = currentUser && d.likes && d.likes.includes(currentUser.uid);
+        const stars = '★'.repeat(d.rating || 0) + '☆'.repeat(5 - (d.rating || 0));
+        const tagsHtml = (d.vibe || []).map(t => `<span class="cafe-tag">${t}</span>`).join('');
+
+        const card = document.createElement('div');
+        card.className = 'cafe-card';
+        card.style.breakInside = 'avoid';
+        card.style.marginBottom = '1.2rem';
+        card.innerHTML = `
+          <div style="padding:14px;">
+            <h3 style="font-family:'Playfair Display',serif;color:#4a7c59;margin-bottom:2px;">${d.name}</h3>
+            ${d.city ? `<p style="font-size:0.8rem;color:#9ab89e;margin-bottom:4px;">📍 ${d.city}</p>` : ''}
+            ${d.rating ? `<div style="color:#f5d76e;font-size:1rem;margin-bottom:4px;">${stars}</div>` : ''}
+            ${d.note ? `<p style="font-size:0.88rem;color:#6a8f6e;line-height:1.6;margin:6px 0;">"${d.note}"</p>` : ''}
+            <div style="margin:6px 0;">${tagsHtml}</div>
+            ${d.map ? `<a href="${d.map}" target="_blank" style="font-size:0.82rem;color:#4a7c59;text-decoration:none;display:inline-block;margin-top:4px;">🗺 view on maps</a>` : ''}
+            <p style="font-size:0.75rem;color:#b0ccb3;margin-top:6px;">added by ${d.email}</p>
+            <div class="post-actions" style="margin-top:10px;">
+              <button class="like-btn ${liked ? 'liked' : ''}" onclick="toggleLike('${id}', ${liked})">
+                ${liked ? '❤️' : '🤍'} ${d.likes ? d.likes.length : 0}
+              </button>
+              <button onclick="toggleComments('${id}')">💬 comments</button>
+            </div>
+            <div id="comments-${id}" style="display:none;">
+              <div id="commentList-${id}"></div>
+              ${currentUser ? `
+                <div style="display:flex;gap:8px;margin-top:8px;">
+                  <input id="commentInput-${id}" placeholder="been here too? say something..." style="flex:1;padding:7px 10px;border-radius:10px;border:1px solid #c5e0bc;font-family:'DM Sans',sans-serif;">
+                  <button onclick="addComment('${id}')">send</button>
+                </div>` : ''}
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    });
+}
+
+function toggleLike(id, liked) {
+  if (!currentUser) return alert('Login to save cafés!');
+  const ref = db.collection('cafes').doc(id);
+  if (liked) {
+    ref.update({ likes: firebase.firestore.FieldValue.arrayRemove(currentUser.uid) });
+  } else {
+    ref.update({ likes: firebase.firestore.FieldValue.arrayUnion(currentUser.uid) });
+  }
+}
+
+function toggleComments(id) {
+  const box = document.getElementById(`comments-${id}`);
+  if (box.style.display === 'none') {
+    box.style.display = 'block';
+    loadComments(id);
+  } else {
+    box.style.display = 'none';
+  }
+}
+
+function loadComments(postId) {
+  const list = document.getElementById(`commentList-${postId}`);
+  db.collection('cafes').doc(postId).collection('comments')
+    .orderBy('createdAt', 'asc')
+    .onSnapshot(snap => {
+      list.innerHTML = '';
+      snap.forEach(doc => {
+        const d = doc.data();
+        const c = document.createElement('div');
+        c.className = 'comment';
+        c.innerHTML = `<strong style="color:#4a7c59;font-size:0.82rem;">${d.email}</strong><p style="font-size:0.88rem;margin-top:2px;">${d.text}</p>`;
+        list.appendChild(c);
+      });
+    });
+}
+
+function addComment(postId) {
+  if (!currentUser) return;
+  const input = document.getElementById(`commentInput-${postId}`);
+  const text  = input.value.trim();
+  if (!text) return;
+  db.collection('cafes').doc(postId).collection('comments').add({
+    uid:       currentUser.uid,
+    email:     currentUser.email,
+    text,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(() => input.value = '');
+}
+</script>
+
+<script>
+(function() {
+  const container = document.getElementById('daisy-bg');
+  const count = 36;
+  function makeDaisy(size) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('width', size * 2.6);
+    svg.setAttribute('height', size * 2.6);
+    svg.setAttribute('viewBox', '-20 -20 40 40');
+    [0,45,90,135,180,225,270,315].forEach(a => {
+      const el = document.createElementNS(ns, 'ellipse');
+      el.setAttribute('cx', 0); el.setAttribute('cy', -size);
+      el.setAttribute('rx', size * 0.44); el.setAttribute('ry', size * 0.77);
+      el.setAttribute('fill', '#fffef0');
+      el.setAttribute('transform', `rotate(${a})`);
+      svg.appendChild(el);
+    });
+    const c1 = document.createElementNS(ns, 'circle');
+    c1.setAttribute('cx', 0); c1.setAttribute('cy', 0);
+    c1.setAttribute('r', size * 0.55); c1.setAttribute('fill', '#f5d76e');
+    svg.appendChild(c1);
+    const c2 = document.createElementNS(ns, 'circle');
+    c2.setAttribute('cx', 0); c2.setAttribute('cy', 0);
+    c2.setAttribute('r', size * 0.28); c2.setAttribute('fill', '#e8c94a');
+    svg.appendChild(c2);
+    return svg;
+  }
+  for (let i = 0; i < count; i++) {
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('daisy');
+    const size = 5 + Math.random() * 7;
+    const opHigh = (0.25 + Math.random() * 0.35).toFixed(2);
+    const opLow  = (parseFloat(opHigh) * 0.3).toFixed(2);
+    wrapper.style.cssText = `left:${(Math.random()*100).toFixed(1)}%;top:${(Math.random()*100).toFixed(1)}%;--op-high:${opHigh};--op-low:${opLow};animation-duration:${(3+Math.random()*5).toFixed(1)}s;animation-delay:-${(Math.random()*6).toFixed(1)}s;`;
+    const svg = makeDaisy(size);
+    svg.style.animationDuration = `${(2+Math.random()*4).toFixed(1)}s`;
+    svg.style.animationDelay    = `-${(Math.random()*6).toFixed(1)}s`;
+    wrapper.appendChild(svg);
+    container.appendChild(wrapper);
+  }
+})();
+</script>
 
 </body>
 </html>
