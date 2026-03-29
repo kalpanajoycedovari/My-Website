@@ -454,3 +454,44 @@ function showMusicPlayer(title, imgSrc) {
   document.getElementById('playerImg').src = imgSrc || '';
   player.style.display = 'flex';
 }
+// ==========================
+// INVITE SYSTEM
+// ==========================
+function showInviteLink() {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const link = `https://kalpanajoycedovari.github.io/My-Website/invite.html?ref=${user.uid}`;
+
+  if (document.getElementById('inviteOverlay')) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'inviteOverlay';
+  overlay.style.cssText = `
+    position:fixed;inset:0;background:rgba(60,20,5,0.55);
+    display:flex;align-items:center;justify-content:center;
+    z-index:99999;backdrop-filter:blur(6px);
+  `;
+
+  overlay.innerHTML = `
+    <div style="background:#fdf5ec;border-radius:24px;padding:32px 28px;max-width:380px;width:90%;text-align:center;border:1px solid #e0c8b0;box-shadow:0 20px 60px rgba(100,50,10,0.2);">
+      <div style="font-family:'Playfair Display',serif;font-style:italic;font-size:1.4rem;color:#5c3317;margin-bottom:6px;">invite someone 🌼</div>
+      <div style="font-family:'Caveat',cursive;font-size:1rem;color:#b07858;margin-bottom:20px;">share this link with someone who gets the vibe</div>
+      <div style="background:rgba(255,255,255,0.85);border:1.5px solid #e0c8b0;border-radius:14px;padding:12px 16px;font-family:'DM Sans',sans-serif;font-size:0.78rem;color:#7a4a2a;word-break:break-all;margin-bottom:16px;text-align:left;">${link}</div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="copyInviteLink('${link}')" id="copyInviteBtn" style="flex:1;padding:11px;">copy link ✨</button>
+        <button onclick="document.getElementById('inviteOverlay').remove()" style="flex:1;padding:11px;background:rgba(255,255,255,0.8);color:#7a4a2a;border:1.5px solid #e0c8b0;">close</button>
+      </div>
+      <div id="copiedMsg" style="font-family:'Caveat',cursive;font-size:1rem;color:#c8855c;margin-top:10px;display:none;">copied! now share it 🌸</div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+}
+
+function copyInviteLink(link) {
+  navigator.clipboard.writeText(link).then(() => {
+    document.getElementById('copiedMsg').style.display = 'block';
+    document.getElementById('copyInviteBtn').textContent = 'copied ✓';
+  });
+}
