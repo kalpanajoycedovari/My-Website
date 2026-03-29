@@ -32,22 +32,86 @@ auth.onAuthStateChanged(user => {
 function loadUserProfile(user) {
   db.collection('users').doc(user.uid).get().then(doc => {
     const data = doc.exists ? doc.data() : {};
-    const name   = data.username || data.name || 'you';
-    const photo  = data.photo || data.avatar || 'https://via.placeholder.com/40';
+    const username = data.username || null;
 
-    document.getElementById('profileBox').innerHTML = `
-      <a href="profile.html" style="display:flex;align-items:center;gap:8px;text-decoration:none;justify-content:center;margin-top:6px;">
-        <img src="${photo}" style="width:36px;height:36px;border-radius:50%;border:2px solid #a8d8a0;object-fit:cover;">
-        <span style="color:#4a7c59;font-size:0.88rem;font-weight:500;">${name}</span>
+    if (!username) {
+      showUsernamePrompt(user);
+      return;
+    }
+
+    renderProfileBox(username);
+  });
+}
+
+function renderProfileBox(username) {
+  const profileBox = document.getElementById('profileBox');
+  const menuProfile = document.getElementById('menuProfile');
+
+  if (profileBox) {
+    profileBox.innerHTML = `
+      <a href="profile.html" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;justify-content:center;margin-top:8px;background:rgba(255,255,255,0.7);border:1.5px solid #e0c8b0;border-radius:24px;padding:6px 16px;">
+        <span style="color:#5c3317;font-family:'Caveat',cursive;font-size:1.1rem;">@${username}</span>
       </a>
     `;
+  }
 
-    document.getElementById('menuProfile').innerHTML = `
-      <a href="profile.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;padding:10px 16px;border-bottom:1px solid #e2f4de;">
-        <img src="${photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
-        <span style="color:#4a7c59;font-weight:500;font-size:0.9rem;">${name}</span>
+  if (menuProfile) {
+    menuProfile.innerHTML = `
+      <a href="profile.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;padding:12px 18px;border-bottom:1px solid #f0dfd0;">
+        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#c8855c,#a05530);display:flex;align-items:center;justify-content:center;color:white;font-family:'Caveat',cursive;font-size:1.1rem;font-weight:600;">
+          ${username.charAt(0).toUpperCase()}
+        </div>
+        <span style="color:#5c3317;font-weight:500;font-size:0.9rem;">@${username}</span>
       </a>
     `;
+  }
+}
+
+function showUsernamePrompt(user) {
+  if (document.getElementById('usernameOverlay')) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'usernameOverlay';
+  overlay.style.cssText = `
+    position:fixed;inset:0;background:rgba(60,20,5,0.55);
+    display:flex;align-items:center;justify-content:center;
+    z-index:99999;backdrop-filter:blur(6px);
+  `;
+
+  overlay.innerHTML = `
+    <div style="background:#fdf5ec;border-radius:24px;padding:32px 28px;max-width:340px;width:90%;text-align:center;border:1px solid #e0c8b0;box-shadow:0 20px 60px rgba(100,50,10,0.2);">
+      <div style="font-family:'Playfair Display',serif;font-style:italic;font-size:1.5rem;color:#5c3317;margin-bottom:6px;">welcome to Solite 🌼</div>
+      <div style="font-family:'Caveat',cursive;font-size:1rem;color:#b07858;margin-bottom:20px;">what would you like to be called?</div>
+      <input id="usernameInput" placeholder="your name, nickname, anything..."
+        style="width:100%;padding:12px 16px;border-radius:14px;border:1.5px solid #e0c8b0;font-family:'DM Sans',sans-serif;font-size:0.95rem;color:#3d2010;background:rgba(255,255,255,0.85);box-sizing:border-box;margin-bottom:8px;">
+      <div style="font-size:0.75rem;color:#b07858;font-family:'DM Sans',sans-serif;margin-bottom:16px;">letters, numbers, underscores — or just leave it for now</div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="saveUsername('${user.uid}')" style="flex:1;padding:11px;">save ✨</button>
+        <button onclick="skipUsername('${user.uid}')" style="flex:1;padding:11px;background:rgba(255,255,255,0.8);color:#7a4a2a;border:1.5px solid #e0c8b0;">skip for now</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  setTimeout(() => document.getElementById('usernameInput')?.focus(), 100);
+}
+
+function saveUsername(uid) {
+  const input = document.getElementById('usernameInput');
+  const raw   = input ? input.value.trim() : '';
+  const username = raw.replace(/[^a-zA-Z0-9_.]/g, '') || 'solite_friend';
+
+  db.collection('users').doc(uid).set({ username }, { merge: true }).then(() => {
+    document.getElementById('usernameOverlay')?.remove();
+    renderProfileBox(username);
+  });
+}
+
+function skipUsername(uid) {
+  const username = 'solite_friend';
+  db.collection('users').doc(uid).set({ username }, { merge: true }).then(() => {
+    document.getElementById('usernameOverlay')?.remove();
+    renderProfileBox(username);
   });
 }
 
@@ -302,4 +366,20 @@ document.addEventListener('DOMContentLoaded', () => {
 // ==========================
 function logout() {
   auth.signOut().then(() => window.location.href = 'login.html');
+}
+
+// ==========================
+// MUSIC PLAYER (hide when empty)
+// ==========================
+document.addEventListener('DOMContentLoaded', () => {
+  const player = document.getElementById('musicPlayer');
+  if (player) player.style.display = 'none';
+});
+
+function showMusicPlayer(title, imgSrc) {
+  const player = document.getElementById('musicPlayer');
+  if (!player) return;
+  document.getElementById('playerTitle').textContent = title || 'Now playing';
+  document.getElementById('playerImg').src = imgSrc || '';
+  player.style.display = 'flex';
 }
