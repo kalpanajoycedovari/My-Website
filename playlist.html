@@ -3,6 +3,17 @@
 <head>
   <title>Playlist</title>
   <link rel="stylesheet" href="style.css">
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <script src="firebase-config.js"></script>
+
+  <script>
+    firebase.initializeApp(firebaseConfig);
+  </script>
+
 </head>
 
 <body>
@@ -10,22 +21,14 @@
 <h1 style="text-align:center;">Your Playlist</h1>
 <div id="playlistContainer" class="masonry"></div>
 
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyDc8vbutr2Sfnb49D58LYDdcxAqdY3sNWo",
-  authDomain: "solite-d9bdb.firebaseapp.com",
-  projectId: "solite-d9bdb"
-};
-
-firebase.initializeApp(firebaseConfig);
-
 const db = firebase.firestore();
 
 firebase.auth().onAuthStateChanged(user => {
+  if (!user) {
+    window.location.href = "login.html";
+    return;
+  }
 
   const container = document.getElementById("playlistContainer");
 
@@ -34,7 +37,6 @@ firebase.auth().onAuthStateChanged(user => {
     .collection("saved")
     .get()
     .then(snapshot => {
-
       snapshot.forEach(doc => {
         const data = doc.data();
 
@@ -47,9 +49,7 @@ firebase.auth().onAuthStateChanged(user => {
           `;
         }
       });
-
     });
-
 });
 </script>
 
