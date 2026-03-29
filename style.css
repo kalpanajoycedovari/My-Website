@@ -783,3 +783,20 @@ body.dark #musicPlayer { background: rgba(30,12,4,0.92); }
 body.dark .login-container { background: rgba(40,20,8,0.88); }
 body.dark .top h1 { color: #e8c8a0; }
 body.dark .top p   { color: #c8a070; }
+/* ===================== */
+/* DROPDOWN POSITION FIX */
+/* ===================== */
+.dropdown {
+  position: static;
+}
+
+.dropdown-content {
+  position: fixed;
+  top: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 0;
+  max-height: 60vh;
+  overflow-y: auto;
+  z-index: 99999;
+}
