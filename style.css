@@ -842,3 +842,27 @@ body {
   background: #e2f4de;
   color: #2e3d2f;
 }
+/* ===================== */
+/* DROPDOWN HOVER FIX */
+/* ===================== */
+.dropdown-content {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 0;
+}
+
+.dropdown::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  height: 10px;
+}
+
+.dropdown:hover .dropdown-content,
+.dropdown-content:hover {
+  display: block;
+  opacity: 1;
+}
