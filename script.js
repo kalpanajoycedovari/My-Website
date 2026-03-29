@@ -88,7 +88,7 @@ function saveUsername(uid) {
   const input    = document.getElementById('usernameInput');
   const raw      = input ? input.value.trim() : '';
   const username = raw.replace(/[^a-zA-Z0-9_.]/g, '') || 'solite_friend';
-  db.collection('users').doc(uid).set({ username }, { merge: true }).then(() => {
+  db.collection('users').doc(uid).set({ username, usernameLower: username.toLowerCase() }, { merge: true }).then(() => {
     document.getElementById('usernameOverlay')?.remove();
     renderProfileBox(username);
   });
@@ -96,7 +96,7 @@ function saveUsername(uid) {
 
 function skipUsername(uid) {
   const username = 'solite_friend';
-  db.collection('users').doc(uid).set({ username }, { merge: true }).then(() => {
+  db.collection('users').doc(uid).set({ username, usernameLower: username.toLowerCase() }, { merge: true }).then(() => {
     document.getElementById('usernameOverlay')?.remove();
     renderProfileBox(username);
   });
@@ -443,7 +443,7 @@ function updateUsername(uid) {
   const username = raw.replace(/[^a-zA-Z0-9_.]/g, '');
   if (!username) { input.style.borderColor = '#c8855c'; input.placeholder = 'please enter something 🌼'; return; }
 
-  db.collection('users').doc(uid).set({ username }, { merge: true }).then(() => {
+  db.collection('users').doc(uid).set({ username, usernameLower: username.toLowerCase() }, { merge: true }).then(() => {
     document.getElementById('editUsernameOverlay')?.remove();
     renderProfileBox(username);
     const notice = document.createElement('div');
@@ -537,8 +537,8 @@ async function searchFriends(query) {
   const user  = auth.currentUser;
 
   const snap = await db.collection('users')
-    .where('username', '>=', clean)
-    .where('username', '<=', clean + '\uf8ff')
+    .where('usernameLower', '>=', clean)
+    .where('usernameLower', '<=', clean + '\uf8ff')
     .limit(8).get();
 
   if (snap.empty) {
