@@ -1,41 +1,64 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <title>Profile</title>
   <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <script src="firebase-config.js"></script>
+
+  <script>
+    firebase.initializeApp(firebaseConfig);
+  </script>
+
 </head>
 <body>
 
 <div id="profile"></div>
 <div id="posts"></div>
 
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
 <script>
 const params = new URLSearchParams(window.location.search);
 const uid = params.get("uid");
 
+if (!uid) {
+  window.location.href = "login.html";
+}
+
 const db = firebase.firestore();
 
 db.collection("users").doc(uid).get().then(doc => {
+  if (!doc.exists) {
+    document.getElementById("profile").innerHTML = "<p>User not found 🌸</p>";
+    return;
+  }
+
   const u = doc.data();
 
   document.getElementById("profile").innerHTML = `
-    <img src="${u.avatar}">
-    <h2>${u.name}</h2>
-    <p>${u.bio}</p>
+    <img src="${u.avatar || 'https://via.placeholder.com/80'}">
+    <h2>${u.name || 'Unknown user'}</h2>
+    <p>${u.bio || ''}</p>
     <button onclick="followUser('${uid}')">Follow</button>
   `;
 });
 
-db.collection("posts").where("uid","==",uid)
-.onSnapshot(snap=>{
-  let html="";
-  snap.forEach(d=>{
-    html+=`<div class="post-card">${d.data().text}</div>`;
+db.collection("posts").where("uid", "==", uid)
+  .onSnapshot(snap => {
+    if (snap.empty) {
+      document.getElementById("posts").innerHTML = "<p>No posts yet 🌸</p>";
+      return;
+    }
+    let html = "";
+    snap.forEach(d => {
+      html += `<div class="post-card">${d.data().text}</div>`;
+    });
+    document.getElementById("posts").innerHTML = html;
   });
-  document.getElementById("posts").innerHTML=html;
-});
 </script>
 
 </body>

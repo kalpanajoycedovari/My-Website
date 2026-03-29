@@ -1,22 +1,45 @@
 <!DOCTYPE html>
 <html>
+<head>
+  <title>Notifications</title>
+  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <script src="firebase-config.js"></script>
+
+  <script>
+    firebase.initializeApp(firebaseConfig);
+  </script>
+
+</head>
 <body>
 
 <h2>🔔 Notifications</h2>
 <div id="n"></div>
 
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
 <script>
-firebase.auth().onAuthStateChanged(user=>{
+firebase.auth().onAuthStateChanged(user => {
+  if (!user) {
+    window.location.href = "login.html";
+    return;
+  }
+
   firebase.firestore()
     .collection("users")
     .doc(user.uid)
     .collection("notifications")
-    .onSnapshot(s=>{
-      let html="";
-      s.forEach(d=> html+=`<p>${d.data().text}</p>`);
-      document.getElementById("n").innerHTML=html;
+    .onSnapshot(s => {
+      if (s.empty) {
+        document.getElementById("n").innerHTML = "<p>No notifications yet 🌸</p>";
+        return;
+      }
+      let html = "";
+      s.forEach(d => html += `<p>${d.data().text}</p>`);
+      document.getElementById("n").innerHTML = html;
     });
 });
 </script>
