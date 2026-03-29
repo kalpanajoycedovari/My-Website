@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Messages — Solite</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&family=Caveat:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="firebase-config.js"></script>
+  <script>firebase.initializeApp(firebaseConfig);</script>
+
+  <style>
+    .msg-wrap { max-width: 680px; margin: 0 auto; padding: 1.5rem; position: relative; z-index: 1; }
+    .inbox-list { margin-bottom: 1.5rem; }
+    .thread-item {
+      background: rgba(255,255,255,0.88);
+      border-radius: 16px;
+      padding: 14px 18px;
+      margin-bottom: 10px;
+      border: 1px solid rgba(210,175,140,0.3);
+      box-shadow: 0 4px 14px rgba(120,70,30,0.07);
+      cursor: pointer;
+      transition: 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .thread-item:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(120,70,30,0.12); }
+    .thread-avatar {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #c8855c, #a05530);
+      color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Caveat', cursive;
+      font-size: 1.2rem;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .thread-info { flex: 1; min-width: 0; }
+    .thread-name { font-family: 'Playfair Display', serif; color: #5c3317; font-size: 0.95rem; }
+    .thread-preview { font-size: 0.82rem; color: #9a7060; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+    .unread-dot { width: 8px; height: 8px; border-radius: 50%; background: #c8855c; flex-shrink: 0; }
+    .chat-box {
+      background: rgba(255,255,255,0.88);
+      border-radius: 20px;
+      border: 1px solid rgba(210,175,140,0.3);
+      box-shadow: 0 6px 24px rgba(120,70,30,0.1);
+      display: none;
+      flex-direction: column;
+      height: 520px;
+    }
+    .chat-box.open { display: flex; }
+    .chat-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(210,175,140,0.3);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .chat-header-name { font-family: 'Playfair Display', serif; color: #5c3317; font-size: 1rem; }
+    .back-btn {
+      background: none;
+      border: none;
+      color: #c8855c;
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 0;
+      box-shadow: none;
+    }
+    .back-btn:hover { transform: none; box-shadow: none; }
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .msg-bubble {
+      max-width: 70%;
+      padding: 10px 14px;
+      border-radius: 18px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .msg-bubble.mine {
+      background: linear-gradient(135deg, #c8855c, #a05530);
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 6px;
+    }
+    .msg-bubble.theirs {
+      background: #fdf0e6;
+      color: #5c3317;
+      align-self: flex-start;
+      border: 1px solid #e8d0b8;
+      border-bottom-left-radius: 6px;
+    }
+    .msg-time {
+      font-size: 0.7rem;
+      opacity: 0.6;
+      margin-top: 3px;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .msg-time.mine { text-align: right; color: white; }
+    .msg-time.theirs { color: #9a7060; }
+    .chat-input-row {
+      padding: 12px 16px;
+      border-top: 1px solid rgba(210,175,140,0.3);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .chat-input-row input {
+      flex: 1;
+      padding: 10px 16px;
+      border-radius: 24px;
+      border: 1.5px solid #e0c8b0;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      color: #3d2010;
+      background: rgba(255,255,255,0.85);
+    }
+    .chat-input-row input:focus {
+      outline: none;
+      border-color: #c8855c;
+    }
+    .send-btn {
+      padding: 10px 18px;
+      border-radius: 24px;
+      flex-shrink: 0;
+      font-size: 0.88rem;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      font-family: 'Caveat', cursive;
+      color: #b07858;
+      font-size: 1.2rem;
+    }
+    .new-msg-btn {
+      margin-bottom: 16px;
+      width: 100%;
+      padding: 12px;
+      font-size: 0.9rem;
+    }
+    .search-user-input {
+      width: 100%;
+      padding: 11px 16px;
+      border-radius: 14px;
+      border: 1.5px solid #e0c8b0;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      color: #3d2010;
+      background: rgba(255,255,255,0.85);
+      box-sizing: border-box;
+      margin-bottom: 10px;
+    }
+    .user-result {
+      padding: 10px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      color: #5c3317;
+      font-size: 0.9rem;
+      transition: 0.15s;
+    }
+    .user-result:hover { background: #fdf0e6; }
+  </style>
+</head>
+
+<body>
+<div id="daisy-bg"></div>
+
+<header class="top">
+  <h1>💌 Messages</h1>
+  <p>"quiet little notes"</p>
+  <nav style="margin-top:10px;">
+    <a href="index.html" style="color:#5c3317;text-decoration:none;font-size:0.9rem;">← back home</a>
+  </nav>
+</header>
+
+<div class="msg-wrap">
+  <button class="new-msg-btn" onclick="showNewMessage()">✦ send a new note</button>
+
+  <div id="inboxView">
+    <div class="inbox-list" id="inboxList">
+      <div class="empty-state">no messages yet 🌸<br><span style="font-size:0.9rem;">send someone a little note</span></div>
+    </div>
+  </div>
+
+  <div class="chat-box" id="chatBox">
+    <div class="chat-header">
+      <button class="back-btn" onclick="closeChat()">←</button>
+      <div class="thread-avatar" id="chatAvatar"></div>
+      <div class="chat-header-name" id="chatName"></div>
+    </div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-input-row">
+      <input id="msgInput" placeholder="write something..." onkeydown="if(event.key==='Enter') sendMessage()">
+      <button class="send-btn" onclick="sendMessage()">send ✨</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const db   = firebase.firestore();
+const auth = firebase.auth();
+let currentUser  = null;
+let activeThread = null;
+let msgListener  = null;
+
+auth.onAuthStateChanged(user => {
+  if (!user) { window.location.href = 'login.html'; return; }
+  currentUser = user;
+  loadInbox();
+
+  const params = new URLSearchParams(window.location.search);
+  const openUid = params.get('uid');
+  if (openUid) openChat(openUid);
+});
+
+function getThreadId(uid1, uid2) {
+  return [uid1, uid2].sort().join('_');
+}
+
+async function loadInbox() {
+  const list = document.getElementById('inboxList');
+  db.collection('threads')
+    .where('members', 'array-contains', currentUser.uid)
+    .orderBy('lastAt', 'desc')
+    .onSnapshot(async snap => {
+      if (snap.empty) return;
+      list.innerHTML = '';
+      for (const doc of snap.docs) {
+        const d = doc.data();
+        const otherUid = d.members.find(m => m !== currentUser.uid);
+        const userDoc  = await db.collection('users').doc(otherUid).get();
+        const username = userDoc.exists ? (userDoc.data().username || 'solite member') : 'solite member';
+        const unread   = d.unread && d.unread[currentUser.uid];
+
+        const item = document.createElement('div');
+        item.className = 'thread-item';
+        item.onclick   = () => openChat(otherUid);
+        item.innerHTML = `
+          <div class="thread-avatar">${username.charAt(0).toUpperCase()}</div>
+          <div class="thread-info">
+            <div class="thread-name">@${username}</div>
+            <div class="thread-preview">${d.lastMsg || '...'}</div>
+          </div>
+          ${unread ? '<div class="unread-dot"></div>' : ''}
+        `;
+        list.appendChild(item);
+      }
+    });
+}
+
+async function openChat(otherUid) {
+  const userDoc  = await db.collection('users').doc(otherUid).get();
+  const username = userDoc.exists ? (userDoc.data().username || 'solite member') : 'solite member';
+
+  activeThread = getThreadId(currentUser.uid, otherUid);
+
+  document.getElementById('chatAvatar').textContent = username.charAt(0).toUpperCase();
+  document.getElementById('chatName').textContent    = '@' + username;
+  document.getElementById('inboxView').style.display = 'none';
+  document.getElementById('chatBox').classList.add('open');
+
+  await db.collection('threads').doc(activeThread).set({
+    members: [currentUser.uid, otherUid],
+    [`unread.${currentUser.uid}`]: false
+  }, { merge: true });
+
+  if (msgListener) msgListener();
+  msgListener = db.collection('threads').doc(activeThread)
+    .collection('messages')
+    .orderBy('createdAt', 'asc')
+    .onSnapshot(snap => {
+      const container = document.getElementById('chatMessages');
+      container.innerHTML = '';
+      snap.forEach(doc => {
+        const m    = doc.data();
+        const mine = m.from === currentUser.uid;
+        const time = m.createdAt ? new Date(m.createdAt.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
+        const wrap = document.createElement('div');
+        wrap.innerHTML = `
+          <div class="msg-bubble ${mine ? 'mine' : 'theirs'}">${m.text}</div>
+          <div class="msg-time ${mine ? 'mine' : 'theirs'}">${time}</div>
+        `;
+        container.appendChild(wrap);
+      });
+      container.scrollTop = container.scrollHeight;
+    });
+}
+
+function closeChat() {
+  if (msgListener) { msgListener(); msgListener = null; }
+  activeThread = null;
+  document.getElementById('chatBox').classList.remove('open');
+  document.getElementById('inboxView').style.display = 'block';
+  document.getElementById('chatMessages').innerHTML  = '';
+}
+
+async function sendMessage() {
+  if (!activeThread || !currentUser) return;
+  const input = document.getElementById('msgInput');
+  const text  = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  const members  = activeThread.split('_');
+  const otherUid = members.find(m => m !== currentUser.uid);
+
+  await db.collection('threads').doc(activeThread)
+    .collection('messages').add({
+      text,
+      from:      currentUser.uid,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+  await db.collection('threads').doc(activeThread).set({
+    members:   [currentUser.uid, otherUid],
+    lastMsg:   text,
+    lastAt:    firebase.firestore.FieldValue.serverTimestamp(),
+    [`unread.${otherUid}`]: true
+  }, { merge: true });
+}
+
+function showNewMessage() {
+  if (document.getElementById('newMsgOverlay')) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'newMsgOverlay';
+  overlay.style.cssText = `position:fixed;inset:0;background:rgba(60,20,5,0.55);display:flex;align-items:center;justify-content:center;z-index:99999;backdrop-filter:blur(6px);`;
+  overlay.innerHTML = `
+    <div style="background:#fdf5ec;border-radius:24px;padding:28px;max-width:360px;width:90%;border:1px solid #e0c8b0;box-shadow:0 20px 60px rgba(100,50,10,0.2);">
+      <div style="font-family:'Playfair Display',serif;font-style:italic;font-size:1.3rem;color:#5c3317;margin-bottom:6px;">send a note 💌</div>
+      <div style="font-family:'Caveat',cursive;font-size:0.95rem;color:#b07858;margin-bottom:16px;">search by username</div>
+      <input class="search-user-input" id="userSearchInput" placeholder="@username..." oninput="searchUsers(this.value)">
+      <div id="userResults"></div>
+      <button onclick="document.getElementById('newMsgOverlay').remove()" style="width:100%;padding:11px;margin-top:10px;background:rgba(255,255,255,0.8);color:#7a4a2a;border:1.5px solid #e0c8b0;">cancel</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  setTimeout(() => document.getElementById('userSearchInput')?.focus(), 100);
+}
+
+async function searchUsers(query) {
+  const results = document.getElementById('userResults');
+  results.innerHTML = '';
+  if (!query || query.length < 2) return;
+
+  const snap = await db.collection('users')
+    .where('username', '>=', query)
+    .where('username', '<=', query + '\uf8ff')
+    .limit(5).get();
+
+  snap.forEach(doc => {
+    if (doc.id === currentUser.uid) return;
+    const username = doc.data().username || 'solite member';
+    const div = document.createElement('div');
+    div.className = 'user-result';
+    div.textContent = '@' + username;
+    div.onclick = () => {
+      document.getElementById('newMsgOverlay')?.remove();
+      openChat(doc.id);
+    };
+    results.appendChild(div);
+  });
+
+  if (snap.empty) {
+    results.innerHTML = `<div style="font-family:'Caveat',cursive;color:#b07858;font-size:0.95rem;padding:8px;">no one found 🌸</div>`;
+  }
+}
+</script>
+
+<script>
+(function() {
+  const container = document.getElementById('daisy-bg');
+  const count = 24;
+  function makeDaisy(size) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('width', size * 2.6);
+    svg.setAttribute('height', size * 2.6);
+    svg.setAttribute('viewBox', '-20 -20 40 40');
+    [0,45,90,135,180,225,270,315].forEach(a => {
+      const el = document.createElementNS(ns, 'ellipse');
+      el.setAttribute('cx', 0); el.setAttribute('cy', -size);
+      el.setAttribute('rx', size * 0.44); el.setAttribute('ry', size * 0.77);
+      el.setAttribute('fill', '#fffef0');
+      el.setAttribute('transform', `rotate(${a})`);
+      svg.appendChild(el);
+    });
+    const c1 = document.createElementNS(ns, 'circle');
+    c1.setAttribute('cx', 0); c1.setAttribute('cy', 0);
+    c1.setAttribute('r', size * 0.55); c1.setAttribute('fill', '#f5d76e');
+    svg.appendChild(c1);
+    const c2 = document.createElementNS(ns, 'circle');
+    c2.setAttribute('cx', 0); c2.setAttribute('cy', 0);
+    c2.setAttribute('r', size * 0.28); c2.setAttribute('fill', '#e8c94a');
+    svg.appendChild(c2);
+    return svg;
+  }
+  for (let i = 0; i < count; i++) {
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('daisy');
+    const size = 5 + Math.random() * 7;
+    const opHigh = (0.25 + Math.random() * 0.35).toFixed(2);
+    const opLow  = (parseFloat(opHigh) * 0.3).toFixed(2);
+    wrapper.style.cssText = `left:${(Math.random()*100).toFixed(1)}%;top:${(Math.random()*100).toFixed(1)}%;--op-high:${opHigh};--op-low:${opLow};animation-duration:${(3+Math.random()*5).toFixed(1)}s;animation-delay:-${(Math.random()*6).toFixed(1)}s;`;
+    const svg = makeDaisy(size);
+    svg.style.animationDuration = `${(2+Math.random()*4).toFixed(1)}s`;
+    svg.style.animationDelay    = `-${(Math.random()*6).toFixed(1)}s`;
+    wrapper.appendChild(svg);
+    container.appendChild(wrapper);
+  }
+})();
+</script>
+
+</body>
+</html>
