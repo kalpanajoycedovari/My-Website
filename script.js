@@ -2,6 +2,22 @@ const db   = firebase.firestore();
 const auth = firebase.auth();
 
 // ==========================
+// MENU PANEL TOGGLE
+// ==========================
+function toggleMenuPanel() {
+  const panel = document.getElementById('menuPanel');
+  if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+document.addEventListener('click', e => {
+  const panel = document.getElementById('menuPanel');
+  const btn   = document.querySelector('.menu-icon-btn');
+  if (panel && btn && !panel.contains(e.target) && !btn.contains(e.target)) {
+    panel.style.display = 'none';
+  }
+});
+
+// ==========================
 // DARK MODE (persistent)
 // ==========================
 if (localStorage.getItem('darkMode') === 'true') {
