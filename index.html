@@ -44,22 +44,22 @@
     </div>
   </div>
 
-  <!-- DROPDOWN PANEL -->
-  <div id="menuPanel" style="display:none;position:absolute;top:70px;right:16px;background:rgba(255,252,248,0.98);border-radius:16px;box-shadow:0 10px 30px rgba(120,70,30,0.15);border:1px solid rgba(210,175,140,0.4);width:210px;overflow:hidden;z-index:99999;">
+  <div id="menuPanel" style="display:none;position:absolute;top:70px;right:16px;background:rgba(255,252,248,0.98);border-radius:16px;box-shadow:0 10px 30px rgba(120,70,30,0.15);border:1px solid rgba(210,175,140,0.4);width:220px;overflow:hidden;z-index:99999;">
     <div style="padding:5px 0;border-bottom:1px solid #f5ede0;">
-      <div style="padding:6px 16px 2px;font-size:10px;color:#c8a888;font-family:'DM Sans',sans-serif;text-transform:uppercase;letter-spacing:0.06em;">navigate</div>
-      <a href="index.html"         style="padding:9px 16px;font-size:13px;color:#7a4a2a;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:8px;text-decoration:none;">🏠 home</a>
-      <a href="music.html"         style="padding:9px 16px;font-size:13px;color:#7a4a2a;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:8px;text-decoration:none;">🎧 music</a>
-      <a href="stories.html"       style="padding:9px 16px;font-size:13px;color:#7a4a2a;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:8px;text-decoration:none;">📖 stories</a>
-      <a href="cafes.html"         style="padding:9px 16px;font-size:13px;color:#7a4a2a;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:8px;text-decoration:none;">☕ cafés</a>
-      <a href="saved.html"         style="padding:9px 16px;font-size:13px;color:#7a4a2a;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:8px;text-decoration:none;">❤️ saved</a>
-      <a href="messages.html"      style="padding:9px 16px;font-size:13px;color:#7a4a2a;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:8px;text-decoration:none;">💌 messages</a>
-      <a href="notifications.html" style="padding:9px 16px;font-size:13px;color:#7a4a2a;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:8px;text-decoration:none;">🔔 notifications</a>
+      <div style="padding:6px 16px 4px;font-size:10px;color:#c8a888;font-family:'DM Sans',sans-serif;text-transform:uppercase;letter-spacing:0.06em;">moods</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;padding:4px 16px 10px;">
+        <button onclick="quickFilter('all')"       class="mood-chip active">all</button>
+        <button onclick="quickFilter('gloomy')"    class="mood-chip">🌙 gloomy</button>
+        <button onclick="quickFilter('soft')"      class="mood-chip">☕ soft</button>
+        <button onclick="quickFilter('nostalgic')" class="mood-chip">📷 nostalgic</button>
+      </div>
     </div>
     <div style="padding:5px 0;border-bottom:1px solid #f5ede0;">
       <div style="padding:6px 16px 2px;font-size:10px;color:#c8a888;font-family:'DM Sans',sans-serif;text-transform:uppercase;letter-spacing:0.06em;">account</div>
       <div onclick="showEditUsername();toggleMenuPanel();" style="padding:9px 16px;font-size:13px;color:#7a4a2a;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:8px;">✏️ change username</div>
       <div onclick="showInviteLink();toggleMenuPanel();" style="padding:9px 16px;font-size:13px;color:#7a4a2a;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:8px;">🌼 invite someone</div>
+      <a href="messages.html"      style="padding:9px 16px;font-size:13px;color:#7a4a2a;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:8px;text-decoration:none;">💌 messages</a>
+      <a href="notifications.html" style="padding:9px 16px;font-size:13px;color:#7a4a2a;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:8px;text-decoration:none;">🔔 notifications</a>
       <div onclick="toggleDarkMode();" style="padding:9px 16px;font-size:13px;color:#7a4a2a;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:8px;">🌙 dark mode</div>
     </div>
     <div style="padding:5px 0;">
@@ -69,19 +69,30 @@
 
   <!-- SEARCH + RANDOM -->
   <div class="top-bar">
-    <div class="search-wrap">
-      <input type="text" id="searchInput" placeholder="search vibes...">
+    <div class="search-oval">
+      <div class="search-left-icon">🌼</div>
+      <input type="text" id="searchInput" placeholder="what are you looking for...">
+      <span class="search-right-deco">✦ ✿</span>
     </div>
     <button id="randomBtn">✦ random vibe</button>
   </div>
 
-  <!-- FILTERS + FIND FRIEND -->
-  <div class="filters">
-    <button data-filter="all"><span class="filter-dot" style="background:#c8a888;opacity:0.5;"></span>all</button>
-    <button data-filter="gloomy"><span class="filter-dot" style="background:#8b7bb0;"></span>gloomy</button>
-    <button data-filter="soft"><span class="filter-dot" style="background:#c8a888;"></span>soft</button>
-    <button data-filter="nostalgic"><span class="filter-dot" style="background:#c87858;"></span>nostalgic</button>
-    <button onclick="showAddFriend()" style="border-color:#f0c8a0;">🤍 find friend</button>
+  <!-- SEARCH TAGS -->
+  <div class="search-tags">
+    <span class="stag" onclick="quickSearch('gloomy')">🌙 gloomy</span>
+    <span class="stag" onclick="quickSearch('soft')">☕ soft</span>
+    <span class="stag" onclick="quickSearch('nostalgic')">📷 nostalgic</span>
+    <span class="stag" onclick="quickSearch('music')">🎧 music</span>
+    <span class="stag" onclick="quickSearch('stories')">📖 stories</span>
+  </div>
+
+  <!-- PAGE LINKS -->
+  <div class="page-links">
+    <a href="music.html" class="page-link">🎧 music</a>
+    <a href="stories.html" class="page-link">📖 stories</a>
+    <a href="cafes.html" class="page-link">☕ cafés</a>
+    <a href="saved.html" class="page-link">❤️ saved</a>
+    <button onclick="showAddFriend()" class="page-link find-link">🤍 find friend</button>
   </div>
 
 </header>

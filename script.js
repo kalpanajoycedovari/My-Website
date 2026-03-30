@@ -693,3 +693,20 @@ function showToast(msg) {
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 3000);
 }
+function quickSearch(term) {
+  const input = document.getElementById('searchInput');
+  if (input) {
+    input.value = term;
+    input.dispatchEvent(new Event('input'));
+  }
+}
+
+function quickFilter(filter) {
+  document.querySelectorAll('.mood-chip').forEach(b =>
+    b.classList.toggle('active', b.textContent.toLowerCase().includes(filter) || filter === 'all')
+  );
+  document.querySelectorAll('.card[data-category]').forEach(card => {
+    card.style.display = (filter === 'all' || card.dataset.category === filter) ? '' : 'none';
+  });
+  toggleMenuPanel();
+}
