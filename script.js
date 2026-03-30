@@ -287,13 +287,18 @@ function renderPost(doc, container) {
   const id    = doc.id;
   const user  = auth.currentUser;
   const liked = user && post.likes && post.likes.includes(user.uid);
+  const isOwn = user && user.uid === post.uid;
 
   const card = document.createElement('div');
   card.className = 'post-card';
+  card.id = `postCard-${id}`;
   card.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
       <a href="profile.html?uid=${post.uid}" style="font-family:'Caveat',cursive;font-size:1.1rem;color:#5c3317;text-decoration:none;">@${post.username || 'anonymous'}</a>
-      <span style="font-size:0.75rem;color:#c8a888;font-family:'DM Sans',sans-serif;">${post.type || ''}</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:0.75rem;color:#c8a888;font-family:'DM Sans',sans-serif;">${post.type || ''}</span>
+        ${isOwn ? `<button onclick="deletePost('${id}')" style="background:none;border:none;color:#c8a888;font-size:0.8rem;padding:2px 6px;cursor:pointer;box-shadow:none;" title="delete">✕</button>` : ''}
+      </div>
     </div>
     <p style="color:#3d2010;font-size:0.92rem;line-height:1.65;">${post.text}</p>
     ${post.imageUrl ? `<img src="${post.imageUrl}" style="width:100%;border-radius:12px;margin-top:8px;">` : ''}
@@ -315,6 +320,30 @@ function renderPost(doc, container) {
   `;
   container.appendChild(card);
   loadComments(id);
+}
+
+// ==========================
+// DELETE POST
+// ==========================
+function deletePost(id) {
+  const user = auth.currentUser;
+  if (!user) return;
+  if (!confirm('delete this yap? 🌸')) return;
+
+  db.collection('posts').doc(id).delete().then(() => {
+    const card = document.getElementById(`postCard-${id}`);
+    if (card) card.remove();
+  }).catch(err => console.error('Delete error:', err));
+}
+
+// ==========================
+// DELETE COMMENT
+// ==========================
+function deleteComment(postId, commentId) {
+  const user = auth.currentUser;
+  if (!user) return;
+  db.collection('posts').doc(postId).collection('comments').doc(commentId).delete()
+    .catch(err => console.error('Delete comment error:', err));
 }
 
 // ==========================
@@ -358,11 +387,17 @@ function loadComments(postId) {
       const container = document.getElementById(`comments-${postId}`);
       if (!container) return;
       container.innerHTML = '';
+      const user = auth.currentUser;
       snapshot.forEach(doc => {
-        const c   = doc.data();
-        const div = document.createElement('div');
-        div.className   = 'comment';
-        div.textContent = c.text;
+        const c     = doc.data();
+        const isOwn = user && user.uid === c.uid;
+        const div   = document.createElement('div');
+        div.className = 'comment';
+        div.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:8px;';
+        div.innerHTML = `
+          <span style="flex:1;">${c.text}</span>
+          ${isOwn ? `<button onclick="deleteComment('${postId}','${doc.id}')" style="background:none;border:none;color:#c8a888;font-size:0.75rem;cursor:pointer;box-shadow:none;padding:0;flex-shrink:0;" title="delete">✕</button>` : ''}
+        `;
         container.appendChild(div);
       });
     });
