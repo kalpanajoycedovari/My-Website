@@ -157,40 +157,60 @@ function scrollToPost() {
 }
 
 // ==========================
-// CREATE POST
+// CREATE POST (YAP)
 // ==========================
 async function createPost() {
-  const user   = auth.currentUser;
+  const user  = auth.currentUser;
+  if (!user) return;
+
   const text   = document.getElementById('postInput').value.trim();
   const type   = document.getElementById('postType').value;
   const extra  = document.getElementById('extraInput').value.trim();
   const lyrics = document.getElementById('lyricsInput')?.value.trim() || '';
+  const errEl  = document.getElementById('yapError');
 
-  if (!text) return;
+  if (errEl) errEl.style.display = 'none';
 
-  let imageUrl = '';
-  const file = document.getElementById('imageInput').files[0];
-  if (file) {
-    const ref = firebase.storage().ref().child('posts/' + Date.now());
-    await ref.put(file);
-    imageUrl = await ref.getDownloadURL();
+  if (!text) {
+    if (errEl) { errEl.textContent = 'write something first 🌸'; errEl.style.display = 'block'; }
+    return;
   }
 
-  const userDoc  = await db.collection('users').doc(user.uid).get();
-  const username = userDoc.exists ? (userDoc.data().username || 'anonymous') : 'anonymous';
+  const btn = document.querySelector('.create-post button[onclick="createPost()"]');
+  if (btn) { btn.textContent = 'posting...'; btn.disabled = true; }
 
-  await db.collection('posts').add({
-    text, type, extra, lyrics, imageUrl,
-    uid: user.uid, username,
-    likes: [],
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
+  try {
+    let imageUrl = '';
+    const file = document.getElementById('imageInput').files[0];
+    if (file) {
+      const ref = firebase.storage().ref().child('posts/' + Date.now() + '_' + file.name);
+      await ref.put(file);
+      imageUrl = await ref.getDownloadURL();
+    }
 
-  document.getElementById('postInput').value  = '';
-  document.getElementById('extraInput').value = '';
-  if (document.getElementById('lyricsInput'))
-    document.getElementById('lyricsInput').value = '';
-  document.getElementById('imageInput').value = '';
+    const userDoc  = await db.collection('users').doc(user.uid).get();
+    const username = userDoc.exists ? (userDoc.data().username || 'anonymous') : 'anonymous';
+
+    await db.collection('posts').add({
+      text, type, extra, lyrics, imageUrl,
+      uid: user.uid, username,
+      likes: [],
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    document.getElementById('postInput').value  = '';
+    document.getElementById('extraInput').value = '';
+    document.getElementById('imageInput').value = '';
+    if (document.getElementById('lyricsInput'))
+      document.getElementById('lyricsInput').value = '';
+
+    if (btn) { btn.textContent = 'Yap! ✨'; btn.disabled = false; }
+
+  } catch(err) {
+    console.error('Yap error:', err);
+    if (errEl) { errEl.textContent = 'something went wrong 🌸 try again'; errEl.style.display = 'block'; }
+    if (btn) { btn.textContent = 'Yap! ✨'; btn.disabled = false; }
+  }
 }
 
 // ==========================
@@ -219,7 +239,7 @@ function loadPosts() {
       const container = document.getElementById('postsContainer');
       container.innerHTML = '';
       if (snapshot.empty) {
-        container.innerHTML = `<div style="text-align:center;font-family:'Caveat',cursive;color:#b07858;font-size:1.2rem;padding:30px;">no posts yet 🌸<br><span style="font-size:0.9rem;">be the first to yap something</span></div>`;
+        container.innerHTML = `<div style="text-align:center;font-family:'Caveat',cursive;color:#b07858;font-size:1.2rem;padding:30px;">no yaps yet 🌸<br><span style="font-size:0.9rem;">be the first to yap something</span></div>`;
         return;
       }
       snapshot.forEach(doc => renderPost(doc, container));
@@ -239,7 +259,7 @@ async function loadFollowingFeed() {
   const followingSnap = await db.collection('users').doc(user.uid).collection('following').get();
 
   if (followingSnap.empty) {
-    container.innerHTML = `<div style="text-align:center;font-family:'Caveat',cursive;color:#b07858;font-size:1.2rem;padding:30px;">you're not following anyone yet 🌸<br><span style="font-size:0.9rem;">follow people to see their posts here</span></div>`;
+    container.innerHTML = `<div style="text-align:center;font-family:'Caveat',cursive;color:#b07858;font-size:1.2rem;padding:30px;">you're not following anyone yet 🌸<br><span style="font-size:0.9rem;">add friends to see their yaps here</span></div>`;
     return;
   }
 
@@ -252,7 +272,7 @@ async function loadFollowingFeed() {
     .onSnapshot(snapshot => {
       container.innerHTML = '';
       if (snapshot.empty) {
-        container.innerHTML = `<div style="text-align:center;font-family:'Caveat',cursive;color:#b07858;font-size:1.2rem;padding:30px;">none of your people have posted yet 🌸<br><span style="font-size:0.9rem;">check back soon</span></div>`;
+        container.innerHTML = `<div style="text-align:center;font-family:'Caveat',cursive;color:#b07858;font-size:1.2rem;padding:30px;">none of your people have yapped yet 🌸<br><span style="font-size:0.9rem;">check back soon</span></div>`;
         return;
       }
       snapshot.forEach(doc => renderPost(doc, container));

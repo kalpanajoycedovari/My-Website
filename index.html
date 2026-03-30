@@ -58,7 +58,6 @@
       <a href="playlist.html">Playlist</a>
       <a href="notifications.html">🔔 Notifications</a>
       <a href="messages.html">💌 Messages</a>
-      <button onclick="showAddFriend()">🤍 Find someone</button>
       <button onclick="showInviteLink()">🌼 Invite someone</button>
       <button onclick="showEditUsername()">✏️ Change username</button>
       <button onclick="toggleDarkMode()">🌙 Dark Mode</button>
@@ -84,19 +83,21 @@
 
 <main class="masonry">
 
-  <!-- CREATE POST -->
+  <!-- YAP BOX -->
   <div class="create-post">
-    <textarea id="postInput" placeholder="yap about your day... 🌙"></textarea>
-    <select id="postType">
+    <div style="font-family:'Playfair Display',serif;font-style:italic;font-size:1.1rem;color:#5c3317;margin-bottom:8px;">yap something 🌙</div>
+    <textarea id="postInput" placeholder="what's on your mind..."></textarea>
+    <select id="postType" style="margin-top:8px;">
       <option value="💬 Yap">💬 Yap</option>
       <option value="🎧 Song">🎧 Song</option>
       <option value="📖 Book">📖 Book</option>
       <option value="☕ Café">☕ Café</option>
     </select>
-    <input type="text" id="extraInput" placeholder="extra (song, book, etc)">
-    <input type="text" id="lyricsInput" placeholder="write lyrics or how this song makes you feel...">
-    <input type="file" id="imageInput">
-    <button onclick="createPost()">Post ✨</button>
+    <input type="text" id="extraInput" placeholder="song title, book name, café... (optional)">
+    <input type="text" id="lyricsInput" placeholder="how does it make you feel...">
+    <input type="file" id="imageInput" accept="image/*">
+    <button onclick="createPost()">Yap! ✨</button>
+  <div id="yapError" style="display:none;font-family:'Caveat',cursive;color:#c8855c;font-size:0.95rem;margin-top:6px;text-align:center;"></div>
   </div>
 
   <!-- FEED TABS -->
