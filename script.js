@@ -303,13 +303,12 @@ function renderPost(doc, container) {
   const post  = doc.data();
   const id    = doc.id;
   const user  = auth.currentUser;
-  const liked = user && post.likes && post.likes.includes(user.uid);
   const isOwn = user && user.uid === post.uid;
- 
+
   const card = document.createElement('div');
   card.className = 'post-card';
   card.id = `postCard-${id}`;
- 
+
   card.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
       <a href="profile.html?uid=${post.uid}" style="font-family:'Caveat',cursive;font-size:1.1rem;color:#5c3317;text-decoration:none;">@${post.username || 'anonymous'}</a>
@@ -331,10 +330,11 @@ function renderPost(doc, container) {
     <p style="color:#3d2010;font-size:0.92rem;line-height:1.65;">${post.text}</p>
     ${post.imageUrl ? `<img src="${post.imageUrl}" style="width:100%;border-radius:12px;margin-top:8px;">` : ''}
     ${post.extra && post.type && post.type.includes('Song') ? `<div class="music-card"><p>🎧 ${post.extra}</p></div>` : ''}
+
+    <!-- SOFT REACTIONS -->
+    <div id="reactions-${id}" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;"></div>
+
     <div class="post-actions" style="margin-top:10px;">
-      <button class="like-btn ${liked ? 'liked' : ''}" onclick="toggleLike('${id}', ${liked})">
-        ${liked ? '❤️' : '🤍'} <span id="likeCount-${id}">${post.likes ? post.likes.length : 0}</span>
-      </button>
       <button onclick="toggleComments('${id}')">💬 comments</button>
       ${user && user.uid !== post.uid ? `<button onclick="followUser('${post.uid}')" style="font-size:0.8rem;padding:5px 12px;">+ follow</button>` : ''}
     </div>
@@ -346,13 +346,101 @@ function renderPost(doc, container) {
       </div>
     </div>
   `;
- 
+
   container.appendChild(card);
   loadComments(id);
- 
-  // apply block/mute styling after render
+  loadReactions(id, post.uid, post.username || 'anonymous');
   applyBlockMuteToCard(card, post.uid);
 }
+
+// ==========================
+// SOFT REACTIONS
+// ==========================
+const REACTIONS = ['🌸','🤍','✨','☕','🌙'];
+
+function loadReactions(postId, postAuthorUid, postAuthorUsername) {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const reactionsRef = db.collection('posts').doc(postId).collection('reactions');
+
+  reactionsRef.onSnapshot(snap => {
+    const container = document.getElementById(`reactions-${postId}`);
+    if (!container) return;
+
+    // tally counts and find current user's reaction
+    const counts  = {};
+    let myReaction = null;
+    snap.forEach(d => {
+      const r = d.data().emoji;
+      counts[r] = (counts[r] || 0) + 1;
+      if (d.id === user.uid) myReaction = r;
+    });
+
+    container.innerHTML = '';
+
+    REACTIONS.forEach(emoji => {
+      const count   = counts[emoji] || 0;
+      const isPicked = myReaction === emoji;
+
+      const btn = document.createElement('button');
+      btn.style.cssText = `
+        background:${isPicked ? 'rgba(200,133,92,0.15)' : 'rgba(255,255,255,0.7)'};
+        border:1.5px solid ${isPicked ? '#c8855c' : '#f0dfd0'};
+        border-radius:24px;
+        padding:4px 10px;
+        font-size:0.88rem;
+        cursor:pointer;
+        display:inline-flex;
+        align-items:center;
+        gap:4px;
+        font-family:'DM Sans',sans-serif;
+        color:${isPicked ? '#7a4a2a' : '#c8a888'};
+        transition:0.15s;
+        box-shadow:none;
+      `;
+      btn.innerHTML = `${emoji}${count > 0 ? `<span style="font-size:0.75rem;">${count}</span>` : ''}`;
+      btn.title = emoji;
+
+      btn.onclick = () => toggleReaction(postId, emoji, myReaction, postAuthorUid, postAuthorUsername);
+      container.appendChild(btn);
+    });
+  });
+}
+
+async function toggleReaction(postId, emoji, currentReaction, postAuthorUid, postAuthorUsername) {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const ref = db.collection('posts').doc(postId).collection('reactions').doc(user.uid);
+
+  if (currentReaction === emoji) {
+    // same emoji — remove reaction
+    await ref.delete();
+    return;
+  }
+
+  // get my username for notification
+  const myDoc      = await db.collection('users').doc(user.uid).get();
+  const myUsername = myDoc.exists ? (myDoc.data().username || 'someone') : 'someone';
+
+  // set new reaction
+  await ref.set({
+    emoji,
+    uid: user.uid,
+    username: myUsername,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  // notify post author (not if reacting to own post)
+  if (user.uid !== postAuthorUid) {
+    await db.collection('users').doc(postAuthorUid).collection('notifications').add({
+      text: `@${myUsername} reacted ${emoji} to your yap 🌸`,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
+}
+
 // ==========================
 // DELETE POST
 // ==========================
@@ -375,20 +463,6 @@ function deleteComment(postId, commentId) {
   if (!user) return;
   db.collection('posts').doc(postId).collection('comments').doc(commentId).delete()
     .catch(err => console.error('Delete comment error:', err));
-}
-
-// ==========================
-// LIKES
-// ==========================
-function toggleLike(id, liked) {
-  const user = auth.currentUser;
-  if (!user) return;
-  const ref = db.collection('posts').doc(id);
-  if (liked) {
-    ref.update({ likes: firebase.firestore.FieldValue.arrayRemove(user.uid) });
-  } else {
-    ref.update({ likes: firebase.firestore.FieldValue.arrayUnion(user.uid) });
-  }
 }
 
 // ==========================
@@ -708,6 +782,7 @@ function showToast(msg) {
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 3000);
 }
+
 function quickSearch(term) {
   const input = document.getElementById('searchInput');
   if (input) {
@@ -725,6 +800,10 @@ function quickFilter(filter) {
   });
   toggleMenuPanel();
 }
+
+// ==========================
+// NOTIFICATION BADGE
+// ==========================
 function watchNotifBadge(user) {
   db.collection('users').doc(user.uid).collection('notifications')
     .onSnapshot(snap => {
@@ -742,18 +821,16 @@ function watchNotifBadge(user) {
       }
     });
 }
-// ============================================================
-// PASTE THIS BLOCK 2 — add these new functions anywhere in script.js
-// (e.g. right before the closing of the file)
-// ============================================================
- 
-// close post menus when clicking outside
+
+// ==========================
+// POST MENU (3-dot)
+// ==========================
 document.addEventListener('click', e => {
   if (!e.target.closest('[id^="postMenu-"]') && !e.target.closest('button[onclick^="togglePostMenu"]')) {
     document.querySelectorAll('[id^="postMenu-"]').forEach(m => m.style.display = 'none');
   }
 });
- 
+
 function togglePostMenu(id) {
   const menu = document.getElementById(`postMenu-${id}`);
   if (!menu) return;
@@ -761,29 +838,32 @@ function togglePostMenu(id) {
   document.querySelectorAll('[id^="postMenu-"]').forEach(m => m.style.display = 'none');
   menu.style.display = isOpen ? 'none' : 'block';
 }
- 
+
+// ==========================
+// BLOCK / MUTE / REPORT
+// ==========================
 async function applyBlockMuteToCard(card, authorUid) {
   const user = auth.currentUser;
   if (!user || user.uid === authorUid) return;
- 
+
   const [blockedDoc, mutedDoc] = await Promise.all([
     db.collection('users').doc(user.uid).collection('blocked').doc(authorUid).get(),
     db.collection('users').doc(user.uid).collection('muted').doc(authorUid).get()
   ]);
- 
+
   if (mutedDoc.exists) {
-    card.style.display = 'none'; // silently hidden
+    card.style.display = 'none';
   } else if (blockedDoc.exists) {
-    card.style.opacity    = '0.35';
-    card.style.filter     = 'grayscale(0.6)';
+    card.style.opacity       = '0.35';
+    card.style.filter        = 'grayscale(0.6)';
     card.style.pointerEvents = 'none';
     const notice = document.createElement('div');
     notice.style.cssText = `font-family:'Caveat',cursive;font-size:0.88rem;color:#c8a888;text-align:center;padding:4px 0 8px;`;
-    notice.textContent   = 'you\'ve blocked this person';
+    notice.textContent = "you've blocked this person";
     card.prepend(notice);
   }
 }
- 
+
 async function muteFromPost(targetUid, username, postId) {
   document.getElementById(`postMenu-${postId}`)?.style && (document.getElementById(`postMenu-${postId}`).style.display = 'none');
   const user = auth.currentUser;
@@ -791,23 +871,18 @@ async function muteFromPost(targetUid, username, postId) {
   await db.collection('users').doc(user.uid).collection('muted').doc(targetUid).set({
     uid: targetUid, mutedAt: firebase.firestore.FieldValue.serverTimestamp()
   });
-  // hide their posts
   document.querySelectorAll('.post-card').forEach(card => {
-    if (card.querySelector(`a[href="profile.html?uid=${targetUid}"]`)) {
-      card.style.display = 'none';
-    }
+    if (card.querySelector(`a[href="profile.html?uid=${targetUid}"]`)) card.style.display = 'none';
   });
   showToast(`@${username} muted 🌸`);
 }
- 
+
 async function blockFromPost(targetUid, username, postId) {
   document.getElementById(`postMenu-${postId}`)?.style && (document.getElementById(`postMenu-${postId}`).style.display = 'none');
   const user = auth.currentUser;
   if (!user) return;
- 
-  // confirm first
   if (!confirm(`block @${username}? their posts will appear greyed out.`)) return;
- 
+
   await db.collection('users').doc(user.uid).collection('blocked').doc(targetUid).set({
     uid: targetUid, blockedAt: firebase.firestore.FieldValue.serverTimestamp()
   });
@@ -815,34 +890,27 @@ async function blockFromPost(targetUid, username, postId) {
     db.collection('users').doc(user.uid).collection('friends').doc(targetUid).delete(),
     db.collection('users').doc(targetUid).collection('friends').doc(user.uid).delete()
   ]);
- 
-  // grey out their posts
   document.querySelectorAll('.post-card').forEach(card => {
     if (card.querySelector(`a[href="profile.html?uid=${targetUid}"]`)) {
-      card.style.opacity       = '0.35';
-      card.style.filter        = 'grayscale(0.6)';
+      card.style.opacity = '0.35';
+      card.style.filter  = 'grayscale(0.6)';
       card.style.pointerEvents = 'none';
     }
   });
   showToast(`@${username} blocked 🌸`);
 }
- 
+
 async function reportFromPost(targetUid, username, postId) {
   document.getElementById(`postMenu-${postId}`)?.style && (document.getElementById(`postMenu-${postId}`).style.display = 'none');
   const user = auth.currentUser;
   if (!user) return;
- 
   const reasons = ['spam or fake account','harassment or bullying','inappropriate content','something else'];
   const reason  = prompt(`report @${username}\n\nReason:\n${reasons.map((r,i) => `${i+1}. ${r}`).join('\n')}\n\nType the number:`);
   if (!reason) return;
-  const idx = parseInt(reason) - 1;
-  const picked = reasons[idx] || 'something else';
- 
+  const picked = reasons[parseInt(reason) - 1] || 'something else';
   await db.collection('reports').add({
-    reportedUid: targetUid,
-    reportedUsername: username,
-    reporterUid: user.uid,
-    reason: picked,
+    reportedUid: targetUid, reportedUsername: username,
+    reporterUid: user.uid, reason: picked,
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });
   showToast('report sent 🌸 thank you for keeping solite safe');
