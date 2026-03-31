@@ -48,10 +48,9 @@ auth.onAuthStateChanged(user => {
 // ==========================
 function loadUserProfile(user) {
   db.collection('users').doc(user.uid).get().then(doc => {
-    const data       = doc.exists ? doc.data() : {};
-    const username   = data.username  || null;
-    const onboarded  = data.onboarded || false;
- 
+    const data      = doc.exists ? doc.data() : {};
+    const username  = data.username  || null;
+    const onboarded = data.onboarded || false;
     if (!onboarded) {
       showOnboarding(user, username);
     } else {
@@ -302,25 +301,47 @@ async function loadFollowingFeed() {
 }
 
 // ==========================
+// SEEDED CARD GRADIENTS
+// ==========================
+const CATEGORY_GRADIENTS = {
+  gloomy:    { bg: 'linear-gradient(135deg,#2d2438,#3d2e4a)', emoji: '🌙' },
+  soft:      { bg: 'linear-gradient(135deg,#f5e8d8,#e8d0b8)', emoji: '☕' },
+  nostalgic: { bg: 'linear-gradient(135deg,#d8c4a8,#c4a888)', emoji: '📷' }
+};
+
+// ==========================
 // RENDER A SINGLE POST
 // ==========================
 function renderPost(doc, container) {
-  const post  = doc.data();
-  const id    = doc.id;
-  const user  = auth.currentUser;
-  const isOwn = user && user.uid === post.uid;
+  const post   = doc.data();
+  const id     = doc.id;
+  const user   = auth.currentUser;
+  const isOwn  = user && user.uid === post.uid;
+  const seeded = post.isSeeded === true;
 
   const card = document.createElement('div');
   card.className = 'post-card';
   card.id = `postCard-${id}`;
+  if (post.category) card.dataset.category = post.category;
+
+  const gradient = seeded && post.category ? CATEGORY_GRADIENTS[post.category] : null;
+  const headerHtml = gradient ? `
+    <div style="height:72px;background:${gradient.bg};border-radius:12px 12px 0 0;margin:-16px -16px 14px -16px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;">
+      ${gradient.emoji}
+    </div>` : '';
+
+  const extraLabel = seeded && post.extra ? `
+    <div style="font-family:'Playfair Display',serif;font-style:italic;font-size:0.95rem;color:#5c3317;margin-bottom:6px;">${post.extra}</div>` : '';
 
   card.innerHTML = `
+    ${headerHtml}
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
       <a href="profile.html?uid=${post.uid}" style="font-family:'Caveat',cursive;font-size:1.1rem;color:#5c3317;text-decoration:none;">@${post.username || 'anonymous'}</a>
       <div style="display:flex;align-items:center;gap:6px;">
         <span style="font-size:0.75rem;color:#c8a888;font-family:'DM Sans',sans-serif;">${post.type || ''}</span>
         ${isOwn
-          ? `<button onclick="deletePost('${id}')" style="background:none;border:none;color:#c8a888;font-size:0.8rem;padding:2px 6px;cursor:pointer;box-shadow:none;" title="delete">✕</button>`
+          ? `<button onclick="startEditPost('${id}')" style="background:none;border:none;color:#c8a888;font-size:0.82rem;padding:2px 4px;cursor:pointer;box-shadow:none;" title="edit">✏️</button>
+             <button onclick="deletePost('${id}')" style="background:none;border:none;color:#c8a888;font-size:0.8rem;padding:2px 6px;cursor:pointer;box-shadow:none;" title="delete">✕</button>`
           : `<div style="position:relative;display:inline-block;">
                <button onclick="togglePostMenu('${id}')" style="background:none;border:none;color:#c8a888;font-size:1.1rem;padding:2px 6px;cursor:pointer;box-shadow:none;line-height:1;" title="more">⋯</button>
                <div id="postMenu-${id}" style="display:none;position:absolute;right:0;top:24px;background:rgba(255,252,248,0.98);border-radius:14px;box-shadow:0 8px 24px rgba(120,70,30,0.14);border:1px solid rgba(210,175,140,0.4);min-width:150px;z-index:999;overflow:hidden;">
@@ -332,13 +353,11 @@ function renderPost(doc, container) {
         }
       </div>
     </div>
-    <p style="color:#3d2010;font-size:0.92rem;line-height:1.65;">${post.text}</p>
+    ${extraLabel}
+    <p id="postText-${id}" style="color:#3d2010;font-size:0.92rem;line-height:1.65;">${post.text}</p>
     ${post.imageUrl ? `<img src="${post.imageUrl}" style="width:100%;border-radius:12px;margin-top:8px;">` : ''}
-    ${post.extra && post.type && post.type.includes('Song') ? `<div class="music-card"><p>🎧 ${post.extra}</p></div>` : ''}
-
-    <!-- SOFT REACTIONS -->
+    ${post.lyrics ? `<div style="font-family:'Caveat',cursive;font-size:0.95rem;color:#c8855c;margin-top:6px;font-style:italic;">"${post.lyrics}"</div>` : ''}
     <div id="reactions-${id}" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:12px;"></div>
-
     <div class="post-actions" style="margin-top:10px;">
       <button onclick="toggleComments('${id}')">💬 comments</button>
       ${user && user.uid !== post.uid ? `<button onclick="followUser('${post.uid}')" style="font-size:0.8rem;padding:5px 12px;">+ follow</button>` : ''}
@@ -359,6 +378,51 @@ function renderPost(doc, container) {
 }
 
 // ==========================
+// INLINE EDIT POST
+// ==========================
+function startEditPost(id) {
+  const textEl = document.getElementById(`postText-${id}`);
+  if (!textEl) return;
+  const current = textEl.textContent;
+  textEl.style.display = 'none';
+
+  const wrapper  = document.createElement('div');
+  wrapper.id     = `editWrapper-${id}`;
+
+  const textarea = document.createElement('textarea');
+  textarea.value = current;
+  textarea.style.cssText = `width:100%;padding:8px 12px;border-radius:10px;border:1.5px solid #c8855c;font-family:'DM Sans',sans-serif;font-size:0.92rem;color:#3d2010;background:rgba(255,255,255,0.9);resize:vertical;min-height:70px;box-sizing:border-box;margin-top:4px;`;
+
+  const btnRow = document.createElement('div');
+  btnRow.style.cssText = `display:flex;gap:8px;margin-top:8px;`;
+
+  const saveBtn = document.createElement('button');
+  saveBtn.textContent = 'save ✨';
+  saveBtn.style.cssText = `padding:6px 16px;font-size:0.82rem;`;
+  saveBtn.onclick = async () => {
+    const newText = textarea.value.trim();
+    if (!newText) return;
+    await db.collection('posts').doc(id).update({ text: newText });
+    textEl.textContent   = newText;
+    textEl.style.display = '';
+    wrapper.remove();
+    showToast('yap updated 🌼');
+  };
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = 'cancel';
+  cancelBtn.style.cssText = `padding:6px 16px;font-size:0.82rem;background:rgba(255,255,255,0.8);color:#7a4a2a;border:1.5px solid #e0c8b0;`;
+  cancelBtn.onclick = () => { textEl.style.display = ''; wrapper.remove(); };
+
+  btnRow.appendChild(saveBtn);
+  btnRow.appendChild(cancelBtn);
+  wrapper.appendChild(textarea);
+  wrapper.appendChild(btnRow);
+  textEl.parentNode.insertBefore(wrapper, textEl.nextSibling);
+  textarea.focus();
+}
+
+// ==========================
 // SOFT REACTIONS
 // ==========================
 const REACTIONS = ['🌸','🤍','✨','☕','🌙'];
@@ -367,14 +431,11 @@ function loadReactions(postId, postAuthorUid, postAuthorUsername) {
   const user = auth.currentUser;
   if (!user) return;
 
-  const reactionsRef = db.collection('posts').doc(postId).collection('reactions');
-
-  reactionsRef.onSnapshot(snap => {
+  db.collection('posts').doc(postId).collection('reactions').onSnapshot(snap => {
     const container = document.getElementById(`reactions-${postId}`);
     if (!container) return;
 
-    // tally counts and find current user's reaction
-    const counts  = {};
+    const counts = {};
     let myReaction = null;
     snap.forEach(d => {
       const r = d.data().emoji;
@@ -383,30 +444,19 @@ function loadReactions(postId, postAuthorUid, postAuthorUsername) {
     });
 
     container.innerHTML = '';
-
     REACTIONS.forEach(emoji => {
-      const count   = counts[emoji] || 0;
+      const count    = counts[emoji] || 0;
       const isPicked = myReaction === emoji;
-
       const btn = document.createElement('button');
       btn.style.cssText = `
         background:${isPicked ? 'rgba(200,133,92,0.15)' : 'rgba(255,255,255,0.7)'};
         border:1.5px solid ${isPicked ? '#c8855c' : '#f0dfd0'};
-        border-radius:24px;
-        padding:3px 8px;
-        font-size:0.75rem;
-        cursor:pointer;
-        display:inline-flex;
-        align-items:center;
-        gap:4px;
-        font-family:'DM Sans',sans-serif;
-        color:${isPicked ? '#7a4a2a' : '#c8a888'};
-        transition:0.15s;
-        box-shadow:none;
+        border-radius:24px;padding:3px 8px;font-size:0.75rem;
+        cursor:pointer;display:inline-flex;align-items:center;gap:4px;
+        font-family:'DM Sans',sans-serif;color:${isPicked ? '#7a4a2a' : '#c8a888'};
+        transition:0.15s;box-shadow:none;
       `;
       btn.innerHTML = `${emoji}${count > 0 ? `<span style="font-size:0.75rem;">${count}</span>` : ''}`;
-      btn.title = emoji;
-
       btn.onclick = () => toggleReaction(postId, emoji, myReaction, postAuthorUid, postAuthorUsername);
       container.appendChild(btn);
     });
@@ -416,28 +466,11 @@ function loadReactions(postId, postAuthorUid, postAuthorUsername) {
 async function toggleReaction(postId, emoji, currentReaction, postAuthorUid, postAuthorUsername) {
   const user = auth.currentUser;
   if (!user) return;
-
   const ref = db.collection('posts').doc(postId).collection('reactions').doc(user.uid);
-
-  if (currentReaction === emoji) {
-    // same emoji — remove reaction
-    await ref.delete();
-    return;
-  }
-
-  // get my username for notification
+  if (currentReaction === emoji) { await ref.delete(); return; }
   const myDoc      = await db.collection('users').doc(user.uid).get();
   const myUsername = myDoc.exists ? (myDoc.data().username || 'someone') : 'someone';
-
-  // set new reaction
-  await ref.set({
-    emoji,
-    uid: user.uid,
-    username: myUsername,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-
-  // notify post author (not if reacting to own post)
+  await ref.set({ emoji, uid: user.uid, username: myUsername, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
   if (user.uid !== postAuthorUid) {
     await db.collection('users').doc(postAuthorUid).collection('notifications').add({
       text: `@${myUsername} reacted ${emoji} to your yap 🌸`,
@@ -453,10 +486,8 @@ function deletePost(id) {
   const user = auth.currentUser;
   if (!user) return;
   if (!confirm('delete this yap? 🌸')) return;
-
   db.collection('posts').doc(id).delete().then(() => {
-    const card = document.getElementById(`postCard-${id}`);
-    if (card) card.remove();
+    document.getElementById(`postCard-${id}`)?.remove();
   }).catch(err => console.error('Delete error:', err));
 }
 
@@ -541,19 +572,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  document.querySelectorAll('.filters button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const filter = btn.dataset.filter;
-      document.querySelectorAll('.card[data-category]').forEach(card => {
-        card.style.display = (filter === 'all' || card.dataset.category === filter) ? '' : 'none';
-      });
-    });
-  });
-
   const randomBtn = document.getElementById('randomBtn');
   if (randomBtn) {
     randomBtn.addEventListener('click', () => {
-      const cards = document.querySelectorAll('.card[data-category]');
+      const cards = document.querySelectorAll('.post-card');
       if (!cards.length) return;
       const r = cards[Math.floor(Math.random() * cards.length)];
       r.scrollIntoView({ behavior: 'smooth' });
@@ -714,19 +736,14 @@ async function searchFriends(query) {
 
     for (const doc of snap.docs) {
       if (doc.id === user.uid) continue;
-
       const data     = doc.data();
       const username = data.username || 'solite member';
-      const isFriend = (await db.collection('users').doc(user.uid)
-        .collection('friends').doc(doc.id).get()).exists;
-
+      const isFriend = (await db.collection('users').doc(user.uid).collection('friends').doc(doc.id).get()).exists;
       const div = document.createElement('div');
       div.style.cssText = `display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:12px;margin-bottom:6px;background:rgba(255,255,255,0.7);border:1px solid #f0dfd0;`;
       div.innerHTML = `
         <div style="display:flex;align-items:center;gap:10px;">
-          <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#c8855c,#a05530);display:flex;align-items:center;justify-content:center;color:white;font-family:'Caveat',cursive;font-size:1.1rem;flex-shrink:0;">
-            ${username.charAt(0).toUpperCase()}
-          </div>
+          <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#c8855c,#a05530);display:flex;align-items:center;justify-content:center;color:white;font-family:'Caveat',cursive;font-size:1.1rem;flex-shrink:0;">${username.charAt(0).toUpperCase()}</div>
           <span style="font-family:'Caveat',cursive;font-size:1.1rem;color:#5c3317;">@${username}</span>
         </div>
         <button id="addBtn-${doc.id}" onclick="addFriend('${doc.id}', '${username}')"
@@ -753,30 +770,17 @@ async function addFriend(targetUid, targetUsername) {
   const myUsername = myDoc.exists ? (myDoc.data().username || 'someone') : 'someone';
 
   await Promise.all([
-    db.collection('users').doc(user.uid).collection('friends').doc(targetUid).set({
-      uid: targetUid, username: targetUsername,
-      addedAt: firebase.firestore.FieldValue.serverTimestamp()
-    }),
-    db.collection('users').doc(targetUid).collection('friends').doc(user.uid).set({
-      uid: user.uid, username: myUsername,
-      addedAt: firebase.firestore.FieldValue.serverTimestamp()
-    }),
+    db.collection('users').doc(user.uid).collection('friends').doc(targetUid).set({ uid: targetUid, username: targetUsername, addedAt: firebase.firestore.FieldValue.serverTimestamp() }),
+    db.collection('users').doc(targetUid).collection('friends').doc(user.uid).set({ uid: user.uid, username: myUsername, addedAt: firebase.firestore.FieldValue.serverTimestamp() }),
     db.collection('users').doc(user.uid).collection('following').doc(targetUid).set({ uid: targetUid }),
     db.collection('users').doc(targetUid).collection('following').doc(user.uid).set({ uid: user.uid }),
-    db.collection('users').doc(targetUid).collection('notifications').add({
-      text: `@${myUsername} added you as a friend 🌼`,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    })
+    db.collection('users').doc(targetUid).collection('notifications').add({ text: `@${myUsername} added you as a friend 🌼`, createdAt: firebase.firestore.FieldValue.serverTimestamp() })
   ]);
 
   if (btn) {
-    btn.textContent      = 'friends ✓';
-    btn.disabled         = false;
-    btn.style.background = 'rgba(255,255,255,0.8)';
-    btn.style.color      = '#7a4a2a';
-    btn.style.border     = '1.5px solid #e0c8b0';
+    btn.textContent = 'friends ✓'; btn.disabled = false;
+    btn.style.background = 'rgba(255,255,255,0.8)'; btn.style.color = '#7a4a2a'; btn.style.border = '1.5px solid #e0c8b0';
   }
-
   showToast(`you and @${targetUsername} are now friends 🌼`);
 }
 
@@ -790,17 +794,14 @@ function showToast(msg) {
 
 function quickSearch(term) {
   const input = document.getElementById('searchInput');
-  if (input) {
-    input.value = term;
-    input.dispatchEvent(new Event('input'));
-  }
+  if (input) { input.value = term; input.dispatchEvent(new Event('input')); }
 }
 
 function quickFilter(filter) {
   document.querySelectorAll('.mood-chip').forEach(b =>
     b.classList.toggle('active', b.textContent.toLowerCase().includes(filter) || filter === 'all')
   );
-  document.querySelectorAll('.card[data-category]').forEach(card => {
+  document.querySelectorAll('.post-card').forEach(card => {
     card.style.display = (filter === 'all' || card.dataset.category === filter) ? '' : 'none';
   });
   toggleMenuPanel();
@@ -850,18 +851,14 @@ function togglePostMenu(id) {
 async function applyBlockMuteToCard(card, authorUid) {
   const user = auth.currentUser;
   if (!user || user.uid === authorUid) return;
-
   const [blockedDoc, mutedDoc] = await Promise.all([
     db.collection('users').doc(user.uid).collection('blocked').doc(authorUid).get(),
     db.collection('users').doc(user.uid).collection('muted').doc(authorUid).get()
   ]);
-
   if (mutedDoc.exists) {
     card.style.display = 'none';
   } else if (blockedDoc.exists) {
-    card.style.opacity       = '0.35';
-    card.style.filter        = 'grayscale(0.6)';
-    card.style.pointerEvents = 'none';
+    card.style.opacity = '0.35'; card.style.filter = 'grayscale(0.6)'; card.style.pointerEvents = 'none';
     const notice = document.createElement('div');
     notice.style.cssText = `font-family:'Caveat',cursive;font-size:0.88rem;color:#c8a888;text-align:center;padding:4px 0 8px;`;
     notice.textContent = "you've blocked this person";
@@ -873,9 +870,7 @@ async function muteFromPost(targetUid, username, postId) {
   document.getElementById(`postMenu-${postId}`)?.style && (document.getElementById(`postMenu-${postId}`).style.display = 'none');
   const user = auth.currentUser;
   if (!user) return;
-  await db.collection('users').doc(user.uid).collection('muted').doc(targetUid).set({
-    uid: targetUid, mutedAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
+  await db.collection('users').doc(user.uid).collection('muted').doc(targetUid).set({ uid: targetUid, mutedAt: firebase.firestore.FieldValue.serverTimestamp() });
   document.querySelectorAll('.post-card').forEach(card => {
     if (card.querySelector(`a[href="profile.html?uid=${targetUid}"]`)) card.style.display = 'none';
   });
@@ -887,19 +882,14 @@ async function blockFromPost(targetUid, username, postId) {
   const user = auth.currentUser;
   if (!user) return;
   if (!confirm(`block @${username}? their posts will appear greyed out.`)) return;
-
-  await db.collection('users').doc(user.uid).collection('blocked').doc(targetUid).set({
-    uid: targetUid, blockedAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
+  await db.collection('users').doc(user.uid).collection('blocked').doc(targetUid).set({ uid: targetUid, blockedAt: firebase.firestore.FieldValue.serverTimestamp() });
   await Promise.all([
     db.collection('users').doc(user.uid).collection('friends').doc(targetUid).delete(),
     db.collection('users').doc(targetUid).collection('friends').doc(user.uid).delete()
   ]);
   document.querySelectorAll('.post-card').forEach(card => {
     if (card.querySelector(`a[href="profile.html?uid=${targetUid}"]`)) {
-      card.style.opacity = '0.35';
-      card.style.filter  = 'grayscale(0.6)';
-      card.style.pointerEvents = 'none';
+      card.style.opacity = '0.35'; card.style.filter = 'grayscale(0.6)'; card.style.pointerEvents = 'none';
     }
   });
   showToast(`@${username} blocked 🌸`);
@@ -913,266 +903,136 @@ async function reportFromPost(targetUid, username, postId) {
   const reason  = prompt(`report @${username}\n\nReason:\n${reasons.map((r,i) => `${i+1}. ${r}`).join('\n')}\n\nType the number:`);
   if (!reason) return;
   const picked = reasons[parseInt(reason) - 1] || 'something else';
-  await db.collection('reports').add({
-    reportedUid: targetUid, reportedUsername: username,
-    reporterUid: user.uid, reason: picked,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
+  await db.collection('reports').add({ reportedUid: targetUid, reportedUsername: username, reporterUid: user.uid, reason: picked, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
   showToast('report sent 🌸 thank you for keeping solite safe');
 }
+
+// ==========================
+// ONBOARDING
+// ==========================
 function showOnboarding(user, existingUsername) {
   if (document.getElementById('onboardingOverlay')) return;
- 
   const overlay = document.createElement('div');
   overlay.id = 'onboardingOverlay';
-  overlay.style.cssText = `
-    position:fixed;inset:0;
-    background:linear-gradient(160deg,#fdf5ec,#f5e8d8);
-    display:flex;align-items:center;justify-content:center;
-    z-index:999999;
-    overflow:hidden;
-  `;
- 
+  overlay.style.cssText = `position:fixed;inset:0;background:linear-gradient(160deg,#fdf5ec,#f5e8d8);display:flex;align-items:center;justify-content:center;z-index:999999;overflow:hidden;`;
   overlay.innerHTML = `
-    <!-- floating daisies -->
     <div id="ob-daisies" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
- 
-    <!-- card -->
-    <div style="
-      background:rgba(255,255,255,0.88);
-      border-radius:28px;
-      padding:40px 32px;
-      max-width:420px;
-      width:92%;
-      text-align:center;
-      border:1px solid rgba(210,175,140,0.35);
-      box-shadow:0 20px 60px rgba(100,50,10,0.14);
-      position:relative;
-      z-index:1;
-    ">
-      <!-- step dots -->
+    <div style="background:rgba(255,255,255,0.88);border-radius:28px;padding:40px 32px;max-width:420px;width:92%;text-align:center;border:1px solid rgba(210,175,140,0.35);box-shadow:0 20px 60px rgba(100,50,10,0.14);position:relative;z-index:1;">
       <div id="ob-dots" style="display:flex;justify-content:center;gap:8px;margin-bottom:28px;">
-        <div class="ob-dot active"></div>
-        <div class="ob-dot"></div>
-        <div class="ob-dot"></div>
+        <div class="ob-dot active"></div><div class="ob-dot"></div><div class="ob-dot"></div>
       </div>
- 
-      <!-- step content -->
       <div id="ob-content"></div>
- 
-      <!-- nav -->
       <div id="ob-nav" style="margin-top:28px;display:flex;flex-direction:column;gap:10px;"></div>
     </div>
- 
     <style>
-      .ob-dot {
-        width:8px;height:8px;border-radius:50%;
-        background:#e0c8b0;transition:0.3s;
-      }
-      .ob-dot.active {
-        background:#c8855c;transform:scale(1.2);
-      }
-      .ob-step-title {
-        font-family:'Playfair Display',serif;
-        font-style:italic;font-size:1.6rem;
-        color:#5c3317;margin-bottom:12px;
-        line-height:1.3;
-      }
-      .ob-step-body {
-        font-family:'Caveat',cursive;
-        font-size:1.1rem;color:#b07858;
-        line-height:1.7;margin-bottom:6px;
-      }
-      .ob-btn-primary {
-        width:100%;padding:13px;
-        background:linear-gradient(135deg,#c8855c,#a05530);
-        color:white;border:none;border-radius:24px;
-        font-family:'DM Sans',sans-serif;font-size:0.95rem;
-        cursor:pointer;transition:0.2s;
-      }
-      .ob-btn-primary:hover { transform:scale(1.02); box-shadow:0 6px 18px rgba(160,85,48,0.28); }
-      .ob-btn-secondary {
-        width:100%;padding:11px;
-        background:rgba(255,255,255,0.8);color:#7a4a2a;
-        border:1.5px solid #e0c8b0;border-radius:24px;
-        font-family:'DM Sans',sans-serif;font-size:0.88rem;
-        cursor:pointer;transition:0.2s;
-      }
-      .ob-btn-secondary:hover { background:#fdf0e6; }
-      .ob-input {
-        width:100%;padding:12px 16px;
-        border-radius:14px;border:1.5px solid #e0c8b0;
-        font-family:'DM Sans',sans-serif;font-size:0.95rem;
-        color:#3d2010;background:rgba(255,255,255,0.85);
-        box-sizing:border-box;margin-bottom:8px;
-        text-align:center;letter-spacing:0.02em;
-      }
-      .ob-input:focus { outline:none;border-color:#c8855c;box-shadow:0 0 8px rgba(200,133,92,0.2); }
-      .ob-feature {
-        display:flex;align-items:center;gap:12px;
-        background:rgba(255,255,255,0.7);
-        border:1px solid #f0dfd0;border-radius:14px;
-        padding:10px 14px;margin-bottom:8px;
-        text-align:left;
-      }
-      .ob-feature-icon { font-size:1.3rem;flex-shrink:0; }
-      .ob-feature-text { font-family:'DM Sans',sans-serif;font-size:0.85rem;color:#7a4a2a;line-height:1.4; }
-      .ob-feature-text strong { color:#5c3317;display:block;font-size:0.88rem; }
+      .ob-dot{width:8px;height:8px;border-radius:50%;background:#e0c8b0;transition:0.3s;}
+      .ob-dot.active{background:#c8855c;transform:scale(1.2);}
+      .ob-step-title{font-family:'Playfair Display',serif;font-style:italic;font-size:1.6rem;color:#5c3317;margin-bottom:12px;line-height:1.3;}
+      .ob-step-body{font-family:'Caveat',cursive;font-size:1.1rem;color:#b07858;line-height:1.7;margin-bottom:6px;}
+      .ob-btn-primary{width:100%;padding:13px;background:linear-gradient(135deg,#c8855c,#a05530);color:white;border:none;border-radius:24px;font-family:'DM Sans',sans-serif;font-size:0.95rem;cursor:pointer;transition:0.2s;}
+      .ob-btn-primary:hover{transform:scale(1.02);}
+      .ob-btn-secondary{width:100%;padding:11px;background:rgba(255,255,255,0.8);color:#7a4a2a;border:1.5px solid #e0c8b0;border-radius:24px;font-family:'DM Sans',sans-serif;font-size:0.88rem;cursor:pointer;}
+      .ob-input{width:100%;padding:12px 16px;border-radius:14px;border:1.5px solid #e0c8b0;font-family:'DM Sans',sans-serif;font-size:0.95rem;color:#3d2010;background:rgba(255,255,255,0.85);box-sizing:border-box;margin-bottom:8px;text-align:center;}
+      .ob-input:focus{outline:none;border-color:#c8855c;}
+      .ob-feature{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.7);border:1px solid #f0dfd0;border-radius:14px;padding:10px 14px;margin-bottom:8px;text-align:left;}
+      .ob-feature-icon{font-size:1.3rem;flex-shrink:0;}
+      .ob-feature-text{font-family:'DM Sans',sans-serif;font-size:0.85rem;color:#7a4a2a;line-height:1.4;}
+      .ob-feature-text strong{color:#5c3317;display:block;font-size:0.88rem;}
     </style>
   `;
- 
   document.body.appendChild(overlay);
   spawnObDaisies();
   renderObStep(1, user, existingUsername);
 }
- 
+
 function renderObStep(step, user, existingUsername) {
   const content = document.getElementById('ob-content');
   const nav     = document.getElementById('ob-nav');
   const dots    = document.querySelectorAll('.ob-dot');
- 
   dots.forEach((d, i) => d.classList.toggle('active', i === step - 1));
- 
-  content.style.opacity = '0';
-  content.style.transform = 'translateY(10px)';
-  content.style.transition = 'opacity 0.3s,transform 0.3s';
- 
-  setTimeout(() => {
-    content.style.opacity = '1';
-    content.style.transform = 'translateY(0)';
-  }, 50);
- 
+  content.style.cssText = 'opacity:0;transform:translateY(10px);transition:opacity 0.3s,transform 0.3s;';
+  setTimeout(() => { content.style.opacity = '1'; content.style.transform = 'translateY(0)'; }, 50);
   nav.innerHTML = '';
- 
+
   if (step === 1) {
     content.innerHTML = `
       <div style="font-size:2.4rem;margin-bottom:16px;">🌼</div>
       <div class="ob-step-title">you found your way here</div>
-      <div class="ob-step-body">
-        Solite is a small, quiet corner of the internet —<br>
-        no ads, no algorithm, no noise.<br><br>
-        just people who get the vibe,<br>
-        sharing little pieces of their world.
-      </div>
-      <div style="font-family:'Caveat',cursive;font-size:0.9rem;color:#c8a888;margin-top:10px;">
-        you were invited here. that means something. ✦
-      </div>
+      <div class="ob-step-body">Solite is a small, quiet corner of the internet —<br>no ads, no algorithm, no noise.<br><br>just people who get the vibe,<br>sharing little pieces of their world.</div>
+      <div style="font-family:'Caveat',cursive;font-size:0.9rem;color:#c8a888;margin-top:10px;">you were invited here. that means something. ✦</div>
     `;
     const btn = document.createElement('button');
-    btn.className   = 'ob-btn-primary';
-    btn.textContent = 'i\'m ready 🌸';
-    btn.onclick     = () => renderObStep(2, user, existingUsername);
+    btn.className = 'ob-btn-primary'; btn.textContent = "i'm ready 🌸";
+    btn.onclick = () => renderObStep(2, user, existingUsername);
     nav.appendChild(btn);
- 
+
   } else if (step === 2) {
     content.innerHTML = `
       <div style="font-size:2rem;margin-bottom:12px;">✦</div>
       <div class="ob-step-title">what shall we call you?</div>
-      <div class="ob-step-body" style="margin-bottom:18px;">
-        pick a name, a nickname, anything —<br>
-        this is how people will know you here.
-      </div>
-      <input class="ob-input" id="ob-username-input"
-        placeholder="your name here..."
-        value="${existingUsername || ''}"
-        maxlength="30">
-      <div style="font-size:0.75rem;color:#c8a888;font-family:'DM Sans',sans-serif;">
-        letters, numbers, underscores only
-      </div>
+      <div class="ob-step-body" style="margin-bottom:18px;">pick a name, a nickname, anything —<br>this is how people will know you here.</div>
+      <input class="ob-input" id="ob-username-input" placeholder="your name here..." value="${existingUsername || ''}" maxlength="30">
+      <div style="font-size:0.75rem;color:#c8a888;font-family:'DM Sans',sans-serif;">letters, numbers, underscores only</div>
     `;
     setTimeout(() => document.getElementById('ob-username-input')?.focus(), 100);
- 
     const btn = document.createElement('button');
-    btn.className   = 'ob-btn-primary';
-    btn.textContent = 'that\'s me ✨';
-    btn.onclick     = async () => {
-      const raw      = document.getElementById('ob-username-input').value.trim();
+    btn.className = 'ob-btn-primary'; btn.textContent = "that's me ✨";
+    btn.onclick = async () => {
+      const raw = document.getElementById('ob-username-input').value.trim();
       const username = raw.replace(/[^a-zA-Z0-9_.]/g, '') || 'solite_friend';
-      await db.collection('users').doc(user.uid).set({
-        username, usernameLower: username.toLowerCase()
-      }, { merge: true });
+      await db.collection('users').doc(user.uid).set({ username, usernameLower: username.toLowerCase() }, { merge: true });
       renderProfileBox(username);
       renderObStep(3, user, username);
     };
     nav.appendChild(btn);
- 
     const skip = document.createElement('button');
-    skip.className   = 'ob-btn-secondary';
-    skip.textContent = 'decide later';
-    skip.onclick     = () => renderObStep(3, user, existingUsername || 'solite_friend');
+    skip.className = 'ob-btn-secondary'; skip.textContent = 'decide later';
+    skip.onclick = () => renderObStep(3, user, existingUsername || 'solite_friend');
     nav.appendChild(skip);
- 
+
   } else if (step === 3) {
     content.innerHTML = `
       <div style="font-size:1.8rem;margin-bottom:14px;">🌸</div>
       <div class="ob-step-title">your corner is ready</div>
       <div class="ob-step-body" style="margin-bottom:18px;">here's what lives here —</div>
-      <div class="ob-feature">
-        <div class="ob-feature-icon">💬</div>
-        <div class="ob-feature-text"><strong>yap</strong>share thoughts, songs, books, café finds</div>
-      </div>
-      <div class="ob-feature">
-        <div class="ob-feature-icon">🤍</div>
-        <div class="ob-feature-text"><strong>find friends</strong>search by username and connect quietly</div>
-      </div>
-      <div class="ob-feature">
-        <div class="ob-feature-icon">🎧</div>
-        <div class="ob-feature-text"><strong>music & stories & cafés</strong>little collections, all yours</div>
-      </div>
-      <div class="ob-feature">
-        <div class="ob-feature-icon">🌼</div>
-        <div class="ob-feature-text"><strong>stay small</strong>this place will never have more than 1000 people</div>
-      </div>
+      <div class="ob-feature"><div class="ob-feature-icon">💬</div><div class="ob-feature-text"><strong>yap</strong>share thoughts, songs, books, café finds</div></div>
+      <div class="ob-feature"><div class="ob-feature-icon">🤍</div><div class="ob-feature-text"><strong>find friends</strong>search by username and connect quietly</div></div>
+      <div class="ob-feature"><div class="ob-feature-icon">🎧</div><div class="ob-feature-text"><strong>music & stories & cafés</strong>little collections, all yours</div></div>
+      <div class="ob-feature"><div class="ob-feature-icon">🌼</div><div class="ob-feature-text"><strong>stay small</strong>this place will never have more than 1000 people</div></div>
     `;
- 
     const btn = document.createElement('button');
-    btn.className   = 'ob-btn-primary';
-    btn.textContent = 'start exploring 🌼';
-    btn.onclick     = async () => {
-      // mark as onboarded
+    btn.className = 'ob-btn-primary'; btn.textContent = 'start exploring 🌼';
+    btn.onclick = async () => {
       await db.collection('users').doc(user.uid).set({ onboarded: true }, { merge: true });
-      const overlay = document.getElementById('onboardingOverlay');
-      if (overlay) {
-        overlay.style.opacity    = '0';
-        overlay.style.transition = 'opacity 0.5s';
-        setTimeout(() => overlay.remove(), 500);
-      }
+      const ov = document.getElementById('onboardingOverlay');
+      if (ov) { ov.style.opacity = '0'; ov.style.transition = 'opacity 0.5s'; setTimeout(() => ov.remove(), 500); }
     };
     nav.appendChild(btn);
   }
 }
- 
+
 function spawnObDaisies() {
   const container = document.getElementById('ob-daisies');
   if (!container) return;
-  const count = 16;
   function makeDaisy(size) {
     const ns = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(ns, 'svg');
-    svg.setAttribute('width', size * 2.6); svg.setAttribute('height', size * 2.6);
-    svg.setAttribute('viewBox', '-20 -20 40 40');
+    svg.setAttribute('width', size*2.6); svg.setAttribute('height', size*2.6); svg.setAttribute('viewBox', '-20 -20 40 40');
     [0,45,90,135,180,225,270,315].forEach(a => {
       const el = document.createElementNS(ns, 'ellipse');
-      el.setAttribute('cx', 0); el.setAttribute('cy', -size);
-      el.setAttribute('rx', size * 0.44); el.setAttribute('ry', size * 0.77);
-      el.setAttribute('fill', '#fffef0'); el.setAttribute('transform', `rotate(${a})`);
-      svg.appendChild(el);
+      el.setAttribute('cx',0); el.setAttribute('cy',-size); el.setAttribute('rx',size*0.44); el.setAttribute('ry',size*0.77);
+      el.setAttribute('fill','#fffef0'); el.setAttribute('transform',`rotate(${a})`); svg.appendChild(el);
     });
-    const c1 = document.createElementNS(ns, 'circle');
-    c1.setAttribute('r', size * 0.55); c1.setAttribute('fill', '#f5d76e'); svg.appendChild(c1);
-    const c2 = document.createElementNS(ns, 'circle');
-    c2.setAttribute('r', size * 0.28); c2.setAttribute('fill', '#e8c94a'); svg.appendChild(c2);
+    const c1 = document.createElementNS(ns,'circle'); c1.setAttribute('r',size*0.55); c1.setAttribute('fill','#f5d76e'); svg.appendChild(c1);
+    const c2 = document.createElementNS(ns,'circle'); c2.setAttribute('r',size*0.28); c2.setAttribute('fill','#e8c94a'); svg.appendChild(c2);
     return svg;
   }
-  for (let i = 0; i < count; i++) {
-    const wrapper = document.createElement('div');
-    wrapper.classList.add('daisy');
-    const size   = 5 + Math.random() * 8;
-    const opHigh = (0.2 + Math.random() * 0.3).toFixed(2);
-    const opLow  = (parseFloat(opHigh) * 0.3).toFixed(2);
-    wrapper.style.cssText = `position:absolute;left:${(Math.random()*100).toFixed(1)}%;top:${(Math.random()*100).toFixed(1)}%;--op-high:${opHigh};--op-low:${opLow};animation-duration:${(3+Math.random()*5).toFixed(1)}s;animation-delay:-${(Math.random()*6).toFixed(1)}s;`;
-    wrapper.appendChild(makeDaisy(size));
-    container.appendChild(wrapper);
+  for (let i = 0; i < 16; i++) {
+    const w = document.createElement('div'); w.classList.add('daisy');
+    const size = 5+Math.random()*8;
+    const opHigh = (0.2+Math.random()*0.3).toFixed(2);
+    const opLow  = (parseFloat(opHigh)*0.3).toFixed(2);
+    w.style.cssText = `position:absolute;left:${(Math.random()*100).toFixed(1)}%;top:${(Math.random()*100).toFixed(1)}%;--op-high:${opHigh};--op-low:${opLow};animation-duration:${(3+Math.random()*5).toFixed(1)}s;animation-delay:-${(Math.random()*6).toFixed(1)}s;`;
+    w.appendChild(makeDaisy(size)); container.appendChild(w);
   }
 }
- 
