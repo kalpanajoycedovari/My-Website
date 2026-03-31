@@ -48,10 +48,15 @@ auth.onAuthStateChanged(user => {
 // ==========================
 function loadUserProfile(user) {
   db.collection('users').doc(user.uid).get().then(doc => {
-    const data = doc.exists ? doc.data() : {};
-    const username = data.username || null;
-    if (!username) { showUsernamePrompt(user); return; }
-    renderProfileBox(username);
+    const data       = doc.exists ? doc.data() : {};
+    const username   = data.username  || null;
+    const onboarded  = data.onboarded || false;
+ 
+    if (!onboarded) {
+      showOnboarding(user, username);
+    } else {
+      renderProfileBox(username);
+    }
   });
 }
 
@@ -915,3 +920,259 @@ async function reportFromPost(targetUid, username, postId) {
   });
   showToast('report sent 🌸 thank you for keeping solite safe');
 }
+function showOnboarding(user, existingUsername) {
+  if (document.getElementById('onboardingOverlay')) return;
+ 
+  const overlay = document.createElement('div');
+  overlay.id = 'onboardingOverlay';
+  overlay.style.cssText = `
+    position:fixed;inset:0;
+    background:linear-gradient(160deg,#fdf5ec,#f5e8d8);
+    display:flex;align-items:center;justify-content:center;
+    z-index:999999;
+    overflow:hidden;
+  `;
+ 
+  overlay.innerHTML = `
+    <!-- floating daisies -->
+    <div id="ob-daisies" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
+ 
+    <!-- card -->
+    <div style="
+      background:rgba(255,255,255,0.88);
+      border-radius:28px;
+      padding:40px 32px;
+      max-width:420px;
+      width:92%;
+      text-align:center;
+      border:1px solid rgba(210,175,140,0.35);
+      box-shadow:0 20px 60px rgba(100,50,10,0.14);
+      position:relative;
+      z-index:1;
+    ">
+      <!-- step dots -->
+      <div id="ob-dots" style="display:flex;justify-content:center;gap:8px;margin-bottom:28px;">
+        <div class="ob-dot active"></div>
+        <div class="ob-dot"></div>
+        <div class="ob-dot"></div>
+      </div>
+ 
+      <!-- step content -->
+      <div id="ob-content"></div>
+ 
+      <!-- nav -->
+      <div id="ob-nav" style="margin-top:28px;display:flex;flex-direction:column;gap:10px;"></div>
+    </div>
+ 
+    <style>
+      .ob-dot {
+        width:8px;height:8px;border-radius:50%;
+        background:#e0c8b0;transition:0.3s;
+      }
+      .ob-dot.active {
+        background:#c8855c;transform:scale(1.2);
+      }
+      .ob-step-title {
+        font-family:'Playfair Display',serif;
+        font-style:italic;font-size:1.6rem;
+        color:#5c3317;margin-bottom:12px;
+        line-height:1.3;
+      }
+      .ob-step-body {
+        font-family:'Caveat',cursive;
+        font-size:1.1rem;color:#b07858;
+        line-height:1.7;margin-bottom:6px;
+      }
+      .ob-btn-primary {
+        width:100%;padding:13px;
+        background:linear-gradient(135deg,#c8855c,#a05530);
+        color:white;border:none;border-radius:24px;
+        font-family:'DM Sans',sans-serif;font-size:0.95rem;
+        cursor:pointer;transition:0.2s;
+      }
+      .ob-btn-primary:hover { transform:scale(1.02); box-shadow:0 6px 18px rgba(160,85,48,0.28); }
+      .ob-btn-secondary {
+        width:100%;padding:11px;
+        background:rgba(255,255,255,0.8);color:#7a4a2a;
+        border:1.5px solid #e0c8b0;border-radius:24px;
+        font-family:'DM Sans',sans-serif;font-size:0.88rem;
+        cursor:pointer;transition:0.2s;
+      }
+      .ob-btn-secondary:hover { background:#fdf0e6; }
+      .ob-input {
+        width:100%;padding:12px 16px;
+        border-radius:14px;border:1.5px solid #e0c8b0;
+        font-family:'DM Sans',sans-serif;font-size:0.95rem;
+        color:#3d2010;background:rgba(255,255,255,0.85);
+        box-sizing:border-box;margin-bottom:8px;
+        text-align:center;letter-spacing:0.02em;
+      }
+      .ob-input:focus { outline:none;border-color:#c8855c;box-shadow:0 0 8px rgba(200,133,92,0.2); }
+      .ob-feature {
+        display:flex;align-items:center;gap:12px;
+        background:rgba(255,255,255,0.7);
+        border:1px solid #f0dfd0;border-radius:14px;
+        padding:10px 14px;margin-bottom:8px;
+        text-align:left;
+      }
+      .ob-feature-icon { font-size:1.3rem;flex-shrink:0; }
+      .ob-feature-text { font-family:'DM Sans',sans-serif;font-size:0.85rem;color:#7a4a2a;line-height:1.4; }
+      .ob-feature-text strong { color:#5c3317;display:block;font-size:0.88rem; }
+    </style>
+  `;
+ 
+  document.body.appendChild(overlay);
+  spawnObDaisies();
+  renderObStep(1, user, existingUsername);
+}
+ 
+function renderObStep(step, user, existingUsername) {
+  const content = document.getElementById('ob-content');
+  const nav     = document.getElementById('ob-nav');
+  const dots    = document.querySelectorAll('.ob-dot');
+ 
+  dots.forEach((d, i) => d.classList.toggle('active', i === step - 1));
+ 
+  content.style.opacity = '0';
+  content.style.transform = 'translateY(10px)';
+  content.style.transition = 'opacity 0.3s,transform 0.3s';
+ 
+  setTimeout(() => {
+    content.style.opacity = '1';
+    content.style.transform = 'translateY(0)';
+  }, 50);
+ 
+  nav.innerHTML = '';
+ 
+  if (step === 1) {
+    content.innerHTML = `
+      <div style="font-size:2.4rem;margin-bottom:16px;">🌼</div>
+      <div class="ob-step-title">you found your way here</div>
+      <div class="ob-step-body">
+        Solite is a small, quiet corner of the internet —<br>
+        no ads, no algorithm, no noise.<br><br>
+        just people who get the vibe,<br>
+        sharing little pieces of their world.
+      </div>
+      <div style="font-family:'Caveat',cursive;font-size:0.9rem;color:#c8a888;margin-top:10px;">
+        you were invited here. that means something. ✦
+      </div>
+    `;
+    const btn = document.createElement('button');
+    btn.className   = 'ob-btn-primary';
+    btn.textContent = 'i\'m ready 🌸';
+    btn.onclick     = () => renderObStep(2, user, existingUsername);
+    nav.appendChild(btn);
+ 
+  } else if (step === 2) {
+    content.innerHTML = `
+      <div style="font-size:2rem;margin-bottom:12px;">✦</div>
+      <div class="ob-step-title">what shall we call you?</div>
+      <div class="ob-step-body" style="margin-bottom:18px;">
+        pick a name, a nickname, anything —<br>
+        this is how people will know you here.
+      </div>
+      <input class="ob-input" id="ob-username-input"
+        placeholder="your name here..."
+        value="${existingUsername || ''}"
+        maxlength="30">
+      <div style="font-size:0.75rem;color:#c8a888;font-family:'DM Sans',sans-serif;">
+        letters, numbers, underscores only
+      </div>
+    `;
+    setTimeout(() => document.getElementById('ob-username-input')?.focus(), 100);
+ 
+    const btn = document.createElement('button');
+    btn.className   = 'ob-btn-primary';
+    btn.textContent = 'that\'s me ✨';
+    btn.onclick     = async () => {
+      const raw      = document.getElementById('ob-username-input').value.trim();
+      const username = raw.replace(/[^a-zA-Z0-9_.]/g, '') || 'solite_friend';
+      await db.collection('users').doc(user.uid).set({
+        username, usernameLower: username.toLowerCase()
+      }, { merge: true });
+      renderProfileBox(username);
+      renderObStep(3, user, username);
+    };
+    nav.appendChild(btn);
+ 
+    const skip = document.createElement('button');
+    skip.className   = 'ob-btn-secondary';
+    skip.textContent = 'decide later';
+    skip.onclick     = () => renderObStep(3, user, existingUsername || 'solite_friend');
+    nav.appendChild(skip);
+ 
+  } else if (step === 3) {
+    content.innerHTML = `
+      <div style="font-size:1.8rem;margin-bottom:14px;">🌸</div>
+      <div class="ob-step-title">your corner is ready</div>
+      <div class="ob-step-body" style="margin-bottom:18px;">here's what lives here —</div>
+      <div class="ob-feature">
+        <div class="ob-feature-icon">💬</div>
+        <div class="ob-feature-text"><strong>yap</strong>share thoughts, songs, books, café finds</div>
+      </div>
+      <div class="ob-feature">
+        <div class="ob-feature-icon">🤍</div>
+        <div class="ob-feature-text"><strong>find friends</strong>search by username and connect quietly</div>
+      </div>
+      <div class="ob-feature">
+        <div class="ob-feature-icon">🎧</div>
+        <div class="ob-feature-text"><strong>music & stories & cafés</strong>little collections, all yours</div>
+      </div>
+      <div class="ob-feature">
+        <div class="ob-feature-icon">🌼</div>
+        <div class="ob-feature-text"><strong>stay small</strong>this place will never have more than 1000 people</div>
+      </div>
+    `;
+ 
+    const btn = document.createElement('button');
+    btn.className   = 'ob-btn-primary';
+    btn.textContent = 'start exploring 🌼';
+    btn.onclick     = async () => {
+      // mark as onboarded
+      await db.collection('users').doc(user.uid).set({ onboarded: true }, { merge: true });
+      const overlay = document.getElementById('onboardingOverlay');
+      if (overlay) {
+        overlay.style.opacity    = '0';
+        overlay.style.transition = 'opacity 0.5s';
+        setTimeout(() => overlay.remove(), 500);
+      }
+    };
+    nav.appendChild(btn);
+  }
+}
+ 
+function spawnObDaisies() {
+  const container = document.getElementById('ob-daisies');
+  if (!container) return;
+  const count = 16;
+  function makeDaisy(size) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('width', size * 2.6); svg.setAttribute('height', size * 2.6);
+    svg.setAttribute('viewBox', '-20 -20 40 40');
+    [0,45,90,135,180,225,270,315].forEach(a => {
+      const el = document.createElementNS(ns, 'ellipse');
+      el.setAttribute('cx', 0); el.setAttribute('cy', -size);
+      el.setAttribute('rx', size * 0.44); el.setAttribute('ry', size * 0.77);
+      el.setAttribute('fill', '#fffef0'); el.setAttribute('transform', `rotate(${a})`);
+      svg.appendChild(el);
+    });
+    const c1 = document.createElementNS(ns, 'circle');
+    c1.setAttribute('r', size * 0.55); c1.setAttribute('fill', '#f5d76e'); svg.appendChild(c1);
+    const c2 = document.createElementNS(ns, 'circle');
+    c2.setAttribute('r', size * 0.28); c2.setAttribute('fill', '#e8c94a'); svg.appendChild(c2);
+    return svg;
+  }
+  for (let i = 0; i < count; i++) {
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('daisy');
+    const size   = 5 + Math.random() * 8;
+    const opHigh = (0.2 + Math.random() * 0.3).toFixed(2);
+    const opLow  = (parseFloat(opHigh) * 0.3).toFixed(2);
+    wrapper.style.cssText = `position:absolute;left:${(Math.random()*100).toFixed(1)}%;top:${(Math.random()*100).toFixed(1)}%;--op-high:${opHigh};--op-low:${opLow};animation-duration:${(3+Math.random()*5).toFixed(1)}s;animation-delay:-${(Math.random()*6).toFixed(1)}s;`;
+    wrapper.appendChild(makeDaisy(size));
+    container.appendChild(wrapper);
+  }
+}
+ 
