@@ -1,47 +1,303 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Notifications</title>
+  <title>Notifications — Solite</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&family=Caveat:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
   <script src="firebase-config.js"></script>
+  <script>firebase.initializeApp(firebaseConfig);</script>
 
-  <script>
-    firebase.initializeApp(firebaseConfig);
-  </script>
+  <style>
+    .notif-wrap {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
 
+    .notif-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.2rem;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .notif-title {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 1.4rem;
+      color: #5c3317;
+    }
+
+    .mark-read-btn {
+      background: rgba(255,255,255,0.8);
+      border: 1.5px solid #e0c8b0;
+      color: #7a4a2a;
+      padding: 6px 16px;
+      border-radius: 24px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: 0.2s;
+    }
+    .mark-read-btn:hover {
+      background: #fdf0e6;
+      border-color: #c8855c;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .notif-card {
+      background: rgba(255,255,255,0.88);
+      border-radius: 16px;
+      padding: 14px 18px;
+      margin-bottom: 10px;
+      border: 1px solid rgba(210,175,140,0.3);
+      box-shadow: 0 4px 14px rgba(120,70,30,0.07);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: 0.2s;
+      animation: fadeUp 0.4s ease forwards;
+      opacity: 0;
+    }
+
+    .notif-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 22px rgba(120,70,30,0.12);
+    }
+
+    .notif-card.unread {
+      background: rgba(253,240,230,0.95);
+      border-color: rgba(200,133,92,0.3);
+    }
+
+    .notif-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #f5d76e, #e8c94a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .notif-text {
+      flex: 1;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      color: #5c3317;
+      line-height: 1.5;
+    }
+
+    .notif-time {
+      font-family: 'Caveat', cursive;
+      font-size: 0.85rem;
+      color: #c8a888;
+      flex-shrink: 0;
+    }
+
+    .unread-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #c8855c;
+      flex-shrink: 0;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      font-family: 'Caveat', cursive;
+      color: #b07858;
+      font-size: 1.3rem;
+    }
+
+    .empty-state span {
+      display: block;
+      font-size: 1rem;
+      margin-top: 6px;
+      color: #c8a888;
+    }
+
+    .notif-section-label {
+      font-family: 'Caveat', cursive;
+      font-size: 0.9rem;
+      color: #c8a888;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin: 16px 0 8px;
+    }
+  </style>
 </head>
-<body>
 
-<h2>🔔 Notifications</h2>
-<div id="n"></div>
+<body>
+<div id="daisy-bg"></div>
+
+<header class="top">
+  <h1>🔔 Notifications</h1>
+  <p>"little notes from your corner"</p>
+  <nav style="margin-top:10px;">
+    <a href="index.html" style="color:#5c3317;text-decoration:none;font-size:0.9rem;font-family:'DM Sans',sans-serif;">← back home</a>
+  </nav>
+</header>
+
+<div class="notif-wrap">
+  <div class="notif-top-row">
+    <div class="notif-title">what's new 🌸</div>
+    <button class="mark-read-btn" onclick="markAllRead()">mark all as read ✓</button>
+  </div>
+
+  <div id="notifList">
+    <div class="empty-state">loading... 🌼</div>
+  </div>
+</div>
 
 <script>
-firebase.auth().onAuthStateChanged(user => {
-  if (!user) {
-    window.location.href = "login.html";
-    return;
-  }
+const db = firebase.firestore();
 
-  firebase.firestore()
-    .collection("users")
-    .doc(user.uid)
-    .collection("notifications")
-    .onSnapshot(s => {
-      if (s.empty) {
-        document.getElementById("n").innerHTML = "<p>No notifications yet 🌸</p>";
-        return;
+function getIcon(text) {
+  if (text.includes('friend'))   return '🌼';
+  if (text.includes('follow'))   return '🤍';
+  if (text.includes('comment'))  return '💬';
+  if (text.includes('liked') || text.includes('heart')) return '❤️';
+  if (text.includes('message') || text.includes('note')) return '💌';
+  return '✦';
+}
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  const now  = Date.now();
+  const then = ts.toMillis ? ts.toMillis() : ts;
+  const diff = Math.floor((now - then) / 1000);
+  if (diff < 60)   return 'just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
+firebase.auth().onAuthStateChanged(user => {
+  if (!user) { window.location.href = 'login.html'; return; }
+
+  const ref = db.collection('users').doc(user.uid).collection('notifications');
+
+  ref.orderBy('createdAt', 'desc').onSnapshot(snap => {
+    const list = document.getElementById('notifList');
+
+    if (snap.empty) {
+      list.innerHTML = `
+        <div class="empty-state">
+          no notifications yet 🌸
+          <span>when someone adds you or interacts, it'll show up here</span>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = '';
+    let delay = 0;
+
+    snap.forEach(doc => {
+      const d    = doc.data();
+      const read = d.read === true;
+
+      const card = document.createElement('div');
+      card.className = `notif-card ${read ? '' : 'unread'}`;
+      card.style.animationDelay = `${delay}s`;
+
+      card.innerHTML = `
+        <div class="notif-icon">${getIcon(d.text || '')}</div>
+        <div class="notif-text">${d.text || ''}</div>
+        <div class="notif-time">${timeAgo(d.createdAt)}</div>
+        ${!read ? '<div class="unread-dot"></div>' : ''}
+      `;
+
+      // mark as read on click
+      if (!read) {
+        card.style.cursor = 'pointer';
+        card.onclick = () => {
+          ref.doc(doc.id).update({ read: true });
+        };
       }
-      let html = "";
-      s.forEach(d => html += `<p>${d.data().text}</p>`);
-      document.getElementById("n").innerHTML = html;
+
+      list.appendChild(card);
+      delay += 0.05;
     });
+  });
 });
+
+function markAllRead() {
+  const user = firebase.auth().currentUser;
+  if (!user) return;
+  const ref = db.collection('users').doc(user.uid).collection('notifications');
+  ref.where('read', '==', false).get().then(snap => {
+    const batch = db.batch();
+    snap.forEach(doc => batch.update(doc.ref, { read: true }));
+    batch.commit();
+  });
+  // also catch ones without a read field
+  ref.get().then(snap => {
+    const batch = db.batch();
+    snap.forEach(doc => {
+      if (doc.data().read !== true) batch.update(doc.ref, { read: true });
+    });
+    batch.commit();
+  });
+}
+</script>
+
+<!-- Daisy background -->
+<script>
+(function() {
+  const container = document.getElementById('daisy-bg');
+  const count = 20;
+  function makeDaisy(size) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('width', size * 2.6);
+    svg.setAttribute('height', size * 2.6);
+    svg.setAttribute('viewBox', '-20 -20 40 40');
+    [0,45,90,135,180,225,270,315].forEach(a => {
+      const el = document.createElementNS(ns, 'ellipse');
+      el.setAttribute('cx', 0); el.setAttribute('cy', -size);
+      el.setAttribute('rx', size * 0.44); el.setAttribute('ry', size * 0.77);
+      el.setAttribute('fill', '#fffef0');
+      el.setAttribute('transform', `rotate(${a})`);
+      svg.appendChild(el);
+    });
+    const c1 = document.createElementNS(ns, 'circle');
+    c1.setAttribute('cx', 0); c1.setAttribute('cy', 0);
+    c1.setAttribute('r', size * 0.55); c1.setAttribute('fill', '#f5d76e');
+    svg.appendChild(c1);
+    const c2 = document.createElementNS(ns, 'circle');
+    c2.setAttribute('cx', 0); c2.setAttribute('cy', 0);
+    c2.setAttribute('r', size * 0.28); c2.setAttribute('fill', '#e8c94a');
+    svg.appendChild(c2);
+    return svg;
+  }
+  for (let i = 0; i < count; i++) {
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('daisy');
+    const size   = 5 + Math.random() * 7;
+    const opHigh = (0.25 + Math.random() * 0.35).toFixed(2);
+    const opLow  = (parseFloat(opHigh) * 0.3).toFixed(2);
+    wrapper.style.cssText = `left:${(Math.random()*100).toFixed(1)}%;top:${(Math.random()*100).toFixed(1)}%;--op-high:${opHigh};--op-low:${opLow};animation-duration:${(3+Math.random()*5).toFixed(1)}s;animation-delay:-${(Math.random()*6).toFixed(1)}s;`;
+    const svg = makeDaisy(size);
+    svg.style.animationDuration = `${(2+Math.random()*4).toFixed(1)}s`;
+    svg.style.animationDelay    = `-${(Math.random()*6).toFixed(1)}s`;
+    wrapper.appendChild(svg);
+    container.appendChild(wrapper);
+  }
+})();
 </script>
 
 </body>
