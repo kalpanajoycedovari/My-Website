@@ -389,7 +389,7 @@ function loadReactions(postId, postAuthorUid, postAuthorUsername) {
         border:1.5px solid ${isPicked ? '#c8855c' : '#f0dfd0'};
         border-radius:24px;
         padding:3px 8px;
-        font-size:0.88rem;
+        font-size:0.75rem;
         cursor:pointer;
         display:inline-flex;
         align-items:center;
