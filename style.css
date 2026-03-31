@@ -683,14 +683,13 @@ button:active { transform: scale(0.96); }
 /* ===================== */
 /* POSTS CONTAINER */
 /* ===================== */
+
 #postsContainer {
-  column-count: 3;
+  column-count: 2;
   column-gap: 1.2rem;
   padding: 1rem;
-  .post-card {
-  min-width: 280px;
 }
-}
+@media (max-width: 500px) { #postsContainer { column-count: 1; } }
 @media (max-width: 900px) { #postsContainer { column-count: 2; } }
 @media (max-width: 500px) { #postsContainer { column-count: 1; } }
 
