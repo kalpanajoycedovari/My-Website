@@ -325,10 +325,12 @@ function renderPost(doc, container) {
   if (post.category) card.dataset.category = post.category;
 
   const gradient = seeded && post.category ? CATEGORY_GRADIENTS[post.category] : null;
+  if (gradient) {
+    card.style.background = gradient.bg;
+    card.style.border = '0.5px solid rgba(180,120,70,0.2)';
+  }
   const headerHtml = gradient ? `
-    <div style="height:72px;background:${gradient.bg};border-radius:12px 12px 0 0;margin:-16px -16px 14px -16px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;">
-      ${gradient.emoji}
-    </div>` : '';
+    <div style="font-size:1.6rem;margin-bottom:8px;">${gradient.emoji}</div>` : '';
 
   const extraLabel = seeded && post.extra ? `
     <div style="font-family:'Playfair Display',serif;font-style:italic;font-size:0.95rem;color:#5c3317;margin-bottom:6px;">${post.extra}</div>` : '';
@@ -354,7 +356,7 @@ function renderPost(doc, container) {
       </div>
     </div>
     ${extraLabel}
-    <p id="postText-${id}" style="color:#3d2010;font-size:0.92rem;line-height:1.65;">${post.text}</p>
+   <p id="postText-${id}" style="color:${gradient && post.category === 'gloomy' ? '#f0e8f8' : '#3d2010'};font-size:0.92rem;line-height:1.65;">${post.text}</p>
     ${post.imageUrl ? `<img src="${post.imageUrl}" style="width:100%;border-radius:12px;margin-top:8px;">` : ''}
     ${post.lyrics ? `<div style="font-family:'Caveat',cursive;font-size:0.95rem;color:#c8855c;margin-top:6px;font-style:italic;">"${post.lyrics}"</div>` : ''}
     <div id="reactions-${id}" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:12px;"></div>
