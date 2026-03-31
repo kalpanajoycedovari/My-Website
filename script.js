@@ -342,8 +342,8 @@ function renderPost(doc, container) {
       <div style="display:flex;align-items:center;gap:6px;">
         <span style="font-size:0.75rem;color:#c8a888;font-family:'DM Sans',sans-serif;">${post.type || ''}</span>
         ${isOwn
-          ? `<button onclick="startEditPost('${id}')" style="background:none;border:none;color:${gradient && post.category === 'gloomy' ? '#d4b8e8' : '#c8a888'};font-size:0.82rem;padding:2px 4px;cursor:pointer;box-shadow:none;" title="edit">✏️</button>
-             <button onclick="deletePost('${id}')" style="background:none;border:none;color:${gradient && post.category === 'gloomy' ? '#d4b8e8' : '#c8a888'};font-size:0.82rem;padding:2px 4px;cursor:pointer;box-shadow:none;" title="delete">✕</button>`
+          ? `<button onclick="startEditPost('${id}')" style="background:none;border:none;color:${gradient ? (post.category === 'gloomy' ? '#d4b8e8' : '#5c3317') : '#c8a888'};font-size:0.82rem;padding:2px 4px;cursor:pointer;box-shadow:none;" title="edit">✏️</button>
+             <button onclick="deletePost('${id}')" style="background:none;border:none;color:${gradient ? (post.category === 'gloomy' ? '#d4b8e8' : '#5c3317') : '#c8a888'};font-size:0.82rem;padding:2px 4px;cursor:pointer;box-shadow:none;" title="delete">✕</button>`
           : `<div style="position:relative;display:inline-block;">
                <button onclick="togglePostMenu('${id}')" style="background:none;border:none;color:#c8a888;font-size:1.1rem;padding:2px 6px;cursor:pointer;box-shadow:none;line-height:1;" title="more">⋯</button>
                <div id="postMenu-${id}" style="display:none;position:absolute;right:0;top:24px;background:rgba(255,252,248,0.98);border-radius:14px;box-shadow:0 8px 24px rgba(120,70,30,0.14);border:1px solid rgba(210,175,140,0.4);min-width:150px;z-index:999;overflow:hidden;">
