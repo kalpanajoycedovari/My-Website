@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Solite — Seed Cards</title>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="firebase-config.js"></script>
+  <script>firebase.initializeApp(firebaseConfig);</script>
+  <style>
+    body { font-family: sans-serif; padding: 40px; background: #fdf5ec; color: #5c3317; }
+    button { padding: 14px 28px; background: #c8855c; color: white; border: none; border-radius: 12px; font-size: 1rem; cursor: pointer; margin-top: 20px; }
+    #log { margin-top: 20px; font-size: 0.88rem; color: #7a4a2a; line-height: 2; }
+  </style>
+</head>
+<body>
+  <h2>🌼 Solite Card Seeder</h2>
+  <p>This will add the 12 static mood cards as real posts in Firestore under @joy.<br>Run this <strong>once only</strong> then delete this file from your repo.</p>
+  <button onclick="seedCards()">seed cards ✨</button>
+  <div id="log"></div>
+
+<script>
+const db  = firebase.firestore();
+const UID = 'yD9rsgZgWJZqbHLLfN4odwwrOUG2';
+const USERNAME = 'joy';
+
+const cards = [
+  {
+    text: "for when you want to disappear into another world entirely — there's a kind of magic in getting completely lost in someone else's story.",
+    type: '📖 Book',
+    extra: 'lost in a book',
+    lyrics: 'highly recommend',
+    category: 'gloomy'
+  },
+  {
+    text: "today felt soft and slow, like honey dripping from a spoon on a sunday morning. some days are just made for being still.",
+    type: '💬 Yap',
+    extra: "today's journal",
+    lyrics: '',
+    category: 'nostalgic'
+  },
+  {
+    text: "quiet corner, warm light, the smell of espresso — there's a café I keep going back to. it feels like a pause from everything.",
+    type: '☕ Café',
+    extra: 'favourite café',
+    lyrics: '',
+    category: 'soft'
+  },
+  {
+    text: "Until I Found You — feels like autumn rain on a window you're watching from the inside. warm and a little melancholy all at once.",
+    type: '🎧 Song',
+    extra: 'Until I Found You',
+    lyrics: 'feels like autumn rain',
+    category: 'soft'
+  },
+  {
+    text: "cozy, a little melancholy, nostalgic for something you can't name. today's vibe is that specific feeling of missing a time you can't quite place.",
+    type: '💬 Yap',
+    extra: 'daily vibe',
+    lyrics: '',
+    category: 'nostalgic'
+  },
+  {
+    text: "it's 2am and everything feels bigger than it probably is. the night has a way of making thoughts louder. you're not alone in this.",
+    type: '💬 Yap',
+    extra: 'late night thoughts',
+    lyrics: "you're not alone",
+    category: 'gloomy'
+  },
+  {
+    text: "songs for slow mornings and warm cups of something. 12 songs that feel like golden hour light through your window.",
+    type: '🎧 Song',
+    extra: 'sunday playlist',
+    lyrics: 'songs for slow mornings',
+    category: 'soft'
+  },
+  {
+    text: "I keep thinking about the version of myself from three years ago — what she knew, what she didn't, what she was still figuring out.",
+    type: '💬 Yap',
+    extra: 'a letter to no one',
+    lyrics: '',
+    category: 'nostalgic'
+  },
+  {
+    text: "tea, a blanket, and pretending the outside world doesn't exist. rain on the window. this is the ritual.",
+    type: '💬 Yap',
+    extra: 'rainy day ritual',
+    lyrics: '',
+    category: 'gloomy'
+  },
+  {
+    text: "finding the perfect song at the perfect moment. sunlight through curtains. the smell of something baking. collect them all — the small joys.",
+    type: '💬 Yap',
+    extra: 'small joys',
+    lyrics: 'collect them all',
+    category: 'soft'
+  },
+  {
+    text: "grainy, warm, imperfect — just like the memories they hold. there's something about film photos that digital will never quite capture.",
+    type: '💬 Yap',
+    extra: 'film photos',
+    lyrics: '',
+    category: 'nostalgic'
+  },
+  {
+    text: "that one song you play when you need to feel something. you know the one. everyone has one. put it on.",
+    type: '🎧 Song',
+    extra: 'currently on repeat',
+    lyrics: 'you know the one',
+    category: 'gloomy'
+  }
+];
+
+async function seedCards() {
+  const log = document.getElementById('log');
+  log.innerHTML = 'starting... 🌼<br>';
+
+  for (const card of cards) {
+    await db.collection('posts').add({
+      text:      card.text,
+      type:      card.type,
+      extra:     card.extra,
+      lyrics:    card.lyrics,
+      imageUrl:  '',
+      uid:       UID,
+      username:  USERNAME,
+      likes:     [],
+      category:  card.category,
+      isSeeded:  true,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    log.innerHTML += `✅ added: ${card.extra}<br>`;
+    await new Promise(r => setTimeout(r, 300));
+  }
+
+  log.innerHTML += '<br>🌸 all done! now remove the static cards from index.html and delete this file from your repo.';
+}
+</script>
+</body>
+</html>
