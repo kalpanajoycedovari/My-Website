@@ -617,6 +617,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+function quickFilter(filter) {
+  document.querySelectorAll('.mood-chip').forEach(b =>
+    b.classList.toggle('active', b.textContent.toLowerCase().includes(filter) || filter === 'all')
+  );
+  document.querySelectorAll('.card[data-category], .post-card[data-category]').forEach(card => {
+    card.style.display = (filter === 'all' || card.dataset.category === filter) ? '' : 'none';
+  });
+  toggleMenuPanel();
+}
+
 // ==========================
 // LOGOUT
 // ==========================
