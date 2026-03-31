@@ -305,16 +305,27 @@ function renderPost(doc, container) {
   const user  = auth.currentUser;
   const liked = user && post.likes && post.likes.includes(user.uid);
   const isOwn = user && user.uid === post.uid;
-
+ 
   const card = document.createElement('div');
   card.className = 'post-card';
   card.id = `postCard-${id}`;
+ 
   card.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
       <a href="profile.html?uid=${post.uid}" style="font-family:'Caveat',cursive;font-size:1.1rem;color:#5c3317;text-decoration:none;">@${post.username || 'anonymous'}</a>
-      <div style="display:flex;align-items:center;gap:8px;">
+      <div style="display:flex;align-items:center;gap:6px;">
         <span style="font-size:0.75rem;color:#c8a888;font-family:'DM Sans',sans-serif;">${post.type || ''}</span>
-        ${isOwn ? `<button onclick="deletePost('${id}')" style="background:none;border:none;color:#c8a888;font-size:0.8rem;padding:2px 6px;cursor:pointer;box-shadow:none;" title="delete">✕</button>` : ''}
+        ${isOwn
+          ? `<button onclick="deletePost('${id}')" style="background:none;border:none;color:#c8a888;font-size:0.8rem;padding:2px 6px;cursor:pointer;box-shadow:none;" title="delete">✕</button>`
+          : `<div style="position:relative;display:inline-block;">
+               <button onclick="togglePostMenu('${id}')" style="background:none;border:none;color:#c8a888;font-size:1.1rem;padding:2px 6px;cursor:pointer;box-shadow:none;line-height:1;" title="more">⋯</button>
+               <div id="postMenu-${id}" style="display:none;position:absolute;right:0;top:24px;background:rgba(255,252,248,0.98);border-radius:14px;box-shadow:0 8px 24px rgba(120,70,30,0.14);border:1px solid rgba(210,175,140,0.4);min-width:150px;z-index:999;overflow:hidden;">
+                 <div onclick="muteFromPost('${post.uid}','${post.username || 'anonymous'}','${id}')" style="padding:10px 16px;font-size:0.85rem;color:#7a4a2a;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:8px;" onmouseover="this.style.background='#fdf0e6'" onmouseout="this.style.background=''">🔇 mute @${post.username || 'anonymous'}</div>
+                 <div onclick="blockFromPost('${post.uid}','${post.username || 'anonymous'}','${id}')" style="padding:10px 16px;font-size:0.85rem;color:#c07060;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:8px;border-top:1px solid #f5ede0;" onmouseover="this.style.background='#fff0ec'" onmouseout="this.style.background=''">🚫 block @${post.username || 'anonymous'}</div>
+                 <div onclick="reportFromPost('${post.uid}','${post.username || 'anonymous'}','${id}')" style="padding:10px 16px;font-size:0.85rem;color:#c07060;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:8px;border-top:1px solid #f5ede0;" onmouseover="this.style.background='#fff0ec'" onmouseout="this.style.background=''">⚑ report</div>
+               </div>
+             </div>`
+        }
       </div>
     </div>
     <p style="color:#3d2010;font-size:0.92rem;line-height:1.65;">${post.text}</p>
@@ -335,10 +346,13 @@ function renderPost(doc, container) {
       </div>
     </div>
   `;
+ 
   container.appendChild(card);
   loadComments(id);
+ 
+  // apply block/mute styling after render
+  applyBlockMuteToCard(card, post.uid);
 }
-
 // ==========================
 // DELETE POST
 // ==========================
@@ -727,4 +741,109 @@ function watchNotifBadge(user) {
         link.appendChild(badge);
       }
     });
+}
+// ============================================================
+// PASTE THIS BLOCK 2 — add these new functions anywhere in script.js
+// (e.g. right before the closing of the file)
+// ============================================================
+ 
+// close post menus when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('[id^="postMenu-"]') && !e.target.closest('button[onclick^="togglePostMenu"]')) {
+    document.querySelectorAll('[id^="postMenu-"]').forEach(m => m.style.display = 'none');
+  }
+});
+ 
+function togglePostMenu(id) {
+  const menu = document.getElementById(`postMenu-${id}`);
+  if (!menu) return;
+  const isOpen = menu.style.display === 'block';
+  document.querySelectorAll('[id^="postMenu-"]').forEach(m => m.style.display = 'none');
+  menu.style.display = isOpen ? 'none' : 'block';
+}
+ 
+async function applyBlockMuteToCard(card, authorUid) {
+  const user = auth.currentUser;
+  if (!user || user.uid === authorUid) return;
+ 
+  const [blockedDoc, mutedDoc] = await Promise.all([
+    db.collection('users').doc(user.uid).collection('blocked').doc(authorUid).get(),
+    db.collection('users').doc(user.uid).collection('muted').doc(authorUid).get()
+  ]);
+ 
+  if (mutedDoc.exists) {
+    card.style.display = 'none'; // silently hidden
+  } else if (blockedDoc.exists) {
+    card.style.opacity    = '0.35';
+    card.style.filter     = 'grayscale(0.6)';
+    card.style.pointerEvents = 'none';
+    const notice = document.createElement('div');
+    notice.style.cssText = `font-family:'Caveat',cursive;font-size:0.88rem;color:#c8a888;text-align:center;padding:4px 0 8px;`;
+    notice.textContent   = 'you\'ve blocked this person';
+    card.prepend(notice);
+  }
+}
+ 
+async function muteFromPost(targetUid, username, postId) {
+  document.getElementById(`postMenu-${postId}`)?.style && (document.getElementById(`postMenu-${postId}`).style.display = 'none');
+  const user = auth.currentUser;
+  if (!user) return;
+  await db.collection('users').doc(user.uid).collection('muted').doc(targetUid).set({
+    uid: targetUid, mutedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  // hide their posts
+  document.querySelectorAll('.post-card').forEach(card => {
+    if (card.querySelector(`a[href="profile.html?uid=${targetUid}"]`)) {
+      card.style.display = 'none';
+    }
+  });
+  showToast(`@${username} muted 🌸`);
+}
+ 
+async function blockFromPost(targetUid, username, postId) {
+  document.getElementById(`postMenu-${postId}`)?.style && (document.getElementById(`postMenu-${postId}`).style.display = 'none');
+  const user = auth.currentUser;
+  if (!user) return;
+ 
+  // confirm first
+  if (!confirm(`block @${username}? their posts will appear greyed out.`)) return;
+ 
+  await db.collection('users').doc(user.uid).collection('blocked').doc(targetUid).set({
+    uid: targetUid, blockedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  await Promise.all([
+    db.collection('users').doc(user.uid).collection('friends').doc(targetUid).delete(),
+    db.collection('users').doc(targetUid).collection('friends').doc(user.uid).delete()
+  ]);
+ 
+  // grey out their posts
+  document.querySelectorAll('.post-card').forEach(card => {
+    if (card.querySelector(`a[href="profile.html?uid=${targetUid}"]`)) {
+      card.style.opacity       = '0.35';
+      card.style.filter        = 'grayscale(0.6)';
+      card.style.pointerEvents = 'none';
+    }
+  });
+  showToast(`@${username} blocked 🌸`);
+}
+ 
+async function reportFromPost(targetUid, username, postId) {
+  document.getElementById(`postMenu-${postId}`)?.style && (document.getElementById(`postMenu-${postId}`).style.display = 'none');
+  const user = auth.currentUser;
+  if (!user) return;
+ 
+  const reasons = ['spam or fake account','harassment or bullying','inappropriate content','something else'];
+  const reason  = prompt(`report @${username}\n\nReason:\n${reasons.map((r,i) => `${i+1}. ${r}`).join('\n')}\n\nType the number:`);
+  if (!reason) return;
+  const idx = parseInt(reason) - 1;
+  const picked = reasons[idx] || 'something else';
+ 
+  await db.collection('reports').add({
+    reportedUid: targetUid,
+    reportedUsername: username,
+    reporterUid: user.uid,
+    reason: picked,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  showToast('report sent 🌸 thank you for keeping solite safe');
 }

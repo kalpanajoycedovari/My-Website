@@ -96,6 +96,18 @@
       background: #fdf0e6; color: #7a4a2a;
       border: 1.5px solid #e0c8b0;
     }
+    .action-btn.danger {
+      background: rgba(255,255,255,0.8); color: #c07060;
+      border: 1.5px solid #f0c8b8;
+      font-size: 0.8rem; padding: 6px 14px;
+    }
+    .action-btn.danger:hover { background: #fff0ec; border-color: #c07060; }
+
+    .safety-row {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      margin-top: 10px; padding-top: 10px;
+      border-top: 1px solid #f5ede0;
+    }
 
     .friends-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
     .friend-chip {
@@ -119,6 +131,29 @@
       text-align: center; font-family: 'Caveat', cursive;
       color: #b07858; font-size: 1.1rem; padding: 24px;
     }
+
+    /* Safety confirm overlay */
+    .safety-overlay {
+      position: fixed; inset: 0;
+      background: rgba(60,20,5,0.55);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 99999; backdrop-filter: blur(6px);
+    }
+    .safety-box {
+      background: #fdf5ec; border-radius: 24px; padding: 28px;
+      max-width: 340px; width: 90%; text-align: center;
+      border: 1px solid #e0c8b0;
+      box-shadow: 0 20px 60px rgba(100,50,10,0.2);
+    }
+    .safety-box h3 {
+      font-family: 'Playfair Display', serif; font-style: italic;
+      color: #5c3317; font-size: 1.2rem; margin-bottom: 8px;
+    }
+    .safety-box p {
+      font-family: 'Caveat', cursive; color: #b07858;
+      font-size: 1rem; margin-bottom: 20px; line-height: 1.5;
+    }
+    .safety-box-btns { display: flex; gap: 10px; }
   </style>
 </head>
 
@@ -143,6 +178,8 @@
       <div class="profile-bio" id="displayBio"></div>
       <div class="stat-box" id="statBox"></div>
       <div id="actionBtns" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;"></div>
+      <!-- safety tools row (other profiles only) -->
+      <div id="safetyRow" class="safety-row" style="display:none;"></div>
     </div>
   </div>
 
@@ -227,29 +264,188 @@ async function loadProfile() {
     msgBtn.className   = 'action-btn secondary';
     msgBtn.onclick     = () => window.location.href = 'messages.html';
     btns.appendChild(msgBtn);
+
   } else {
-    const isFriend = (await db.collection('users').doc(currentUser.uid)
-      .collection('friends').doc(profileUid).get()).exists;
+    // check friend + block + mute status
+    const [isFriendDoc, isBlockedDoc, isMutedDoc] = await Promise.all([
+      db.collection('users').doc(currentUser.uid).collection('friends').doc(profileUid).get(),
+      db.collection('users').doc(currentUser.uid).collection('blocked').doc(profileUid).get(),
+      db.collection('users').doc(currentUser.uid).collection('muted').doc(profileUid).get()
+    ]);
 
-    if (isFriend) {
-      const msgBtn = document.createElement('button');
-      msgBtn.textContent = '💌 send a note';
-      msgBtn.className   = 'action-btn primary';
-      msgBtn.onclick     = () => window.location.href = `messages.html?uid=${profileUid}`;
-      btns.appendChild(msgBtn);
+    const isFriend  = isFriendDoc.exists;
+    const isBlocked = isBlockedDoc.exists;
+    const isMuted   = isMutedDoc.exists;
 
-      const friendBadge = document.createElement('span');
-      friendBadge.textContent = 'friends ✓';
-      friendBadge.className   = 'action-btn friend';
-      btns.appendChild(friendBadge);
-    } else {
-      const addBtn = document.createElement('button');
-      addBtn.textContent = '🤍 add friend';
-      addBtn.className   = 'action-btn primary';
-      addBtn.onclick     = () => addFriendFromProfile(profileUid);
-      btns.appendChild(addBtn);
+    if (!isBlocked) {
+      if (isFriend) {
+        const msgBtn = document.createElement('button');
+        msgBtn.textContent = '💌 send a note';
+        msgBtn.className   = 'action-btn primary';
+        msgBtn.onclick     = () => window.location.href = `messages.html?uid=${profileUid}`;
+        btns.appendChild(msgBtn);
+
+        const friendBadge = document.createElement('span');
+        friendBadge.textContent = 'friends ✓';
+        friendBadge.className   = 'action-btn friend';
+        btns.appendChild(friendBadge);
+      } else {
+        const addBtn = document.createElement('button');
+        addBtn.textContent = '🤍 add friend';
+        addBtn.className   = 'action-btn primary';
+        addBtn.onclick     = () => addFriendFromProfile(profileUid);
+        btns.appendChild(addBtn);
+      }
     }
+
+    // safety row
+    const safetyRow = document.getElementById('safetyRow');
+    safetyRow.style.display = 'flex';
+    safetyRow.innerHTML = '';
+
+    // mute button
+    const muteBtn = document.createElement('button');
+    muteBtn.textContent = isMuted ? '🔇 muted' : '🔇 mute';
+    muteBtn.className   = 'action-btn danger';
+    muteBtn.onclick     = () => toggleMute(profileUid, isMuted, username);
+    safetyRow.appendChild(muteBtn);
+
+    // block button
+    const blockBtn = document.createElement('button');
+    blockBtn.textContent = isBlocked ? '🚫 unblock' : '🚫 block';
+    blockBtn.className   = 'action-btn danger';
+    blockBtn.onclick     = () => toggleBlock(profileUid, isBlocked, username);
+    safetyRow.appendChild(blockBtn);
+
+    // report button
+    const reportBtn = document.createElement('button');
+    reportBtn.textContent = '⚑ report';
+    reportBtn.className   = 'action-btn danger';
+    reportBtn.onclick     = () => showReportOverlay(profileUid, username);
+    safetyRow.appendChild(reportBtn);
   }
+}
+
+// ==========================
+// MUTE
+// ==========================
+async function toggleMute(targetUid, isMuted, username) {
+  if (isMuted) {
+    await db.collection('users').doc(currentUser.uid).collection('muted').doc(targetUid).delete();
+    showToast(`@${username} unmuted 🌸`);
+  } else {
+    showSafetyConfirm(
+      `mute @${username}?`,
+      `you won't see their posts in your feed. they won't know. you can unmute anytime.`,
+      async () => {
+        await db.collection('users').doc(currentUser.uid).collection('muted').doc(targetUid).set({
+          uid: targetUid, mutedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showToast(`@${username} muted 🌸`);
+        await loadProfile();
+      }
+    );
+    return;
+  }
+  await loadProfile();
+}
+
+// ==========================
+// BLOCK
+// ==========================
+async function toggleBlock(targetUid, isBlocked, username) {
+  if (isBlocked) {
+    await db.collection('users').doc(currentUser.uid).collection('blocked').doc(targetUid).delete();
+    showToast(`@${username} unblocked 🌸`);
+    await loadProfile();
+  } else {
+    showSafetyConfirm(
+      `block @${username}?`,
+      `their posts will appear greyed out in your feed. they can't message you. you can unblock anytime from their profile.`,
+      async () => {
+        await db.collection('users').doc(currentUser.uid).collection('blocked').doc(targetUid).set({
+          uid: targetUid, blockedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        // also remove from friends if they were one
+        await Promise.all([
+          db.collection('users').doc(currentUser.uid).collection('friends').doc(targetUid).delete(),
+          db.collection('users').doc(targetUid).collection('friends').doc(currentUser.uid).delete()
+        ]);
+        showToast(`@${username} blocked 🌸`);
+        await loadProfile();
+      }
+    );
+  }
+}
+
+// ==========================
+// REPORT
+// ==========================
+function showReportOverlay(targetUid, username) {
+  if (document.getElementById('reportOverlay')) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'reportOverlay';
+  overlay.className = 'safety-overlay';
+  overlay.innerHTML = `
+    <div class="safety-box">
+      <h3>report @${username}</h3>
+      <p>what's the reason?</p>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;text-align:left;">
+        ${['spam or fake account','harassment or bullying','inappropriate content','something else'].map(r => `
+          <label style="display:flex;align-items:center;gap:10px;font-family:'DM Sans',sans-serif;font-size:0.88rem;color:#7a4a2a;cursor:pointer;">
+            <input type="radio" name="reportReason" value="${r}" style="accent-color:#c8855c;width:auto;margin:0;">
+            ${r}
+          </label>
+        `).join('')}
+      </div>
+      <div class="safety-box-btns">
+        <button onclick="submitReport('${targetUid}','${username}')" style="flex:1;padding:10px;">send report</button>
+        <button onclick="document.getElementById('reportOverlay').remove()" style="flex:1;padding:10px;background:rgba(255,255,255,0.8);color:#7a4a2a;border:1.5px solid #e0c8b0;">cancel</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+async function submitReport(targetUid, username) {
+  const reason = document.querySelector('input[name="reportReason"]:checked')?.value;
+  if (!reason) { showToast('please select a reason 🌸'); return; }
+
+  await db.collection('reports').add({
+    reportedUid: targetUid,
+    reportedUsername: username,
+    reporterUid: currentUser.uid,
+    reason,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  document.getElementById('reportOverlay')?.remove();
+  showToast('report sent 🌸 thank you for keeping solite safe');
+}
+
+// ==========================
+// SAFETY CONFIRM DIALOG
+// ==========================
+function showSafetyConfirm(title, message, onConfirm) {
+  if (document.getElementById('safetyConfirmOverlay')) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'safetyConfirmOverlay';
+  overlay.className = 'safety-overlay';
+  overlay.innerHTML = `
+    <div class="safety-box">
+      <h3>${title}</h3>
+      <p>${message}</p>
+      <div class="safety-box-btns">
+        <button id="safetyConfirmBtn" style="flex:1;padding:10px;">yes, confirm</button>
+        <button onclick="document.getElementById('safetyConfirmOverlay').remove()" style="flex:1;padding:10px;background:rgba(255,255,255,0.8);color:#7a4a2a;border:1.5px solid #e0c8b0;">cancel</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById('safetyConfirmBtn').onclick = async () => {
+    overlay.remove();
+    await onConfirm();
+  };
 }
 
 function toggleEditPanel() {
@@ -267,9 +463,9 @@ async function saveProfile() {
 }
 
 async function addFriendFromProfile(targetUid) {
-  const myDoc      = await db.collection('users').doc(currentUser.uid).get();
-  const myUsername = myDoc.exists ? (myDoc.data().username || 'someone') : 'someone';
-  const theirDoc   = await db.collection('users').doc(targetUid).get();
+  const myDoc         = await db.collection('users').doc(currentUser.uid).get();
+  const myUsername    = myDoc.exists ? (myDoc.data().username || 'someone') : 'someone';
+  const theirDoc      = await db.collection('users').doc(targetUid).get();
   const theirUsername = theirDoc.exists ? (theirDoc.data().username || 'someone') : 'someone';
 
   await Promise.all([
@@ -322,15 +518,11 @@ function loadTab(tab) {
     .get()
     .then(snap => {
       list.innerHTML = '';
-      if (snap.empty) {
-        list.innerHTML = `<div class="empty-msg">nothing here yet 🌸</div>`;
-        return;
-      }
+      if (snap.empty) { list.innerHTML = `<div class="empty-msg">nothing here yet 🌸</div>`; return; }
       snap.forEach(doc => {
         const d    = doc.data();
         const card = document.createElement('div');
         card.className = 'post-tab-card';
-
         if (tab === 'posts') {
           card.innerHTML = `
             <p style="color:#3d2010;font-size:0.92rem;line-height:1.6;">${d.text || ''}</p>
@@ -357,25 +549,19 @@ function loadTab(tab) {
         }
         list.appendChild(card);
       });
-    }).catch(() => {
-      list.innerHTML = `<div class="empty-msg">nothing here yet 🌸</div>`;
-    });
+    }).catch(() => { list.innerHTML = `<div class="empty-msg">nothing here yet 🌸</div>`; });
 }
 
 async function loadFriendsTab() {
   const list = document.getElementById('friendsList');
   list.innerHTML = `<p style="color:#c8a888;font-size:0.88rem;text-align:center;padding:10px;">loading...</p>`;
-
   const snap = await db.collection('users').doc(profileUid).collection('friends').get();
-
   if (snap.empty) {
     list.innerHTML = `<div class="empty-msg">no friends yet 🌸<br><span style="font-size:0.9rem;">use the + button to find someone</span></div>`;
     return;
   }
-
   const container = document.createElement('div');
   container.className = 'friends-list';
-
   for (const doc of snap.docs) {
     const data     = doc.data();
     const username = data.username || 'solite member';
@@ -388,7 +574,6 @@ async function loadFriendsTab() {
     `;
     container.appendChild(link);
   }
-
   list.innerHTML = '';
   list.appendChild(container);
 }
@@ -401,15 +586,13 @@ async function loadFriendsTab() {
   function makeDaisy(size) {
     const ns = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(ns, 'svg');
-    svg.setAttribute('width', size * 2.6);
-    svg.setAttribute('height', size * 2.6);
+    svg.setAttribute('width', size * 2.6); svg.setAttribute('height', size * 2.6);
     svg.setAttribute('viewBox', '-20 -20 40 40');
     [0,45,90,135,180,225,270,315].forEach(a => {
       const el = document.createElementNS(ns, 'ellipse');
       el.setAttribute('cx', 0); el.setAttribute('cy', -size);
       el.setAttribute('rx', size * 0.44); el.setAttribute('ry', size * 0.77);
-      el.setAttribute('fill', '#fffef0');
-      el.setAttribute('transform', `rotate(${a})`);
+      el.setAttribute('fill', '#fffef0'); el.setAttribute('transform', `rotate(${a})`);
       svg.appendChild(el);
     });
     const c1 = document.createElementNS(ns, 'circle');
