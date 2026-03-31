@@ -332,7 +332,7 @@ function renderPost(doc, container) {
     ${post.extra && post.type && post.type.includes('Song') ? `<div class="music-card"><p>🎧 ${post.extra}</p></div>` : ''}
 
     <!-- SOFT REACTIONS -->
-    <div id="reactions-${id}" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;"></div>
+    <div id="reactions-${id}" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:12px;"></div>
 
     <div class="post-actions" style="margin-top:10px;">
       <button onclick="toggleComments('${id}')">💬 comments</button>
@@ -388,7 +388,7 @@ function loadReactions(postId, postAuthorUid, postAuthorUsername) {
         background:${isPicked ? 'rgba(200,133,92,0.15)' : 'rgba(255,255,255,0.7)'};
         border:1.5px solid ${isPicked ? '#c8855c' : '#f0dfd0'};
         border-radius:24px;
-        padding:4px 10px;
+        padding:3px 8px;
         font-size:0.88rem;
         cursor:pointer;
         display:inline-flex;
