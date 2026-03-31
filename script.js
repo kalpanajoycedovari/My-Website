@@ -334,7 +334,7 @@ function renderPost(doc, container) {
   }
 
   const headerHtml = gradient ? `<div style="font-size:1.6rem;margin-bottom:8px;">${gradient.emoji}</div>` : '';
-  const extraLabel = seeded && post.extra ? `<div style="font-family:'Playfair Display',serif;font-style:italic;font-size:0.95rem;color:${gradient && post.category === 'gloomy' ? '#c8a8e8' : '#5c3317'};margin-bottom:6px;">${post.extra}</div>` : '';
+  const extraLabel = seeded && post.extra ? `<div data-extra-label="true" style="font-family:'Playfair Display',serif;font-style:italic;font-size:0.95rem;color:${gradient && post.category === 'gloomy' ? '#c8a8e8' : '#5c3317'};margin-bottom:6px;">${post.extra}</div>` : '';
   const btnColor   = gradient ? (post.category === 'gloomy' ? '#d4b8e8' : '#5c3317') : '#c8a888';
   const textColor  = gradient && post.category === 'gloomy' ? '#f0e8f8' : '#3d2010';
   const userColor  = gradient && post.category === 'gloomy' ? '#e8d0f8' : '#5c3317';
@@ -387,17 +387,33 @@ function renderPost(doc, container) {
 // INLINE EDIT POST
 // ==========================
 function startEditPost(id) {
-  const textEl = document.getElementById(`postText-${id}`);
-  if (!textEl) return;
-  const current = textEl.textContent;
+  const textEl  = document.getElementById(`postText-${id}`);
+  const card    = document.getElementById(`postCard-${id}`);
+  if (!textEl || !card) return;
+
+  // find the extra label (italic title) if it exists
+  const extraEl = card.querySelector('[data-extra-label]');
+  const currentText  = textEl.textContent;
+  const currentExtra = extraEl ? extraEl.textContent : '';
+
   textEl.style.display = 'none';
+  if (extraEl) extraEl.style.display = 'none';
 
-  const wrapper  = document.createElement('div');
-  wrapper.id     = `editWrapper-${id}`;
+  const wrapper = document.createElement('div');
+  wrapper.id = `editWrapper-${id}`;
 
-  const textarea = document.createElement('textarea');
-  textarea.value = current;
-  textarea.style.cssText = `width:100%;padding:8px 12px;border-radius:10px;border:1.5px solid #c8855c;font-family:'DM Sans',sans-serif;font-size:0.92rem;color:#3d2010;background:rgba(255,255,255,0.9);resize:vertical;min-height:70px;box-sizing:border-box;margin-top:4px;`;
+  // title input (only show if card has an extra label)
+  const titleHtml = extraEl ? `
+    <input id="editTitle-${id}" value="${currentExtra}"
+      placeholder="title..."
+      style="width:100%;padding:7px 12px;border-radius:10px;border:1.5px solid #c8855c;font-family:'Playfair Display',serif;font-style:italic;font-size:0.95rem;color:#5c3317;background:rgba(255,255,255,0.9);box-sizing:border-box;margin-bottom:6px;">
+  ` : '';
+
+  const textarea = document.createElement('div');
+  textarea.innerHTML = `
+    ${titleHtml}
+    <textarea id="editBody-${id}" style="width:100%;padding:8px 12px;border-radius:10px;border:1.5px solid #c8855c;font-family:'DM Sans',sans-serif;font-size:0.92rem;color:#3d2010;background:rgba(255,255,255,0.9);resize:vertical;min-height:70px;box-sizing:border-box;">${currentText}</textarea>
+  `;
 
   const btnRow = document.createElement('div');
   btnRow.style.cssText = `display:flex;gap:8px;margin-top:8px;`;
@@ -406,11 +422,21 @@ function startEditPost(id) {
   saveBtn.textContent = 'save ✨';
   saveBtn.style.cssText = `padding:6px 16px;font-size:0.82rem;`;
   saveBtn.onclick = async () => {
-    const newText = textarea.value.trim();
+    const newText  = document.getElementById(`editBody-${id}`)?.value.trim();
+    const newExtra = document.getElementById(`editTitle-${id}`)?.value.trim();
     if (!newText) return;
-    await db.collection('posts').doc(id).update({ text: newText });
+
+    const updates = { text: newText };
+    if (newExtra !== undefined) updates.extra = newExtra;
+
+    await db.collection('posts').doc(id).update(updates);
+
     textEl.textContent   = newText;
     textEl.style.display = '';
+    if (extraEl && newExtra !== undefined) {
+      extraEl.textContent  = newExtra;
+      extraEl.style.display = '';
+    }
     wrapper.remove();
     showToast('yap updated 🌼');
   };
@@ -418,16 +444,19 @@ function startEditPost(id) {
   const cancelBtn = document.createElement('button');
   cancelBtn.textContent = 'cancel';
   cancelBtn.style.cssText = `padding:6px 16px;font-size:0.82rem;background:rgba(255,255,255,0.8);color:#7a4a2a;border:1.5px solid #e0c8b0;`;
-  cancelBtn.onclick = () => { textEl.style.display = ''; wrapper.remove(); };
+  cancelBtn.onclick = () => {
+    textEl.style.display = '';
+    if (extraEl) extraEl.style.display = '';
+    wrapper.remove();
+  };
 
   btnRow.appendChild(saveBtn);
   btnRow.appendChild(cancelBtn);
   wrapper.appendChild(textarea);
   wrapper.appendChild(btnRow);
   textEl.parentNode.insertBefore(wrapper, textEl.nextSibling);
-  textarea.focus();
+  document.getElementById(`editBody-${id}`)?.focus();
 }
-
 // ==========================
 // SOFT REACTIONS
 // ==========================
