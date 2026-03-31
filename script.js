@@ -37,6 +37,7 @@ auth.onAuthStateChanged(user => {
     loadUserProfile(user);
     loadPosts();
     injectFloatingBtn();
+    watchNotifBadge(user);
   } else {
     window.location.href = 'login.html';
   }
@@ -709,4 +710,21 @@ function quickFilter(filter) {
     card.style.display = (filter === 'all' || card.dataset.category === filter) ? '' : 'none';
   });
   toggleMenuPanel();
+}
+function watchNotifBadge(user) {
+  db.collection('users').doc(user.uid).collection('notifications')
+    .onSnapshot(snap => {
+      const unread = snap.docs.filter(d => d.data().read !== true).length;
+      const link = document.querySelector('a[href="notifications.html"]');
+      if (!link) return;
+      const existing = link.querySelector('.notif-badge');
+      if (existing) existing.remove();
+      if (unread > 0) {
+        const badge = document.createElement('span');
+        badge.className = 'notif-badge';
+        badge.textContent = unread;
+        badge.style.cssText = `background:#c8855c;color:white;border-radius:50%;font-size:0.65rem;padding:1px 5px;margin-left:4px;font-family:'DM Sans',sans-serif;`;
+        link.appendChild(badge);
+      }
+    });
 }
