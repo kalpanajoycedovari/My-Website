@@ -690,8 +690,7 @@ button:active { transform: scale(0.96); }
   padding: 1rem;
 }
 @media (max-width: 500px) { #postsContainer { column-count: 1; } }
-@media (max-width: 900px) { #postsContainer { column-count: 2; } }
-@media (max-width: 500px) { #postsContainer { column-count: 1; } }
+
 
 /* ===================== */
 /* MUSIC CARD */
