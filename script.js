@@ -32,13 +32,17 @@ function toggleDarkMode() {
 // ==========================
 // AUTH STATE
 // ==========================
+let currentUserId = null; // store uid globally so renderPost always has it
+
 auth.onAuthStateChanged(user => {
   if (user) {
+    currentUserId = user.uid;
     loadUserProfile(user);
     loadPosts();
     injectFloatingBtn();
     watchNotifBadge(user);
   } else {
+    currentUserId = null;
     window.location.href = 'login.html';
   }
 });
@@ -315,8 +319,7 @@ const CATEGORY_GRADIENTS = {
 function renderPost(doc, container) {
   const post   = doc.data();
   const id     = doc.id;
-  const user   = auth.currentUser;
-  const isOwn  = user && user.uid === post.uid;
+  const isOwn  = currentUserId && currentUserId === post.uid; // use global uid
   const seeded = post.isSeeded === true;
 
   const card = document.createElement('div');
@@ -329,23 +332,24 @@ function renderPost(doc, container) {
     card.style.background = gradient.bg;
     card.style.border = '0.5px solid rgba(180,120,70,0.2)';
   }
-  const headerHtml = gradient ? `
-    <div style="font-size:1.6rem;margin-bottom:8px;">${gradient.emoji}</div>` : '';
 
-  const extraLabel = seeded && post.extra ? `
-    <div style="font-family:'Playfair Display',serif;font-style:italic;font-size:0.95rem;color:#5c3317;margin-bottom:6px;">${post.extra}</div>` : '';
+  const headerHtml = gradient ? `<div style="font-size:1.6rem;margin-bottom:8px;">${gradient.emoji}</div>` : '';
+  const extraLabel = seeded && post.extra ? `<div style="font-family:'Playfair Display',serif;font-style:italic;font-size:0.95rem;color:${gradient && post.category === 'gloomy' ? '#c8a8e8' : '#5c3317'};margin-bottom:6px;">${post.extra}</div>` : '';
+  const btnColor   = gradient ? (post.category === 'gloomy' ? '#d4b8e8' : '#5c3317') : '#c8a888';
+  const textColor  = gradient && post.category === 'gloomy' ? '#f0e8f8' : '#3d2010';
+  const userColor  = gradient && post.category === 'gloomy' ? '#e8d0f8' : '#5c3317';
 
   card.innerHTML = `
     ${headerHtml}
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-      <a href="profile.html?uid=${post.uid}" style="font-family:'Caveat',cursive;font-size:1.1rem;color:#5c3317;text-decoration:none;">@${post.username || 'anonymous'}</a>
+      <a href="profile.html?uid=${post.uid}" style="font-family:'Caveat',cursive;font-size:1.1rem;color:${userColor};text-decoration:none;">@${post.username || 'anonymous'}</a>
       <div style="display:flex;align-items:center;gap:6px;">
-        <span style="font-size:0.75rem;color:#c8a888;font-family:'DM Sans',sans-serif;">${post.type || ''}</span>
+        <span style="font-size:0.75rem;color:${btnColor};font-family:'DM Sans',sans-serif;">${post.type || ''}</span>
         ${isOwn
-          ? `<button onclick="startEditPost('${id}')" style="background:none;border:none;color:${gradient ? (post.category === 'gloomy' ? '#d4b8e8' : '#5c3317') : '#c8a888'};font-size:0.82rem;padding:2px 4px;cursor:pointer;box-shadow:none;" title="edit">✏️</button>
-             <button onclick="deletePost('${id}')" style="background:none;border:none;color:${gradient ? (post.category === 'gloomy' ? '#d4b8e8' : '#5c3317') : '#c8a888'};font-size:0.82rem;padding:2px 4px;cursor:pointer;box-shadow:none;" title="delete">✕</button>`
+          ? `<button onclick="startEditPost('${id}')" style="background:none;border:none;color:${btnColor};font-size:0.82rem;padding:2px 4px;cursor:pointer;box-shadow:none;" title="edit">✏️</button>
+             <button onclick="deletePost('${id}')" style="background:none;border:none;color:${btnColor};font-size:0.82rem;padding:2px 4px;cursor:pointer;box-shadow:none;" title="delete">✕</button>`
           : `<div style="position:relative;display:inline-block;">
-               <button onclick="togglePostMenu('${id}')" style="background:none;border:none;color:#c8a888;font-size:1.1rem;padding:2px 6px;cursor:pointer;box-shadow:none;line-height:1;" title="more">⋯</button>
+               <button onclick="togglePostMenu('${id}')" style="background:none;border:none;color:${btnColor};font-size:1.1rem;padding:2px 6px;cursor:pointer;box-shadow:none;line-height:1;" title="more">⋯</button>
                <div id="postMenu-${id}" style="display:none;position:absolute;right:0;top:24px;background:rgba(255,252,248,0.98);border-radius:14px;box-shadow:0 8px 24px rgba(120,70,30,0.14);border:1px solid rgba(210,175,140,0.4);min-width:150px;z-index:999;overflow:hidden;">
                  <div onclick="muteFromPost('${post.uid}','${post.username || 'anonymous'}','${id}')" style="padding:10px 16px;font-size:0.85rem;color:#7a4a2a;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:8px;" onmouseover="this.style.background='#fdf0e6'" onmouseout="this.style.background=''">🔇 mute @${post.username || 'anonymous'}</div>
                  <div onclick="blockFromPost('${post.uid}','${post.username || 'anonymous'}','${id}')" style="padding:10px 16px;font-size:0.85rem;color:#c07060;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:8px;border-top:1px solid #f5ede0;" onmouseover="this.style.background='#fff0ec'" onmouseout="this.style.background=''">🚫 block @${post.username || 'anonymous'}</div>
@@ -356,13 +360,13 @@ function renderPost(doc, container) {
       </div>
     </div>
     ${extraLabel}
-   <p id="postText-${id}" style="color:${gradient && post.category === 'gloomy' ? '#f0e8f8' : '#3d2010'};font-size:0.92rem;line-height:1.65;">${post.text}</p>
+    <p id="postText-${id}" style="color:${textColor};font-size:0.92rem;line-height:1.65;">${post.text}</p>
     ${post.imageUrl ? `<img src="${post.imageUrl}" style="width:100%;border-radius:12px;margin-top:8px;">` : ''}
-    ${post.lyrics ? `<div style="font-family:'Caveat',cursive;font-size:0.95rem;color:#c8855c;margin-top:6px;font-style:italic;">"${post.lyrics}"</div>` : ''}
+    ${post.lyrics ? `<div style="font-family:'Caveat',cursive;font-size:0.95rem;color:${gradient && post.category === 'gloomy' ? '#c8a8e8' : '#c8855c'};margin-top:6px;font-style:italic;">"${post.lyrics}"</div>` : ''}
     <div id="reactions-${id}" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:12px;"></div>
     <div class="post-actions" style="margin-top:10px;">
       <button onclick="toggleComments('${id}')">💬 comments</button>
-      ${user && user.uid !== post.uid ? `<button onclick="followUser('${post.uid}')" style="font-size:0.8rem;padding:5px 12px;">+ follow</button>` : ''}
+      ${!isOwn ? `<button onclick="followUser('${post.uid}')" style="font-size:0.8rem;padding:5px 12px;">+ follow</button>` : ''}
     </div>
     <div id="commentBox-${id}" style="display:none;margin-top:10px;">
       <div id="comments-${id}"></div>
@@ -530,10 +534,9 @@ function loadComments(postId) {
       const container = document.getElementById(`comments-${postId}`);
       if (!container) return;
       container.innerHTML = '';
-      const user = auth.currentUser;
       snapshot.forEach(doc => {
         const c     = doc.data();
-        const isOwn = user && user.uid === c.uid;
+        const isOwn = currentUserId && currentUserId === c.uid;
         const div   = document.createElement('div');
         div.className = 'comment';
         div.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:8px;';
