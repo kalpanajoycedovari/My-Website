@@ -1,76 +1,229 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Saved</title>
+  <title>Saved — Solite</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&family=Caveat:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
   <script src="firebase-config.js"></script>
+  <script>firebase.initializeApp(firebaseConfig);</script>
 
-  <script>
-    firebase.initializeApp(firebaseConfig);
-  </script>
+  <style>
+    .saved-wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
 
+    .saved-grid {
+      column-count: 3;
+      column-gap: 1.2rem;
+    }
+    @media (max-width: 900px) { .saved-grid { column-count: 2; } }
+    @media (max-width: 500px) { .saved-grid { column-count: 1; } }
+
+    .saved-card {
+      break-inside: avoid;
+      background: rgba(255,255,255,0.88);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 1.2rem;
+      border: 1px solid rgba(210,175,140,0.3);
+      box-shadow: 0 4px 16px rgba(120,70,30,0.09);
+      display: inline-block;
+      width: 100%;
+      transition: 0.3s;
+      animation: fadeUp 0.5s ease forwards;
+      opacity: 0;
+    }
+    .saved-card:hover { transform: translateY(-4px); box-shadow: 0 10px 26px rgba(120,70,30,0.14); }
+
+    .saved-card.gloomy { background: linear-gradient(135deg,#2d2438,#3d2e4a); border-color: rgba(255,255,255,0.08); }
+    .saved-card.soft   { background: linear-gradient(135deg,#f5e8d8,#e8d0b8); border-color: rgba(180,120,70,0.2); }
+    .saved-card.nostalgic { background: linear-gradient(135deg,#d8c4a8,#c4a888); border-color: rgba(160,100,50,0.2); }
+
+    .saved-author {
+      font-family: 'Caveat', cursive;
+      font-size: 1rem;
+      margin-bottom: 6px;
+    }
+    .saved-title {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+    }
+    .saved-text {
+      font-size: 0.88rem;
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+    .saved-lyrics {
+      font-family: 'Caveat', cursive;
+      font-size: 0.9rem;
+      font-style: italic;
+      margin-bottom: 10px;
+    }
+    .unsave-btn {
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: inherit;
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: 0.2s;
+    }
+    .unsave-btn:hover { background: rgba(255,255,255,0.35); transform: none; box-shadow: none; }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      font-family: 'Caveat', cursive;
+      color: #b07858;
+      font-size: 1.3rem;
+    }
+    .empty-state span {
+      display: block;
+      font-size: 1rem;
+      color: #c8a888;
+      margin-top: 8px;
+    }
+  </style>
 </head>
 
 <body>
+<div id="daisy-bg"></div>
 
-<h1 style="text-align:center;">❤️ Your Saved Cards</h1>
-<div id="savedContainer" class="masonry"></div>
+<header class="top">
+  <h1>❤️ Saved</h1>
+  <p>"little pieces you wanted to keep"</p>
+  <nav style="margin-top:10px;">
+    <a href="index.html" style="color:#5c3317;text-decoration:none;font-size:0.9rem;font-family:'DM Sans',sans-serif;">← back home</a>
+  </nav>
+</header>
+
+<div class="saved-wrap">
+  <div id="savedGrid" class="saved-grid"></div>
+</div>
 
 <script>
 const db = firebase.firestore();
 
-firebase.auth().onAuthStateChanged(user => {
-  if (!user) {
-    window.location.href = "login.html";
+const CATEGORY_GRADIENTS = {
+  gloomy:    { emoji: '🌙' },
+  soft:      { emoji: '☕' },
+  nostalgic: { emoji: '📷' }
+};
+
+firebase.auth().onAuthStateChanged(async user => {
+  if (!user) { window.location.href = 'login.html'; return; }
+
+  const grid = document.getElementById('savedGrid');
+  grid.innerHTML = `<div style="text-align:center;font-family:'Caveat',cursive;color:#b07858;font-size:1.1rem;padding:30px;">loading your saved posts... 🌼</div>`;
+
+  const savedSnap = await db.collection('users').doc(user.uid).collection('saved').orderBy('savedAt', 'desc').get();
+
+  if (savedSnap.empty) {
+    grid.innerHTML = `
+      <div class="empty-state">
+        nothing saved yet 🌸
+        <span>tap the 🔖 on any post to save it here</span>
+      </div>`;
     return;
   }
 
-  const container = document.getElementById("savedContainer");
+  grid.innerHTML = '';
+  let delay = 0;
 
-  db.collection("users")
-    .doc(user.uid)
-    .collection("saved")
-    .get()
-    .then(snapshot => {
-      if (snapshot.empty) {
-        container.innerHTML = "<p style='text-align:center;'>No saved cards yet 🌸</p>";
-        return;
-      }
+  for (const savedDoc of savedSnap.docs) {
+    const postId = savedDoc.id;
+    const postDoc = await db.collection('posts').doc(postId).get();
 
-      snapshot.forEach(doc => {
-        const data = doc.data();
+    if (!postDoc.exists) {
+      // post was deleted — clean up
+      db.collection('users').doc(user.uid).collection('saved').doc(postId).delete();
+      continue;
+    }
 
-        container.innerHTML += `
-          <div class="card">
-            ${data.image ? `<img src="${data.image}">` : ""}
-            <div class="card-content">
-              <h3>${data.title}</h3>
-              <p>${data.text}</p>
-              <button onclick="deleteCard('${doc.id}')">🗑 remove</button>
-            </div>
-          </div>
-        `;
-      });
-    });
+    const post     = postDoc.data();
+    const category = post.category || null;
+    const gradient = category ? CATEGORY_GRADIENTS[category] : null;
+    const isGloomy = category === 'gloomy';
+
+    const textColor   = isGloomy ? '#f0e8f8' : '#3d2010';
+    const authorColor = isGloomy ? '#e8d0f8' : '#5c3317';
+    const titleColor  = isGloomy ? '#c8a8e8' : '#5c3317';
+    const lyricsColor = isGloomy ? '#c8a8e8' : '#c8855c';
+
+    const card = document.createElement('div');
+    card.className = `saved-card ${category || ''}`;
+    card.style.animationDelay = `${delay}s`;
+
+    card.innerHTML = `
+      ${gradient ? `<div style="font-size:1.4rem;margin-bottom:8px;">${gradient.emoji}</div>` : ''}
+      <div class="saved-author" style="color:${authorColor};">@${post.username || 'anonymous'}</div>
+      ${post.extra ? `<div class="saved-title" style="color:${titleColor};">${post.extra}</div>` : ''}
+      <div class="saved-text" style="color:${textColor};">${post.text || ''}</div>
+      ${post.lyrics ? `<div class="saved-lyrics" style="color:${lyricsColor};">"${post.lyrics}"</div>` : ''}
+      ${post.imageUrl ? `<img src="${post.imageUrl}" style="width:100%;border-radius:10px;margin-bottom:10px;">` : ''}
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;">
+        <a href="index.html" style="font-family:'DM Sans',sans-serif;font-size:0.78rem;color:${isGloomy ? '#c8a8e8' : '#c8a888'};text-decoration:none;">view on feed ↗</a>
+        <button class="unsave-btn" style="color:${textColor};" onclick="unsavePost('${postId}', this)">🔖 unsave</button>
+      </div>
+    `;
+
+    grid.appendChild(card);
+    delay += 0.06;
+  }
 });
 
-function deleteCard(id) {
+async function unsavePost(postId, btn) {
   const user = firebase.auth().currentUser;
   if (!user) return;
-
-  db.collection("users")
-    .doc(user.uid)
-    .collection("saved")
-    .doc(id)
-    .delete()
-    .then(() => location.reload());
+  btn.textContent = 'removing...';
+  await db.collection('users').doc(user.uid).collection('saved').doc(postId).delete();
+  const card = btn.closest('.saved-card');
+  card.style.opacity    = '0';
+  card.style.transform  = 'scale(0.95)';
+  card.style.transition = '0.3s';
+  setTimeout(() => card.remove(), 300);
 }
+</script>
+
+<!-- Daisy background -->
+<script>
+(function() {
+  const container = document.getElementById('daisy-bg');
+  function makeDaisy(size) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('width', size*2.6); svg.setAttribute('height', size*2.6); svg.setAttribute('viewBox', '-20 -20 40 40');
+    [0,45,90,135,180,225,270,315].forEach(a => {
+      const el = document.createElementNS(ns, 'ellipse');
+      el.setAttribute('cx',0); el.setAttribute('cy',-size); el.setAttribute('rx',size*0.44); el.setAttribute('ry',size*0.77);
+      el.setAttribute('fill','#fffef0'); el.setAttribute('transform',`rotate(${a})`); svg.appendChild(el);
+    });
+    const c1 = document.createElementNS(ns,'circle'); c1.setAttribute('r',size*0.55); c1.setAttribute('fill','#f5d76e'); svg.appendChild(c1);
+    const c2 = document.createElementNS(ns,'circle'); c2.setAttribute('r',size*0.28); c2.setAttribute('fill','#e8c94a'); svg.appendChild(c2);
+    return svg;
+  }
+  for (let i = 0; i < 20; i++) {
+    const w = document.createElement('div'); w.classList.add('daisy');
+    const size = 5+Math.random()*7;
+    const opHigh = (0.25+Math.random()*0.35).toFixed(2);
+    const opLow  = (parseFloat(opHigh)*0.3).toFixed(2);
+    w.style.cssText = `left:${(Math.random()*100).toFixed(1)}%;top:${(Math.random()*100).toFixed(1)}%;--op-high:${opHigh};--op-low:${opLow};animation-duration:${(3+Math.random()*5).toFixed(1)}s;animation-delay:-${(Math.random()*6).toFixed(1)}s;`;
+    w.appendChild(makeDaisy(size)); container.appendChild(w);
+  }
+})();
 </script>
 
 </body>

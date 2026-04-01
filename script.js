@@ -366,6 +366,7 @@ function renderPost(doc, container) {
     <div id="reactions-${id}" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:12px;"></div>
     <div class="post-actions" style="margin-top:10px;">
       <button onclick="toggleComments('${id}')">💬 comments</button>
+      <button onclick="toggleSave('${id}')" id="saveBtn-${id}" style="background:none;border:none;color:#c8a888;box-shadow:none;font-size:0.85rem;padding:5px 8px;">🔖</button>
       ${!isOwn ? `<button onclick="followUser('${post.uid}')" style="font-size:0.8rem;padding:5px 12px;">+ follow</button>` : ''}
     </div>
     <div id="commentBox-${id}" style="display:none;margin-top:10px;">
@@ -381,6 +382,7 @@ function renderPost(doc, container) {
   loadComments(id);
   loadReactions(id, post.uid, post.username || 'anonymous');
   applyBlockMuteToCard(card, post.uid);
+   checkSaved(id);
 }
 
 // ==========================
@@ -1053,6 +1055,33 @@ function renderObStep(step, user, existingUsername) {
     };
     nav.appendChild(btn);
   }
+}
+// ==========================
+// SAVE POST
+// ==========================
+async function toggleSave(postId) {
+  const user = auth.currentUser;
+  if (!user) return;
+  const ref = db.collection('users').doc(user.uid).collection('saved').doc(postId);
+  const btn = document.getElementById(`saveBtn-${postId}`);
+  const exists = (await ref.get()).exists;
+  if (exists) {
+    await ref.delete();
+    if (btn) btn.style.color = '#c8a888';
+    showToast('removed from saved 🌸');
+  } else {
+    await ref.set({ savedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    if (btn) btn.style.color = '#c8855c';
+    showToast('saved 🌸');
+  }
+}
+
+async function checkSaved(postId) {
+  const user = auth.currentUser;
+  if (!user) return;
+  const exists = (await db.collection('users').doc(user.uid).collection('saved').doc(postId).get()).exists;
+  const btn = document.getElementById(`saveBtn-${postId}`);
+  if (btn && exists) btn.style.color = '#c8855c';
 }
 
 function spawnObDaisies() {
