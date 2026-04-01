@@ -409,21 +409,23 @@ async function uploadPhoto(input) {
   const file = input.files[0];
   if (!file) return;
 
-  const avatarEl = document.getElementById('avatarCircle');
-  avatarEl.innerHTML = `<span style="font-size:0.7rem;color:white;">uploading...</span>`;
-
-  try {
-    const ref = storage.ref().child(`avatars/${currentUser.uid}`);
-    await ref.put(file);
-    const url = await ref.getDownloadURL();
-    await db.collection('users').doc(currentUser.uid).set({ photoUrl: url }, { merge: true });
-    avatarEl.innerHTML = `<img src="${url}" alt="profile photo">`;
-    showToast('photo updated 🌼');
-  } catch(err) {
-    console.error('Photo upload error:', err);
-    showToast('upload failed 🌸 try again');
-    await loadProfile();
+  // check file size — max 500kb for base64 in Firestore
+  if (file.size > 500000) {
+    showToast('photo too large 🌸 please use one under 500kb');
+    return;
   }
+
+  const avatarEl = document.getElementById('avatarCircle');
+  avatarEl.innerHTML = `<span style="font-size:0.7rem;color:white;">saving...</span>`;
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const base64 = e.target.result;
+    await db.collection('users').doc(currentUser.uid).set({ photoUrl: base64 }, { merge: true });
+    avatarEl.innerHTML = `<img src="${base64}" alt="profile photo">`;
+    showToast('photo updated 🌼');
+  };
+  reader.readAsDataURL(file);
 }
 
 // ==========================
