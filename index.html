@@ -176,6 +176,16 @@
   }
 })();
 </script>
+<script>
+// secret admin shortcut — Shift + A then D
+document.addEventListener('keydown', e => {
+  if (e.shiftKey && e.key === 'A') window._a = true;
+  if (window._a && e.key === 'D') {
+    window._a = false;
+    window.location.href = 'admin.html';
+  }
+});
+</script>
 
 </body>
 </html>
