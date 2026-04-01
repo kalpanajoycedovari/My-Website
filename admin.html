@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Solite · Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <style>
+    :root {
+      --bg:        #1a1410;
+      --surface:   #241d16;
+      --card:      #2e2318;
+      --border:    rgba(200,160,100,0.18);
+      --gold:      #c8a064;
+      --gold-soft: rgba(200,160,100,0.12);
+      --rose:      #c47b7b;
+      --rose-soft: rgba(196,123,123,0.12);
+      --sage:      #7ba89c;
+      --sage-soft: rgba(123,168,156,0.12);
+      --cream:     #f0e6d6;
+      --muted:     rgba(240,230,214,0.45);
+      --danger:    #c47b7b;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--cream);
+      min-height: 100vh;
+    }
+
+    /* ── GATE ─────────────────────────────── */
+    #gate {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 999;
+    }
+
+    .gate-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 48px 40px;
+      width: 360px;
+      text-align: center;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+    }
+
+    .gate-emblem {
+      font-family: 'Caveat', cursive;
+      font-size: 2.2rem;
+      color: var(--gold);
+      margin-bottom: 8px;
+      letter-spacing: 0.02em;
+    }
+
+    .gate-sub {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 36px;
+    }
+
+    .gate-input {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      color: var(--cream);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      outline: none;
+      margin-bottom: 14px;
+      transition: border-color 0.2s;
+    }
+
+    .gate-input:focus { border-color: var(--gold); }
+
+    .gate-btn {
+      width: 100%;
+      background: var(--gold);
+      color: #1a1410;
+      border: none;
+      border-radius: 10px;
+      padding: 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      transition: opacity 0.2s;
+    }
+
+    .gate-btn:hover { opacity: 0.85; }
+
+    #gate-error {
+      color: var(--rose);
+      font-size: 0.8rem;
+      margin-top: 12px;
+      display: none;
+    }
+
+    /* ── MAIN ─────────────────────────────── */
+    #dashboard { display: none; }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-title {
+      display: flex; align-items: center; gap: 12px;
+    }
+
+    .header-title .logo {
+      font-family: 'Caveat', cursive;
+      font-size: 1.6rem;
+      color: var(--gold);
+    }
+
+    .header-title .badge {
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      background: var(--gold-soft);
+      color: var(--gold);
+      border: 1px solid rgba(200,160,100,0.3);
+      border-radius: 20px;
+      padding: 3px 10px;
+    }
+
+    .header-right {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    /* ── LAYOUT ───────────────────────────── */
+    .main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    /* ── STAT CARDS ───────────────────────── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 36px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+    }
+
+    .stat-card.gold::before { background: var(--gold); }
+    .stat-card.rose::before { background: var(--rose); }
+    .stat-card.sage::before { background: var(--sage); }
+    .stat-card.amber::before { background: #c8a040; }
+
+    .stat-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .stat-value {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.4rem;
+      color: var(--cream);
+      line-height: 1;
+    }
+
+    .stat-sub {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    /* ── SECTIONS ─────────────────────────── */
+    .sections {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 700px) {
+      .sections { grid-template-columns: 1fr; }
+    }
+
+    .section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .section-full {
+      grid-column: 1 / -1;
+    }
+
+    .section-header {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 400;
+      color: var(--cream);
+    }
+
+    .section-count {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    /* ── MEMBER ROWS ──────────────────────── */
+    .member-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 22px;
+      border-bottom: 1px solid rgba(200,160,100,0.07);
+      transition: background 0.15s;
+    }
+
+    .member-row:last-child { border-bottom: none; }
+    .member-row:hover { background: rgba(200,160,100,0.04); }
+
+    .member-avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: var(--gold-soft);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Playfair Display', serif;
+      font-size: 0.85rem;
+      color: var(--gold);
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .member-avatar img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+
+    .member-info { flex: 1; min-width: 0; }
+
+    .member-name {
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--cream);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .member-meta {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .member-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .action-btn {
+      font-size: 0.7rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.15s;
+      background: transparent;
+    }
+
+    .btn-ban {
+      border-color: rgba(196,123,123,0.4);
+      color: var(--rose);
+    }
+
+    .btn-ban:hover {
+      background: var(--rose-soft);
+    }
+
+    /* ── REPORT ROWS ──────────────────────── */
+    .report-row {
+      padding: 16px 22px;
+      border-bottom: 1px solid rgba(200,160,100,0.07);
+      transition: background 0.15s;
+    }
+
+    .report-row:last-child { border-bottom: none; }
+    .report-row:hover { background: rgba(200,160,100,0.04); }
+
+    .report-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .report-target {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--cream);
+    }
+
+    .report-type {
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 20px;
+      background: var(--rose-soft);
+      color: var(--rose);
+      border: 1px solid rgba(196,123,123,0.25);
+    }
+
+    .report-reason {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .report-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .btn-delete {
+      border-color: rgba(196,123,123,0.4);
+      color: var(--rose);
+    }
+
+    .btn-delete:hover { background: var(--rose-soft); }
+
+    .btn-dismiss {
+      border-color: var(--border);
+      color: var(--muted);
+    }
+
+    .btn-dismiss:hover { background: var(--gold-soft); color: var(--gold); }
+
+    /* ── CAP CONTROL ──────────────────────── */
+    .cap-control {
+      padding: 22px;
+    }
+
+    .cap-bar-wrap {
+      background: rgba(0,0,0,0.3);
+      border-radius: 100px;
+      height: 8px;
+      overflow: hidden;
+      margin: 10px 0 6px;
+    }
+
+    .cap-bar-fill {
+      height: 100%;
+      border-radius: 100px;
+      background: linear-gradient(90deg, var(--sage), var(--gold));
+      transition: width 0.6s ease;
+    }
+
+    .cap-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .cap-toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .toggle-label {
+      font-size: 0.85rem;
+      color: var(--cream);
+    }
+
+    .toggle-sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .toggle {
+      width: 44px; height: 24px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+
+    .toggle.on {
+      background: var(--sage);
+      border-color: var(--sage);
+    }
+
+    .toggle::after {
+      content: '';
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--cream);
+      transition: transform 0.2s;
+    }
+
+    .toggle.on::after { transform: translateX(20px); }
+
+    /* ── EMPTY ────────────────────────────── */
+    .empty-state {
+      padding: 36px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+
+    /* ── TOAST ────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 28px; right: 28px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 0.82rem;
+      color: var(--cream);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.25s;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    #toast.show { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- GATE -->
+<div id="gate">
+  <div class="gate-card">
+    <div class="gate-emblem">✦ solite</div>
+    <div class="gate-sub">Admin Access</div>
+    <input type="password" id="gatePass" class="gate-input" placeholder="Enter admin password"
+           onkeydown="if(event.key==='Enter') unlockDashboard()">
+    <button class="gate-btn" onclick="unlockDashboard()">Enter</button>
+    <div id="gate-error">Incorrect password. Try again.</div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <header>
+    <div class="header-title">
+      <span class="logo">solite</span>
+      <span class="badge">Admin</span>
+    </div>
+    <div class="header-right" id="lastUpdated">Loading…</div>
+  </header>
+
+  <div class="main">
+
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-card gold">
+        <div class="stat-label">Total Members</div>
+        <div class="stat-value" id="statMembers">—</div>
+        <div class="stat-sub">cap at 900</div>
+      </div>
+      <div class="stat-card sage">
+        <div class="stat-label">Joined This Week</div>
+        <div class="stat-value" id="statWeek">—</div>
+        <div class="stat-sub">last 7 days</div>
+      </div>
+      <div class="stat-card rose">
+        <div class="stat-label">Open Reports</div>
+        <div class="stat-value" id="statReports">—</div>
+        <div class="stat-sub">needs review</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-label">Total Posts</div>
+        <div class="stat-value" id="statPosts">—</div>
+        <div class="stat-sub">all time</div>
+      </div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="sections">
+
+      <!-- RECENT JOINS -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">Recent Joins</div>
+          <div class="section-count" id="joinCount"></div>
+        </div>
+        <div id="recentJoins"><div class="empty-state">Loading members…</div></div>
+      </div>
+
+      <!-- REPORTS -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">Reports</div>
+          <div class="section-count" id="reportCount"></div>
+        </div>
+        <div id="reportsList"><div class="empty-state">Loading reports…</div></div>
+      </div>
+
+      <!-- CAPACITY CONTROL -->
+      <div class="section section-full">
+        <div class="section-header">
+          <div class="section-title">Capacity & Access</div>
+        </div>
+        <div class="cap-control">
+          <div style="font-size:0.8rem; color:var(--muted); margin-bottom:4px;">Member capacity</div>
+          <div class="cap-bar-wrap">
+            <div class="cap-bar-fill" id="capBar" style="width:0%"></div>
+          </div>
+          <div class="cap-labels">
+            <span id="capCurrent">0 members</span>
+            <span>900 cap</span>
+          </div>
+
+          <div class="cap-toggle-row">
+            <div>
+              <div class="toggle-label">Signups open</div>
+              <div class="toggle-sub" id="toggleSub">Members can currently sign up</div>
+            </div>
+            <div class="toggle" id="signupToggle" onclick="toggleSignups()"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // ── CONFIG ─────────────────────────────────────────────
+  // Change this to your own password before deploying!
+  const ADMIN_PASSWORD = 'solite-admin-2025';
+  const ADMIN_UID      = 'yD9rsgZgWJZqbHLLfN4odwwr0UG2'; // Joy's UID
+
+  firebase.initializeApp(firebaseConfig);
+  const db   = firebase.firestore();
+  const auth = firebase.auth();
+
+  let signupsOpen = true;
+
+  // ── GATE ───────────────────────────────────────────────
+  function unlockDashboard() {
+    const pass = document.getElementById('gatePass').value;
+    if (pass === ADMIN_PASSWORD) {
+      document.getElementById('gate').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+      loadDashboard();
+    } else {
+      document.getElementById('gate-error').style.display = 'block';
+      document.getElementById('gatePass').value = '';
+      document.getElementById('gatePass').focus();
+    }
+  }
+
+  // ── LOAD ALL ───────────────────────────────────────────
+  async function loadDashboard() {
+    document.getElementById('lastUpdated').textContent =
+      'Last updated: ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+    await Promise.all([
+      loadStats(),
+      loadRecentJoins(),
+      loadReports(),
+      loadCapacityStatus(),
+    ]);
+  }
+
+  // ── STATS ──────────────────────────────────────────────
+  async function loadStats() {
+    // Member count from meta/stats
+    const statsDoc = await db.collection('meta').doc('stats').get();
+    const memberCount = statsDoc.exists ? (statsDoc.data().memberCount || 0) : 0;
+    document.getElementById('statMembers').textContent = memberCount;
+    document.getElementById('capCurrent').textContent  = memberCount + ' members';
+
+    const pct = Math.min((memberCount / 900) * 100, 100);
+    document.getElementById('capBar').style.width = pct + '%';
+
+    // This week joins
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const weekSnap = await db.collection('users')
+      .where('joinedAt', '>=', weekAgo)
+      .get();
+    document.getElementById('statWeek').textContent = weekSnap.size;
+
+    // Open reports
+    const reportsSnap = await db.collection('reports')
+      .where('status', '==', 'open')
+      .get();
+    document.getElementById('statReports').textContent = reportsSnap.size;
+
+    // Total posts
+    const postsSnap = await db.collection('posts').get();
+    document.getElementById('statPosts').textContent = postsSnap.size;
+  }
+
+  // ── RECENT JOINS ───────────────────────────────────────
+  async function loadRecentJoins() {
+    const snap = await db.collection('users')
+      .orderBy('joinedAt', 'desc')
+      .limit(8)
+      .get();
+
+    const container = document.getElementById('recentJoins');
+    document.getElementById('joinCount').textContent = snap.size + ' shown';
+
+    if (snap.empty) {
+      container.innerHTML = '<div class="empty-state">No members yet 🌸</div>';
+      return;
+    }
+
+    container.innerHTML = '';
+    snap.forEach(doc => {
+      const u    = doc.data();
+      const uid  = doc.id;
+      const name = u.username || u.displayName || u.email || 'unknown';
+      const date = u.joinedAt ? u.joinedAt.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '—';
+      const initial = name.charAt(0).toUpperCase();
+
+      const row = document.createElement('div');
+      row.className = 'member-row';
+      row.innerHTML = `
+        <div class="member-avatar">
+          ${u.photoBase64
+            ? `<img src="${u.photoBase64}" alt="${initial}">`
+            : initial}
+        </div>
+        <div class="member-info">
+          <div class="member-name">@${name}</div>
+          <div class="member-meta">Joined ${date}</div>
+        </div>
+        <div class="member-actions">
+          <button class="action-btn btn-ban" onclick="banUser('${uid}', '${name}')">Ban</button>
+        </div>
+      `;
+      container.appendChild(row);
+    });
+  }
+
+  // ── REPORTS ────────────────────────────────────────────
+  async function loadReports() {
+    const snap = await db.collection('reports')
+      .where('status', '==', 'open')
+      .orderBy('createdAt', 'desc')
+      .limit(10)
+      .get();
+
+    const container = document.getElementById('reportsList');
+    document.getElementById('reportCount').textContent = snap.size + ' open';
+
+    if (snap.empty) {
+      container.innerHTML = '<div class="empty-state">No open reports 🌿<br><span style="font-size:0.8rem">Everything looks peaceful</span></div>';
+      return;
+    }
+
+    container.innerHTML = '';
+    snap.forEach(doc => {
+      const r = doc.data();
+      const rid = doc.id;
+
+      const row = document.createElement('div');
+      row.className = 'report-row';
+      row.id = 'report-' + rid;
+      row.innerHTML = `
+        <div class="report-top">
+          <div class="report-target">${r.targetUsername || r.targetId || 'Unknown'}</div>
+          <span class="report-type">${r.type || 'report'}</span>
+        </div>
+        <div class="report-reason">${r.reason || 'No reason given'}</div>
+        <div class="report-actions">
+          ${r.postId
+            ? `<button class="action-btn btn-delete" onclick="deletePost('${r.postId}', '${rid}')">Delete Post</button>`
+            : ''}
+          ${r.targetId
+            ? `<button class="action-btn btn-ban" onclick="banUser('${r.targetId}', '${r.targetUsername || r.targetId}')">Ban User</button>`
+            : ''}
+          <button class="action-btn btn-dismiss" onclick="dismissReport('${rid}')">Dismiss</button>
+        </div>
+      `;
+      container.appendChild(row);
+    });
+  }
+
+  // ── CAPACITY TOGGLE ────────────────────────────────────
+  async function loadCapacityStatus() {
+    const doc = await db.collection('meta').doc('settings').get();
+    signupsOpen = doc.exists ? (doc.data().signupsOpen !== false) : true;
+    updateToggleUI();
+  }
+
+  function updateToggleUI() {
+    const toggle = document.getElementById('signupToggle');
+    const sub    = document.getElementById('toggleSub');
+    if (signupsOpen) {
+      toggle.classList.add('on');
+      sub.textContent = 'Members can currently sign up';
+    } else {
+      toggle.classList.remove('on');
+      sub.textContent = 'Signups are paused';
+    }
+  }
+
+  async function toggleSignups() {
+    signupsOpen = !signupsOpen;
+    updateToggleUI();
+    await db.collection('meta').doc('settings').set(
+      { signupsOpen },
+      { merge: true }
+    );
+    showToast(signupsOpen ? '✦ Signups reopened' : '🌸 Signups paused');
+  }
+
+  // ── ACTIONS ────────────────────────────────────────────
+  async function banUser(uid, username) {
+    if (!confirm(`Ban @${username}? This will mark their account as banned.`)) return;
+    await db.collection('users').doc(uid).update({ banned: true, bannedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    showToast(`@${username} has been banned`);
+    loadRecentJoins();
+    loadReports();
+  }
+
+  async function deletePost(postId, reportId) {
+    if (!confirm('Delete this post? This cannot be undone.')) return;
+    await db.collection('posts').doc(postId).delete();
+    await dismissReport(reportId);
+    showToast('Post deleted');
+  }
+
+  async function dismissReport(reportId) {
+    await db.collection('reports').doc(reportId).update({ status: 'dismissed' });
+    const row = document.getElementById('report-' + reportId);
+    if (row) row.remove();
+    // update counter
+    const remaining = document.querySelectorAll('.report-row').length;
+    document.getElementById('reportCount').textContent = remaining + ' open';
+    document.getElementById('statReports').textContent = remaining;
+    if (remaining === 0) {
+      document.getElementById('reportsList').innerHTML =
+        '<div class="empty-state">No open reports 🌿<br><span style="font-size:0.8rem">Everything looks peaceful</span></div>';
+    }
+    showToast('Report dismissed');
+  }
+
+  // ── TOAST ──────────────────────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  // Enter key on gate
+  document.getElementById('gatePass').focus();
+</script>
+</body>
+</html>
