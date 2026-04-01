@@ -382,28 +382,36 @@ async function uploadPhoto(input) {
   const file = input.files[0];
   if (!file) return;
 
-  if (file.size > 500000) {
-    showToast('photo too large 🌸 please use one under 500kb');
+  if (file.size > 5000000) {
+    showToast('photo too large 🌸 please use one under 5mb');
     return;
   }
 
   const avatarEl = document.getElementById('avatarCircle');
   avatarEl.innerHTML = `<span style="font-size:0.7rem;color:white;">saving...</span>`;
 
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    const base64 = e.target.result;
-    await db.collection('users').doc(currentUser.uid).set({ photoUrl: base64 }, { merge: true });
-    avatarEl.innerHTML = `<img src="${base64}" alt="profile photo">`;
+  try {
+    const storageRef = firebase.storage().ref().child('profiles/' + currentUser.uid);
+    await storageRef.put(file);
+    const downloadUrl = await storageRef.getDownloadURL();
+
+    await db.collection('users').doc(currentUser.uid).set({ photoUrl: downloadUrl }, { merge: true });
+    avatarEl.innerHTML = `<img src="${downloadUrl}" alt="profile photo">`;
     showToast('photo updated 🌼');
-  };
-  reader.readAsDataURL(file);
+  } catch (err) {
+    console.error('Photo upload error:', err);
+    avatarEl.textContent = currentUser.displayName?.charAt(0) || '?';
+    showToast('upload failed 🌸 try again');
+  }
 }
 
 async function removePhoto() {
   closePhotoMenu();
+  try {
+    await firebase.storage().ref().child('profiles/' + currentUser.uid).delete();
+  } catch (e) { /* no photo in storage, that's fine */ }
   await db.collection('users').doc(currentUser.uid).set({ photoUrl: null }, { merge: true });
-  const doc      = await db.collection('users').doc(currentUser.uid).get();
+  const doc = await db.collection('users').doc(currentUser.uid).get();
   const username = doc.exists ? (doc.data().username || '?') : '?';
   document.getElementById('avatarCircle').innerHTML  = '';
   document.getElementById('avatarCircle').textContent = username.charAt(0).toUpperCase();
