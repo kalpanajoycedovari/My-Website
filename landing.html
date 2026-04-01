@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Solite — a small corner</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&family=Caveat:wght@400;600&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f7efe6">
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #f7efe6;
+      color: #3d2010;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* animated daisy bg */
+    #daisy-bg {
+      position: fixed; inset: 0;
+      pointer-events: none; z-index: 0; overflow: hidden;
+    }
+    #daisy-bg .daisy {
+      position: absolute; transform-origin: center;
+      animation: daisyFloat linear infinite;
+    }
+    #daisy-bg .daisy svg {
+      display: block; animation: daisyBlink ease-in-out infinite;
+    }
+    @keyframes daisyFloat {
+      0%   { transform: translateY(0px) rotate(0deg); }
+      25%  { transform: translateY(-8px) rotate(4deg); }
+      50%  { transform: translateY(0px) rotate(0deg); }
+      75%  { transform: translateY(6px) rotate(-4deg); }
+      100% { transform: translateY(0px) rotate(0deg); }
+    }
+    @keyframes daisyBlink {
+      0%, 100% { opacity: var(--op-high); }
+      50%       { opacity: var(--op-low); }
+    }
+
+    .landing-wrap {
+      position: relative; z-index: 1;
+      max-width: 560px; margin: 0 auto;
+      padding: 80px 2rem 60px;
+      text-align: center;
+      animation: fadeInPage 1s ease;
+    }
+    @keyframes fadeInPage {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .logo-daisy { font-size: 3rem; margin-bottom: 16px; display: block; }
+
+    .logo-title {
+      font-family: 'Playfair Display', serif;
+      font-style: italic; font-size: 3.2rem;
+      color: #5c3317; letter-spacing: 0.02em;
+      line-height: 1.1; margin-bottom: 8px;
+    }
+
+    .logo-sub {
+      font-family: 'Caveat', cursive;
+      font-size: 1.15rem; color: #b07858;
+      margin-bottom: 52px; line-height: 1.6;
+    }
+
+    .divider {
+      display: flex; align-items: center; gap: 8px;
+      justify-content: center; margin-bottom: 44px; opacity: 0.4;
+    }
+    .divider-line { width: 60px; height: 1px; background: #c8956c; }
+    .divider-dot  { width: 4px; height: 4px; border-radius: 50%; background: #c8956c; }
+
+    .stanza {
+      margin-bottom: 40px;
+    }
+    .stanza p {
+      font-family: 'Playfair Display', serif;
+      font-style: italic; font-size: 1.15rem;
+      color: #7a4a2a; line-height: 1.9;
+    }
+    .stanza .note {
+      font-family: 'Caveat', cursive;
+      font-size: 0.95rem; color: #c8a888;
+      margin-top: 8px; font-style: normal;
+    }
+
+    .features {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 12px; margin: 40px 0; text-align: left;
+    }
+    .feature-card {
+      background: rgba(255,255,255,0.72);
+      border: 1px solid rgba(210,175,140,0.35);
+      border-radius: 16px; padding: 14px 16px;
+    }
+    .feature-icon { font-size: 1.2rem; margin-bottom: 4px; }
+    .feature-title {
+      font-family: 'Playfair Display', serif;
+      font-style: italic; font-size: 0.92rem;
+      color: #5c3317; margin-bottom: 2px;
+    }
+    .feature-desc {
+      font-family: 'Caveat', cursive;
+      font-size: 0.82rem; color: #b07858; line-height: 1.4;
+    }
+
+    .cta-section { margin-top: 48px; }
+
+    .cta-title {
+      font-family: 'Playfair Display', serif;
+      font-style: italic; font-size: 1.5rem;
+      color: #5c3317; margin-bottom: 10px;
+    }
+    .cta-sub {
+      font-family: 'Caveat', cursive;
+      font-size: 1rem; color: #b07858;
+      margin-bottom: 24px; line-height: 1.6;
+    }
+
+    .btn-primary {
+      display: inline-block;
+      background: linear-gradient(135deg, #c8855c, #a05530);
+      color: white; padding: 14px 36px;
+      border-radius: 60px; text-decoration: none;
+      font-family: 'DM Sans', sans-serif; font-size: 0.95rem;
+      font-weight: 500; transition: 0.2s;
+      box-shadow: 0 6px 20px rgba(160,85,48,0.3);
+    }
+    .btn-primary:hover {
+      transform: scale(1.04);
+      box-shadow: 0 10px 28px rgba(160,85,48,0.35);
+    }
+
+    .btn-secondary {
+      display: inline-block;
+      background: rgba(255,255,255,0.8);
+      color: #7a4a2a; padding: 12px 28px;
+      border-radius: 60px; text-decoration: none;
+      font-family: 'DM Sans', sans-serif; font-size: 0.88rem;
+      border: 1.5px solid #e0c8b0; margin-top: 12px;
+      transition: 0.2s;
+    }
+    .btn-secondary:hover { background: #fdf0e6; border-color: #c8855c; }
+
+    .invite-note {
+      font-family: 'Caveat', cursive;
+      font-size: 0.88rem; color: #c8a888;
+      margin-top: 20px; line-height: 1.6;
+    }
+
+    .footer {
+      margin-top: 60px; padding-top: 24px;
+      border-top: 1px solid rgba(210,175,140,0.3);
+      font-family: 'Caveat', cursive;
+      font-size: 0.88rem; color: #c8a888;
+    }
+  </style>
+</head>
+
+<body>
+<div id="daisy-bg"></div>
+
+<div class="landing-wrap">
+
+  <span class="logo-daisy">🌼</span>
+  <div class="logo-title">Solite</div>
+  <div class="logo-sub">
+    a small corner of the internet<br>
+    that hasn't been sold yet
+  </div>
+
+  <div class="divider">
+    <div class="divider-line"></div>
+    <div class="divider-dot"></div>
+    <div class="divider-dot"></div>
+    <div class="divider-dot"></div>
+    <div class="divider-line"></div>
+  </div>
+
+  <div class="stanza">
+    <p>
+      Somewhere between the noises<br>
+      and the endless scroll,<br>
+      there is a garden....<br>
+      that only a few people know about.
+    </p>
+    <div class="note">YOU are one of them ✦</div>
+  </div>
+
+  <div class="stanza">
+    <p>
+      What you're worth.<br>
+      No strangers in the thousands!
+    </p>
+    <div class="note">just people who get the vibe 🌸</div>
+  </div>
+
+  <div class="features">
+    <div class="feature-card">
+      <div class="feature-icon">💬</div>
+      <div class="feature-title">yap</div>
+      <div class="feature-desc">thoughts, songs, books, late nights — all of it</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🌸</div>
+      <div class="feature-title">soft reactions</div>
+      <div class="feature-desc">no like counts. just warmth.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🤍</div>
+      <div class="feature-title">find friends</div>
+      <div class="feature-desc">quietly. by name. no algorithm.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🌼</div>
+      <div class="feature-title">stays small</div>
+      <div class="feature-desc">capped at 1000 people. always.</div>
+    </div>
+  </div>
+
+  <div class="divider" style="margin: 36px 0;">
+    <div class="divider-line"></div>
+    <div class="divider-dot"></div>
+    <div class="divider-dot"></div>
+    <div class="divider-dot"></div>
+    <div class="divider-line"></div>
+  </div>
+
+  <div class="cta-section" id="ctaSection">
+    <div class="cta-title">you found the gate</div>
+    <div class="cta-sub">
+      Solite is invite-only —<br>
+      Every member was brought here by someone who knew them.<br>
+       And.....that's how it stays safe.
+    </div>
+
+    <!-- if they arrived via invite link, show join button -->
+    <div id="inviteAction"></div>
+
+    <div class="invite-note">
+      If you weren't invited yet, Congrats!<br>
+      You have found Your Way here!<br>
+      Find someone who's already here 🌼
+    </div>
+  </div>
+
+  <div class="footer">
+    Made with quiet intention · no data selling · EVER!
+  </div>
+
+</div>
+
+<script>
+// check if they arrived with an invite ref
+const params = new URLSearchParams(window.location.search);
+const ref    = params.get('ref');
+const action = document.getElementById('inviteAction');
+
+if (ref) {
+  // they have an invite — show signup/login
+  action.innerHTML = `
+    <a href="login.html?ref=${ref}" class="btn-primary">enter the garden 🌸</a>
+    <br>
+    <div class="invite-note" style="margin-top:12px;">someone saved you a seat ✦</div>
+  `;
+} else {
+  // no invite — show login for existing members
+  action.innerHTML = `
+    <a href="login.html" class="btn-secondary">i'm already a member →</a>
+  `;
+}
+</script>
+
+<script>
+(function() {
+  const container = document.getElementById('daisy-bg');
+  function makeDaisy(size) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('width', size*2.6); svg.setAttribute('height', size*2.6); svg.setAttribute('viewBox', '-20 -20 40 40');
+    [0,45,90,135,180,225,270,315].forEach(a => {
+      const el = document.createElementNS(ns, 'ellipse');
+      el.setAttribute('cx',0); el.setAttribute('cy',-size); el.setAttribute('rx',size*0.44); el.setAttribute('ry',size*0.77);
+      el.setAttribute('fill','#fffef0'); el.setAttribute('transform',`rotate(${a})`); svg.appendChild(el);
+    });
+    const c1 = document.createElementNS(ns,'circle'); c1.setAttribute('r',size*0.55); c1.setAttribute('fill','#f5d76e'); svg.appendChild(c1);
+    const c2 = document.createElementNS(ns,'circle'); c2.setAttribute('r',size*0.28); c2.setAttribute('fill','#e8c94a'); svg.appendChild(c2);
+    return svg;
+  }
+  for (let i = 0; i < 28; i++) {
+    const w = document.createElement('div'); w.classList.add('daisy');
+    const size = 6+Math.random()*10;
+    const opHigh = (0.2+Math.random()*0.4).toFixed(2);
+    const opLow  = (parseFloat(opHigh)*0.25).toFixed(2);
+    w.style.cssText = `left:${(Math.random()*100).toFixed(1)}%;top:${(Math.random()*100).toFixed(1)}%;--op-high:${opHigh};--op-low:${opLow};animation-duration:${(4+Math.random()*6).toFixed(1)}s;animation-delay:-${(Math.random()*8).toFixed(1)}s;`;
+    w.appendChild(makeDaisy(size)); container.appendChild(w);
+  }
+})();
+</script>
+
+</body>
+</html>

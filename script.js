@@ -706,7 +706,7 @@ function showMusicPlayer(title, imgSrc) {
 function showInviteLink() {
   const user = auth.currentUser;
   if (!user) return;
-  const link = `https://kalpanajoycedovari.github.io/My-Website/invite.html?ref=${user.uid}`;
+ const link = `https://kalpanajoycedovari.github.io/My-Website/landing.html?ref=${user.uid}`;
   if (document.getElementById('inviteOverlay')) return;
 
   const overlay = document.createElement('div');

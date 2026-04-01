@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Post — Solite</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&family=Caveat:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="firebase-config.js"></script>
+  <script>firebase.initializeApp(firebaseConfig);</script>
+
+  <style>
+    .post-wrap {
+      max-width: 620px; margin: 0 auto;
+      padding: 1.5rem; position: relative; z-index: 1;
+    }
+
+    .post-detail-card {
+      background: rgba(255,255,255,0.88);
+      border-radius: 22px; padding: 24px;
+      border: 1px solid rgba(210,175,140,0.3);
+      box-shadow: 0 6px 24px rgba(120,70,30,0.1);
+      margin-bottom: 1.5rem;
+      animation: fadeUp 0.5s ease forwards;
+    }
+
+    .post-detail-card.gloomy    { background: linear-gradient(135deg,#2d2438,#3d2e4a); border-color: rgba(255,255,255,0.08); }
+    .post-detail-card.soft      { background: linear-gradient(135deg,#f5e8d8,#e8d0b8); border-color: rgba(180,120,70,0.2); }
+    .post-detail-card.nostalgic { background: linear-gradient(135deg,#d8c4a8,#c4a888); border-color: rgba(160,100,50,0.2); }
+
+    .post-author {
+      font-family: 'Caveat', cursive; font-size: 1.1rem;
+      text-decoration: none; margin-bottom: 6px; display: inline-block;
+    }
+    .post-title {
+      font-family: 'Playfair Display', serif; font-style: italic;
+      font-size: 1.1rem; margin-bottom: 8px;
+    }
+    .post-body {
+      font-size: 1rem; line-height: 1.75; margin-bottom: 12px;
+    }
+    .post-lyrics {
+      font-family: 'Caveat', cursive; font-size: 1rem;
+      font-style: italic; margin-bottom: 12px;
+    }
+
+    .reactions-row {
+      display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0;
+    }
+
+    .comments-section {
+      background: rgba(255,255,255,0.88); border-radius: 18px;
+      padding: 20px; border: 1px solid rgba(210,175,140,0.3);
+      box-shadow: 0 4px 16px rgba(120,70,30,0.08);
+    }
+    .comments-title {
+      font-family: 'Playfair Display', serif; font-style: italic;
+      font-size: 1.1rem; color: #5c3317; margin-bottom: 14px;
+    }
+    .comment-item {
+      background: #fdf5ec; padding: 10px 14px;
+      margin-bottom: 8px; border-radius: 12px;
+      font-size: 0.9rem; color: #7a4a2a;
+      border-left: 3px solid #e0c8b0;
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 8px;
+      animation: fadeUp 0.3s ease forwards;
+    }
+    .comment-input-row {
+      display: flex; gap: 8px; margin-top: 14px;
+    }
+    .comment-input-row input {
+      flex: 1; padding: 10px 14px; border-radius: 12px;
+      border: 1.5px solid #e0c8b0; font-family: 'DM Sans', sans-serif;
+      background: rgba(255,255,255,0.85); color: #3d2010; font-size: 0.9rem;
+    }
+    .comment-input-row input:focus { outline: none; border-color: #c8855c; }
+  </style>
+</head>
+
+<body>
+<div id="daisy-bg"></div>
+
+<header class="top">
+  <h1>🌸 Solite</h1>
+  <p>"a small corner for you and just you"</p>
+  <nav style="margin-top:10px;">
+    <a href="javascript:history.back()" style="color:#5c3317;text-decoration:none;font-size:0.9rem;font-family:'DM Sans',sans-serif;">← back</a>
+    &nbsp;&nbsp;
+    <a href="index.html" style="color:#5c3317;text-decoration:none;font-size:0.9rem;font-family:'DM Sans',sans-serif;">home</a>
+  </nav>
+</header>
+
+<div class="post-wrap">
+  <div id="postContainer"></div>
+  <div id="commentsSection" class="comments-section" style="display:none;">
+    <div class="comments-title">comments ✦</div>
+    <div id="commentsList"></div>
+    <div class="comment-input-row">
+      <input id="commentInput" placeholder="say something...">
+      <button onclick="addComment()">send</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const db = firebase.firestore();
+let currentUserId = null;
+let postId        = null;
+
+const REACTIONS = ['🌸','🤍','✨','☕','🌙'];
+const CATEGORY_GRADIENTS = {
+  gloomy:    { emoji: '🌙' },
+  soft:      { emoji: '☕' },
+  nostalgic: { emoji: '📷' }
+};
+
+firebase.auth().onAuthStateChanged(async user => {
+  if (!user) { window.location.href = 'login.html'; return; }
+  currentUserId = user.uid;
+  const params = new URLSearchParams(window.location.search);
+  postId = params.get('id');
+  if (!postId) { window.location.href = 'index.html'; return; }
+  await loadPost();
+});
+
+async function loadPost() {
+  const doc  = await db.collection('posts').doc(postId).get();
+  if (!doc.exists) {
+    document.getElementById('postContainer').innerHTML = `<div style="text-align:center;font-family:'Caveat',cursive;color:#b07858;font-size:1.2rem;padding:40px;">post not found 🌸</div>`;
+    return;
+  }
+
+  const post     = doc.data();
+  const isOwn    = currentUserId === post.uid;
+  const seeded   = post.isSeeded === true;
+  const category = post.category || null;
+  const gradient = seeded && category ? CATEGORY_GRADIENTS[category] : null;
+
+  const isGloomy  = category === 'gloomy';
+  const textColor = isGloomy ? '#f0e8f8' : '#3d2010';
+  const userColor = isGloomy ? '#e8d0f8' : '#5c3317';
+  const titleColor = isGloomy ? '#c8a8e8' : '#5c3317';
+  const lyricsColor = isGloomy ? '#c8a8e8' : '#c8855c';
+  const typeColor = isGloomy ? '#c8a0d8' : '#c8a888';
+
+  const card = document.createElement('div');
+  card.className = `post-detail-card ${category || ''}`;
+
+  card.innerHTML = `
+    ${gradient ? `<div style="font-size:2rem;margin-bottom:12px;">${gradient.emoji}</div>` : ''}
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <a href="profile.html?uid=${post.uid}" class="post-author" style="color:${userColor};">@${post.username || 'anonymous'}</a>
+      <span style="font-size:0.78rem;color:${typeColor};font-family:'DM Sans',sans-serif;">${post.type || ''}</span>
+    </div>
+    ${post.extra ? `<div class="post-title" style="color:${titleColor};">${post.extra}</div>` : ''}
+    <div class="post-body" style="color:${textColor};">${post.text || ''}</div>
+    ${post.lyrics ? `<div class="post-lyrics" style="color:${lyricsColor};">"${post.lyrics}"</div>` : ''}
+    ${post.imageUrl ? `<img src="${post.imageUrl}" style="width:100%;border-radius:14px;margin-bottom:12px;">` : ''}
+    <div id="reactionsRow" class="reactions-row"></div>
+    ${isOwn ? `<button onclick="deletePost()" style="background:none;border:none;color:${isGloomy ? '#c8a0d8' : '#c8a888'};font-size:0.82rem;padding:0;cursor:pointer;box-shadow:none;margin-top:8px;">✕ delete this yap</button>` : ''}
+  `;
+
+  document.getElementById('postContainer').appendChild(card);
+  document.getElementById('commentsSection').style.display = 'block';
+
+  loadReactions();
+  loadComments();
+}
+
+function loadReactions() {
+  const user = firebase.auth().currentUser;
+  if (!user) return;
+
+  db.collection('posts').doc(postId).collection('reactions').onSnapshot(snap => {
+    const row = document.getElementById('reactionsRow');
+    if (!row) return;
+
+    const counts = {};
+    let myReaction = null;
+    snap.forEach(d => {
+      const r = d.data().emoji;
+      counts[r] = (counts[r] || 0) + 1;
+      if (d.id === user.uid) myReaction = r;
+    });
+
+    row.innerHTML = '';
+    REACTIONS.forEach(emoji => {
+      const count    = counts[emoji] || 0;
+      const isPicked = myReaction === emoji;
+      const btn = document.createElement('button');
+      btn.style.cssText = `
+        background:${isPicked ? 'rgba(200,133,92,0.15)' : 'rgba(255,255,255,0.7)'};
+        border:1.5px solid ${isPicked ? '#c8855c' : '#f0dfd0'};
+        border-radius:24px; padding:4px 12px; font-size:0.85rem;
+        cursor:pointer; display:inline-flex; align-items:center; gap:4px;
+        font-family:'DM Sans',sans-serif;
+        color:${isPicked ? '#7a4a2a' : '#c8a888'};
+        transition:0.15s; box-shadow:none;
+      `;
+      btn.innerHTML = `${emoji}${count > 0 ? `<span style="font-size:0.78rem;">${count}</span>` : ''}`;
+      btn.onclick = () => toggleReaction(emoji, myReaction);
+      row.appendChild(btn);
+    });
+  });
+}
+
+async function toggleReaction(emoji, currentReaction) {
+  const user = firebase.auth().currentUser;
+  if (!user) return;
+  const ref = db.collection('posts').doc(postId).collection('reactions').doc(user.uid);
+  if (currentReaction === emoji) { await ref.delete(); return; }
+  const myDoc      = await db.collection('users').doc(user.uid).get();
+  const myUsername = myDoc.exists ? (myDoc.data().username || 'someone') : 'someone';
+  await ref.set({ emoji, uid: user.uid, username: myUsername, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+}
+
+function loadComments() {
+  const user = firebase.auth().currentUser;
+  db.collection('posts').doc(postId).collection('comments')
+    .orderBy('createdAt')
+    .onSnapshot(snap => {
+      const list = document.getElementById('commentsList');
+      if (!list) return;
+      list.innerHTML = '';
+      if (snap.empty) {
+        list.innerHTML = `<div style="font-family:'Caveat',cursive;color:#b07858;font-size:1rem;padding:8px 0;">no comments yet — be the first 🌸</div>`;
+        return;
+      }
+      snap.forEach(doc => {
+        const c     = doc.data();
+        const isOwn = user && user.uid === c.uid;
+        const div   = document.createElement('div');
+        div.className = 'comment-item';
+        div.innerHTML = `
+          <span style="flex:1;">${c.text}</span>
+          ${isOwn ? `<button onclick="deleteComment('${doc.id}')" style="background:none;border:none;color:#c8a888;font-size:0.75rem;cursor:pointer;box-shadow:none;padding:0;flex-shrink:0;">✕</button>` : ''}
+        `;
+        list.appendChild(div);
+      });
+    });
+}
+
+async function addComment() {
+  const user  = firebase.auth().currentUser;
+  const input = document.getElementById('commentInput');
+  const text  = input.value.trim();
+  if (!text || !user) return;
+  await db.collection('posts').doc(postId).collection('comments').add({
+    text, uid: user.uid,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  input.value = '';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.activeElement.id === 'commentInput') addComment();
+});
+
+async function deletePost() {
+  if (!confirm('delete this yap? 🌸')) return;
+  await db.collection('posts').doc(postId).delete();
+  window.location.href = 'index.html';
+}
+
+function deleteComment(commentId) {
+  db.collection('posts').doc(postId).collection('comments').doc(commentId).delete();
+}
+</script>
+
+<script>
+(function() {
+  const container = document.getElementById('daisy-bg');
+  function makeDaisy(size) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('width', size*2.6); svg.setAttribute('height', size*2.6); svg.setAttribute('viewBox', '-20 -20 40 40');
+    [0,45,90,135,180,225,270,315].forEach(a => {
+      const el = document.createElementNS(ns, 'ellipse');
+      el.setAttribute('cx',0); el.setAttribute('cy',-size); el.setAttribute('rx',size*0.44); el.setAttribute('ry',size*0.77);
+      el.setAttribute('fill','#fffef0'); el.setAttribute('transform',`rotate(${a})`); svg.appendChild(el);
+    });
+    const c1 = document.createElementNS(ns,'circle'); c1.setAttribute('r',size*0.55); c1.setAttribute('fill','#f5d76e'); svg.appendChild(c1);
+    const c2 = document.createElementNS(ns,'circle'); c2.setAttribute('r',size*0.28); c2.setAttribute('fill','#e8c94a'); svg.appendChild(c2);
+    return svg;
+  }
+  for (let i = 0; i < 18; i++) {
+    const w = document.createElement('div'); w.classList.add('daisy');
+    const size = 5+Math.random()*7;
+    const opHigh = (0.25+Math.random()*0.35).toFixed(2);
+    const opLow  = (parseFloat(opHigh)*0.3).toFixed(2);
+    w.style.cssText = `left:${(Math.random()*100).toFixed(1)}%;top:${(Math.random()*100).toFixed(1)}%;--op-high:${opHigh};--op-low:${opLow};animation-duration:${(3+Math.random()*5).toFixed(1)}s;animation-delay:-${(Math.random()*6).toFixed(1)}s;`;
+    const svg = makeDaisy(size);
+    svg.style.animationDuration = `${(2+Math.random()*4).toFixed(1)}s`;
+    svg.style.animationDelay    = `-${(Math.random()*6).toFixed(1)}s`;
+    w.appendChild(svg); container.appendChild(w);
+  }
+})();
+</script>
+
+</body>
+</html>
