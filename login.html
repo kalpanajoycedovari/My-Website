@@ -36,10 +36,17 @@ const db   = firebase.firestore();
 
 async function checkCap() {
   try {
-    const doc   = await db.collection('meta').doc('stats').get();
-    const count = doc.exists ? (doc.data().memberCount || 0) : 0;
-    if (count >= 900) {
-      const btn = document.getElementById('signupBtn');
+    // Check member count
+    const statsDoc = await db.collection('meta').doc('stats').get();
+    const count = statsDoc.exists ? (statsDoc.data().memberCount || 0) : 0;
+
+    // Check admin signup toggle
+    const settingsDoc = await db.collection('meta').doc('settings').get();
+    const signupsOpen = settingsDoc.exists ? (settingsDoc.data().signupsOpen !== false) : true;
+
+    const btn = document.getElementById('signupBtn');
+
+    if (count >= 900 || !signupsOpen) {
       btn.disabled    = true;
       btn.textContent = 'Solite is full for now 🌸';
       btn.style.opacity = '0.6';
@@ -52,10 +59,19 @@ checkCap();
 
 async function signup() {
   try {
-    const doc   = await db.collection('meta').doc('stats').get();
-    const count = doc.exists ? (doc.data().memberCount || 0) : 0;
+    // Check member count
+    const statsDoc = await db.collection('meta').doc('stats').get();
+    const count = statsDoc.exists ? (statsDoc.data().memberCount || 0) : 0;
     if (count >= 900) {
       alert('Solite is at capacity for now 🌸 we will open again soon');
+      return;
+    }
+
+    // Check admin signup toggle
+    const settingsDoc = await db.collection('meta').doc('settings').get();
+    const signupsOpen = settingsDoc.exists ? (settingsDoc.data().signupsOpen !== false) : true;
+    if (!signupsOpen) {
+      alert('Signups are paused for now 🌸 check back soon');
       return;
     }
   } catch(e) {}
