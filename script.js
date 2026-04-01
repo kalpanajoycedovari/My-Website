@@ -32,7 +32,7 @@ function toggleDarkMode() {
 // ==========================
 // AUTH STATE
 // ==========================
-let currentUserId = null; // store uid globally so renderPost always has it
+let currentUserId = null;
 
 auth.onAuthStateChanged(user => {
   if (user) {
@@ -319,7 +319,7 @@ const CATEGORY_GRADIENTS = {
 function renderPost(doc, container) {
   const post   = doc.data();
   const id     = doc.id;
-  const isOwn  = currentUserId && currentUserId === post.uid; // use global uid
+  const isOwn  = currentUserId && currentUserId === post.uid;
   const seeded = post.isSeeded === true;
 
   const card = document.createElement('div');
@@ -382,7 +382,15 @@ function renderPost(doc, container) {
   loadComments(id);
   loadReactions(id, post.uid, post.username || 'anonymous');
   applyBlockMuteToCard(card, post.uid);
-   checkSaved(id);
+  checkSaved(id);
+
+  // make card clickable to open post detail
+  card.style.cursor = 'pointer';
+  card.addEventListener('click', e => {
+    if (!e.target.closest('button') && !e.target.closest('input') && !e.target.closest('a') && !e.target.closest('[id^="postMenu"]')) {
+      window.location.href = `post.html?id=${id}`;
+    }
+  });
 }
 
 // ==========================
@@ -393,7 +401,6 @@ function startEditPost(id) {
   const card    = document.getElementById(`postCard-${id}`);
   if (!textEl || !card) return;
 
-  // find the extra label (italic title) if it exists
   const extraEl = card.querySelector('[data-extra-label]');
   const currentText  = textEl.textContent;
   const currentExtra = extraEl ? extraEl.textContent : '';
@@ -404,7 +411,6 @@ function startEditPost(id) {
   const wrapper = document.createElement('div');
   wrapper.id = `editWrapper-${id}`;
 
-  // title input (only show if card has an extra label)
   const titleHtml = extraEl ? `
     <input id="editTitle-${id}" value="${currentExtra}"
       placeholder="title..."
@@ -459,6 +465,7 @@ function startEditPost(id) {
   textEl.parentNode.insertBefore(wrapper, textEl.nextSibling);
   document.getElementById(`editBody-${id}`)?.focus();
 }
+
 // ==========================
 // SOFT REACTIONS
 // ==========================
@@ -706,7 +713,7 @@ function showMusicPlayer(title, imgSrc) {
 function showInviteLink() {
   const user = auth.currentUser;
   if (!user) return;
- const link = `https://kalpanajoycedovari.github.io/My-Website/landing.html?ref=${user.uid}`;
+  const link = `https://kalpanajoycedovari.github.io/My-Website/landing.html?ref=${user.uid}`;
   if (document.getElementById('inviteOverlay')) return;
 
   const overlay = document.createElement('div');
@@ -843,16 +850,6 @@ function quickSearch(term) {
   if (input) { input.value = term; input.dispatchEvent(new Event('input')); }
 }
 
-function quickFilter(filter) {
-  document.querySelectorAll('.mood-chip').forEach(b =>
-    b.classList.toggle('active', b.textContent.toLowerCase().includes(filter) || filter === 'all')
-  );
-  document.querySelectorAll('.post-card').forEach(card => {
-    card.style.display = (filter === 'all' || card.dataset.category === filter) ? '' : 'none';
-  });
-  toggleMenuPanel();
-}
-
 // ==========================
 // NOTIFICATION BADGE
 // ==========================
@@ -951,6 +948,34 @@ async function reportFromPost(targetUid, username, postId) {
   const picked = reasons[parseInt(reason) - 1] || 'something else';
   await db.collection('reports').add({ reportedUid: targetUid, reportedUsername: username, reporterUid: user.uid, reason: picked, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
   showToast('report sent 🌸 thank you for keeping solite safe');
+}
+
+// ==========================
+// SAVE POST
+// ==========================
+async function toggleSave(postId) {
+  const user = auth.currentUser;
+  if (!user) return;
+  const ref = db.collection('users').doc(user.uid).collection('saved').doc(postId);
+  const btn = document.getElementById(`saveBtn-${postId}`);
+  const exists = (await ref.get()).exists;
+  if (exists) {
+    await ref.delete();
+    if (btn) btn.style.color = '#c8a888';
+    showToast('removed from saved 🌸');
+  } else {
+    await ref.set({ savedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    if (btn) btn.style.color = '#c8855c';
+    showToast('saved 🌸');
+  }
+}
+
+async function checkSaved(postId) {
+  const user = auth.currentUser;
+  if (!user) return;
+  const exists = (await db.collection('users').doc(user.uid).collection('saved').doc(postId).get()).exists;
+  const btn = document.getElementById(`saveBtn-${postId}`);
+  if (btn && exists) btn.style.color = '#c8855c';
 }
 
 // ==========================
@@ -1055,33 +1080,6 @@ function renderObStep(step, user, existingUsername) {
     };
     nav.appendChild(btn);
   }
-}
-// ==========================
-// SAVE POST
-// ==========================
-async function toggleSave(postId) {
-  const user = auth.currentUser;
-  if (!user) return;
-  const ref = db.collection('users').doc(user.uid).collection('saved').doc(postId);
-  const btn = document.getElementById(`saveBtn-${postId}`);
-  const exists = (await ref.get()).exists;
-  if (exists) {
-    await ref.delete();
-    if (btn) btn.style.color = '#c8a888';
-    showToast('removed from saved 🌸');
-  } else {
-    await ref.set({ savedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    if (btn) btn.style.color = '#c8855c';
-    showToast('saved 🌸');
-  }
-}
-
-async function checkSaved(postId) {
-  const user = auth.currentUser;
-  if (!user) return;
-  const exists = (await db.collection('users').doc(user.uid).collection('saved').doc(postId).get()).exists;
-  const btn = document.getElementById(`saveBtn-${postId}`);
-  if (btn && exists) btn.style.color = '#c8855c';
 }
 
 function spawnObDaisies() {
