@@ -14,516 +14,255 @@
   <script>firebase.initializeApp(firebaseConfig);</script>
 
   <style>
-    /* ========================
-       PAGE BASE
-    ======================== */
-    .cafe-wrap {
-      max-width: 860px;
-      margin: 0 auto;
-      padding: 1.5rem;
-      position: relative;
-      z-index: 1;
-    }
+    body { margin: 0; min-height: 100vh; position: relative; }
 
-    /* ========================
-       ADD CAFE FORM
-    ======================== */
+    #cafe-forest-bg {
+      position: fixed; inset: 0; z-index: 0;
+      background: #3d1f08; overflow: hidden; pointer-events: none;
+    }
+    .forest-top { position: absolute; top: 0; left: 0; right: 0; height: 200px; background: #1a0e04; }
+    .tree-trunk  { position: absolute; background: #100804; border-radius: 3px; }
+    .tree-top    { position: absolute; background: #180c03; border-radius: 40% 40% 10% 10%; }
+    .wood-wall   {
+      position: absolute; top: 175px; left: 0; right: 0; bottom: 0; background: #5c3015;
+      background-image: repeating-linear-gradient(90deg,transparent 0px,transparent 46px,rgba(255,255,255,0.04) 46px,rgba(255,255,255,0.04) 47px),
+        repeating-linear-gradient(180deg,transparent 0px,transparent 82px,rgba(0,0,0,0.1) 82px,rgba(0,0,0,0.1) 83px);
+    }
+    .center-glow {
+      position: absolute; top: 160px; left: 50%; transform: translateX(-50%);
+      width: 700px; height: 300px;
+      background: radial-gradient(ellipse at 50% 20%,rgba(240,160,50,0.14) 0%,transparent 60%);
+    }
+    .table-surface {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 180px;
+      background: linear-gradient(180deg,#7a4020 0%,#5c2e10 100%);
+      border-top: 2px solid rgba(200,140,70,0.5);
+      background-image: repeating-linear-gradient(90deg,transparent 0px,transparent 38px,rgba(255,255,255,0.04) 38px,rgba(255,255,255,0.04) 39px);
+    }
+    .table-glow {
+      position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; height: 200px;
+      background: radial-gradient(ellipse at 50% 100%,rgba(220,130,40,0.2) 0%,transparent 65%);
+    }
+    .lights-wire { position: absolute; top: 173px; left: 0; right: 0; height: 1px; background: rgba(200,150,70,0.4); }
+    .bulb {
+      position: absolute; top: 169px; width: 9px; height: 11px;
+      border-radius: 50% 50% 50% 50%/60% 60% 40% 40%;
+      background: #ffdd44;
+      box-shadow: 0 0 10px 4px rgba(255,220,60,0.75), 0 0 22px 8px rgba(255,200,40,0.4);
+    }
+    .bulb::after {
+      content:''; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      width:28px; height:28px; border-radius:50%;
+      background: radial-gradient(ellipse,rgba(255,220,60,0.4),transparent);
+    }
+    .candle-wrap { position:absolute; bottom:105px; left:50%; transform:translateX(-50%); }
+    .candle-body { width:18px; height:52px; background:linear-gradient(180deg,#f5f0e8,#e8dcc8); border-radius:3px 3px 2px 2px; margin:0 auto; position:relative; }
+    .candle-wick { position:absolute; top:-10px; left:50%; transform:translateX(-50%); width:2px; height:10px; background:#3d2010; border-radius:1px; }
+    .candle-flame { position:absolute; top:-24px; left:50%; transform:translateX(-50%); width:11px; height:18px; background:radial-gradient(ellipse at 50% 80%,#ff9020 0%,#ffcc00 60%,transparent 100%); border-radius:50% 50% 30% 30%; animation:flameFlicker 1.8s ease-in-out infinite; }
+    @keyframes flameFlicker { 0%,100%{transform:translateX(-50%) scaleX(1) scaleY(1);} 30%{transform:translateX(-52%) scaleX(0.85) scaleY(1.1);} 60%{transform:translateX(-48%) scaleX(1.1) scaleY(0.95);} }
+    .candle-halo { position:absolute; top:-42px; left:50%; transform:translateX(-50%); width:70px; height:70px; background:radial-gradient(ellipse,rgba(255,180,50,0.28) 0%,transparent 70%); border-radius:50%; }
+    .candle-plate { width:32px; height:7px; background:#d4b888; border-radius:50%; margin:0 auto; }
+    .cup-deco { position:absolute; bottom:115px; right:18%; }
+    .cup-deco-body { width:38px; height:30px; background:linear-gradient(180deg,#fdf5ec,#f0dfc8); border-radius:3px 3px 9px 9px; margin:0 auto; position:relative; box-shadow:0 2px 8px rgba(0,0,0,0.3); }
+    .cup-deco-fill { width:28px; height:9px; background:#5c2e10; border-radius:50%; margin:0 auto; position:relative; top:5px; }
+    .cup-deco-handle { position:absolute; right:-10px; top:5px; width:10px; height:16px; border:2.5px solid #f0dfc8; border-left:none; border-radius:0 8px 8px 0; }
+    .cup-deco-saucer { width:46px; height:7px; background:#fdf5ec; border-radius:50%; margin:-2px auto 0; box-shadow:0 2px 6px rgba(0,0,0,0.25); }
+    .book-deco { position:absolute; bottom:125px; left:18%; width:28px; height:40px; background:#a05530; border-radius:2px 3px 3px 2px; box-shadow:2px 2px 8px rgba(0,0,0,0.4); transform:rotate(-6deg); }
+    .book-deco-spine { position:absolute; left:0; top:0; bottom:0; width:5px; background:#7a3a1e; border-radius:2px 0 0 2px; }
+    .book-deco-pages { position:absolute; right:0; top:2px; bottom:2px; width:3px; background:#fdf5ec; border-radius:0 2px 2px 0; }
+
+    .cafe-wrap { position:relative; z-index:1; max-width:860px; margin:0 auto; padding:1.5rem; }
+    header.top { position:relative; z-index:2; }
+    header.top h1 { color:#fde8b8 !important; text-shadow:0 0 24px rgba(255,180,60,0.4),0 2px 8px rgba(0,0,0,0.4); }
+    header.top p  { color:rgba(240,205,140,0.85) !important; }
+    header.top a  { color:rgba(240,205,140,0.85) !important; }
+
     .add-cafe-form {
-      background: rgba(255,255,255,0.88);
-      border-radius: 24px;
-      padding: 24px;
-      margin-bottom: 2rem;
-      border: 1px solid rgba(210,175,140,0.3);
-      box-shadow: 0 4px 20px rgba(120,70,30,0.08);
+      background:rgba(80,38,14,0.82); border-radius:24px; padding:22px; margin-bottom:2rem;
+      border:1px solid rgba(200,140,70,0.4);
+      box-shadow:0 8px 32px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,210,120,0.08);
+      backdrop-filter:blur(6px);
     }
+    .add-cafe-form h3 { font-family:'Playfair Display',serif; font-style:italic; font-size:1.2rem; color:#fde0a0; margin-bottom:16px; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+    @media(max-width:540px){.form-row{grid-template-columns:1fr;}}
+    .add-cafe-form input,.add-cafe-form textarea { background:rgba(255,255,255,0.1)!important; border:1px solid rgba(210,155,80,0.4)!important; color:#fde0a0!important; border-radius:10px!important; }
+    .add-cafe-form input::placeholder,.add-cafe-form textarea::placeholder { color:rgba(240,205,140,0.45)!important; }
+    .add-cafe-form textarea { min-height:80px; width:100%; box-sizing:border-box; }
 
-    .add-cafe-form h3 {
-      font-family: 'Playfair Display', serif;
-      font-style: italic;
-      font-size: 1.3rem;
-      color: #5c3317;
-      margin-bottom: 16px;
-    }
+    .photo-upload-area { border:2px dashed rgba(210,155,80,0.4); border-radius:16px; padding:20px; text-align:center; cursor:pointer; background:rgba(255,255,255,0.05); position:relative; margin-bottom:12px; transition:0.2s; }
+    .photo-upload-area:hover { border-color:rgba(255,200,80,0.7); background:rgba(255,255,255,0.08); }
+    .photo-upload-area input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+    .photo-preview-grid { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+    .photo-preview-item { width:80px; height:80px; border-radius:10px; object-fit:cover; border:2px solid rgba(200,140,70,0.4); }
 
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-    @media(max-width:540px) { .form-row { grid-template-columns: 1fr; } }
+    .vibe-tags { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+    .vibe-tag { padding:5px 14px; border-radius:20px; border:1px solid rgba(210,155,80,0.35); font-size:0.8rem; color:rgba(240,205,140,0.7); cursor:pointer; font-family:'DM Sans',sans-serif; background:rgba(255,255,255,0.06); transition:0.15s; user-select:none; }
+    .vibe-tag.selected { background:rgba(200,110,40,0.45); color:#fde0a0; border-color:rgba(210,140,60,0.65); }
 
-    .form-row input, .add-cafe-form input, .add-cafe-form textarea {
-      width: 100%;
-      box-sizing: border-box;
-    }
+    .star-row { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+    .star-picker span { font-size:1.4rem; cursor:pointer; transition:transform 0.15s; display:inline-block; color:rgba(220,175,80,0.3); }
+    .star-picker span.active { color:#ffdd44; transform:scale(1.2); text-shadow:0 0 8px rgba(255,220,60,0.6); }
 
-    /* Photo upload area */
-    .photo-upload-area {
-      border: 2px dashed rgba(200,133,92,0.4);
-      border-radius: 16px;
-      padding: 20px;
-      text-align: center;
-      cursor: pointer;
-      transition: 0.2s;
-      margin-bottom: 10px;
-      background: rgba(255,248,240,0.6);
-      position: relative;
-    }
-    .photo-upload-area:hover {
-      border-color: #c8855c;
-      background: rgba(255,240,225,0.8);
-    }
-    .photo-upload-area input[type="file"] {
-      position: absolute;
-      inset: 0;
-      opacity: 0;
-      cursor: pointer;
-      width: 100%;
-      height: 100%;
-    }
-    .photo-preview-grid {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 10px;
-    }
-    .photo-preview-item {
-      width: 80px;
-      height: 80px;
-      border-radius: 10px;
-      object-fit: cover;
-      border: 2px solid rgba(200,133,92,0.3);
-    }
+    .filter-bar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1.5rem; }
+    .filter-chip { padding:6px 16px; border-radius:20px; border:1px solid rgba(210,155,80,0.35); font-size:0.82rem; color:rgba(240,205,140,0.7); cursor:pointer; font-family:'DM Sans',sans-serif; background:rgba(80,38,14,0.7); transition:0.15s; backdrop-filter:blur(4px); }
+    .filter-chip.active { background:rgba(200,110,40,0.5); color:#fde0a0; border-color:rgba(210,140,60,0.65); }
 
-    /* Star rating */
-    .star-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-    .star-picker span {
-      font-size: 1.4rem;
-      cursor: pointer;
-      transition: transform 0.15s;
-      display: inline-block;
-      color: #ddd;
-    }
-    .star-picker span:hover,
-    .star-picker span.active { color: #f5d76e; transform: scale(1.2); }
+    .section-title { font-family:'Playfair Display',serif; font-style:italic; font-size:1.2rem; color:#fde0a0; margin-bottom:1rem; text-shadow:0 2px 8px rgba(0,0,0,0.3); }
 
-    /* Vibe tags selector */
-    .vibe-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-    .vibe-tag {
-      padding: 5px 14px;
-      border-radius: 20px;
-      border: 1.5px solid #e0c8b0;
-      font-size: 0.8rem;
-      color: #7a4a2a;
-      cursor: pointer;
-      font-family: 'DM Sans', sans-serif;
-      background: rgba(255,255,255,0.8);
-      transition: 0.15s;
-      user-select: none;
-    }
-    .vibe-tag.selected {
-      background: linear-gradient(135deg, #c8855c, #a05530);
-      color: white;
-      border-color: #c8855c;
-    }
+    .cafe-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); gap:1.4rem; }
+    @media(max-width:600px){.cafe-grid{grid-template-columns:1fr;}}
 
-    /* ========================
-       FILTER BAR
-    ======================== */
-    .filter-bar {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-bottom: 1.5rem;
-      align-items: center;
-    }
-    .filter-chip {
-      padding: 6px 16px;
-      border-radius: 20px;
-      border: 1.5px solid #e0c8b0;
-      font-size: 0.82rem;
-      color: #7a4a2a;
-      cursor: pointer;
-      font-family: 'DM Sans', sans-serif;
-      background: rgba(255,255,255,0.8);
-      transition: 0.15s;
-    }
-    .filter-chip.active {
-      background: linear-gradient(135deg, #c8855c, #a05530);
-      color: white;
-      border-color: #c8855c;
-    }
+    .cafe-card { background:rgba(60,28,8,0.82); border-radius:20px; overflow:hidden; border:1px solid rgba(200,140,70,0.28); box-shadow:0 4px 20px rgba(0,0,0,0.35); transition:transform 0.2s,box-shadow 0.2s; animation:fadeUp 0.4s ease forwards; opacity:0; backdrop-filter:blur(4px); }
+    .cafe-card:hover { transform:translateY(-4px); box-shadow:0 12px 36px rgba(0,0,0,0.45); }
+    .cafe-card.seeded { cursor:pointer; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(16px);} to{opacity:1;transform:translateY(0);} }
 
-    /* ========================
-       CAFE CARDS
-    ======================== */
-    .cafe-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-      gap: 1.4rem;
-    }
-    @media(max-width:600px) { .cafe-grid { grid-template-columns: 1fr; } }
+    .cafe-photo-strip { width:100%; height:200px; position:relative; overflow:hidden; background:linear-gradient(135deg,#5c3010,#8B5E3C); }
+    .cafe-photo-strip img { width:100%; height:100%; object-fit:cover; }
+    .cafe-photo-strip .no-photo { width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:2.8rem; color:rgba(255,220,140,0.5); gap:6px; }
+    .cafe-photo-strip .no-photo span { font-family:'Caveat',cursive; font-size:0.9rem; color:rgba(255,200,100,0.4); }
+    .multi-photo { display:grid; grid-template-columns:2fr 1fr; height:200px; gap:2px; }
+    .multi-photo img { width:100%; height:100%; object-fit:cover; }
+    .multi-photo .right-col { display:grid; grid-template-rows:1fr 1fr; gap:2px; }
+    .photo-count-badge { position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.55); color:#fde0a0; font-size:0.75rem; padding:3px 10px; border-radius:12px; font-family:'DM Sans',sans-serif; }
 
-    .cafe-card {
-      background: rgba(255,255,255,0.92);
-      border-radius: 20px;
-      overflow: hidden;
-      border: 1px solid rgba(210,175,140,0.25);
-      box-shadow: 0 4px 18px rgba(120,70,30,0.08);
-      transition: transform 0.2s, box-shadow 0.2s;
-      animation: fadeUp 0.4s ease forwards;
-      opacity: 0;
-    }
-    .cafe-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 32px rgba(120,70,30,0.14);
-    }
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
+    .cafe-body { padding:16px; }
+    .cafe-name { font-family:'Playfair Display',serif; font-size:1.1rem; color:#fde0a0; margin-bottom:4px; }
+    .cafe-location { font-size:0.8rem; color:rgba(220,175,100,0.6); font-family:'DM Sans',sans-serif; margin-bottom:8px; }
+    .cafe-stars { color:#ffdd44; font-size:0.9rem; margin-bottom:8px; letter-spacing:2px; text-shadow:0 0 6px rgba(255,220,60,0.4); }
+    .cafe-note { font-family:'Caveat',cursive; font-size:1rem; color:rgba(240,205,140,0.85); line-height:1.6; margin-bottom:10px; font-style:italic; }
+    .cafe-tags { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+    .cafe-tag { display:inline-block; background:rgba(200,133,92,0.15); color:#fde0a0; font-size:0.75rem; padding:3px 10px; border-radius:20px; font-family:'DM Sans',sans-serif; border:1px solid rgba(210,140,60,0.3); }
+    .cafe-meta { font-size:0.75rem; color:rgba(200,155,90,0.55); font-family:'DM Sans',sans-serif; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+    .avatar-mini { width:20px; height:20px; border-radius:50%; background:linear-gradient(135deg,#c8855c,#a05530); display:flex; align-items:center; justify-content:center; color:white; font-size:0.65rem; font-family:'Caveat',cursive; flex-shrink:0; }
+    .cafe-actions { display:flex; align-items:center; gap:8px; padding-top:10px; border-top:1px solid rgba(200,140,70,0.2); }
+    .cafe-actions button { font-size:0.82rem; padding:5px 12px; background:rgba(255,255,255,0.08); border:1px solid rgba(210,155,80,0.3); color:#fde0a0; border-radius:20px; box-shadow:none; }
+    .cafe-actions button:hover { background:rgba(200,110,40,0.3); }
+    .maps-link { font-size:0.8rem; color:#ffdd44; text-decoration:none; font-family:'DM Sans',sans-serif; margin-left:auto; opacity:0.85; }
+    .maps-link:hover { opacity:1; text-decoration:underline; }
+    .comments-box { display:none; margin-top:12px; padding-top:12px; border-top:1px solid rgba(200,140,70,0.2); }
+    .comment { font-size:0.85rem; color:rgba(240,205,140,0.85); padding:6px 0; border-bottom:1px solid rgba(200,140,70,0.1); font-family:'DM Sans',sans-serif; }
+    .comment:last-child { border-bottom:none; }
 
-    /* Photo strip */
-    .cafe-photo-strip {
-      width: 100%;
-      height: 200px;
-      position: relative;
-      overflow: hidden;
-      background: linear-gradient(135deg, #e8d5c0, #d4a878);
-    }
-    .cafe-photo-strip img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .cafe-photo-strip .no-photo {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-size: 2.8rem;
-      color: rgba(255,255,255,0.7);
-      gap: 6px;
-    }
-    .cafe-photo-strip .no-photo span {
-      font-family: 'Caveat', cursive;
-      font-size: 0.9rem;
-      color: rgba(255,255,255,0.6);
-    }
-
-    /* Multiple photos strip */
-    .multi-photo {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      height: 200px;
-      gap: 2px;
-    }
-    .multi-photo img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .multi-photo .right-col {
-      display: grid;
-      grid-template-rows: 1fr 1fr;
-      gap: 2px;
-    }
-    .photo-count-badge {
-      position: absolute;
-      bottom: 10px;
-      right: 10px;
-      background: rgba(0,0,0,0.5);
-      color: white;
-      font-size: 0.75rem;
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-family: 'DM Sans', sans-serif;
-    }
-
-    /* Card body */
-    .cafe-body {
-      padding: 16px;
-    }
-    .cafe-name {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.15rem;
-      color: #3d1f0a;
-      margin-bottom: 4px;
-    }
-    .cafe-location {
-      font-size: 0.8rem;
-      color: #c8a888;
-      font-family: 'DM Sans', sans-serif;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .cafe-stars {
-      color: #f5d76e;
-      font-size: 0.95rem;
-      margin-bottom: 8px;
-      letter-spacing: 2px;
-    }
-    .cafe-note {
-      font-family: 'Caveat', cursive;
-      font-size: 1rem;
-      color: #7a4a2a;
-      line-height: 1.6;
-      margin-bottom: 10px;
-      font-style: italic;
-    }
-    .cafe-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 12px;
-    }
-    .cafe-tag {
-      display: inline-block;
-      background: rgba(200,133,92,0.1);
-      color: #7a4a2a;
-      font-size: 0.75rem;
-      padding: 3px 10px;
-      border-radius: 20px;
-      font-family: 'DM Sans', sans-serif;
-      border: 1px solid rgba(200,133,92,0.2);
-    }
-    .cafe-meta {
-      font-size: 0.75rem;
-      color: #c8a888;
-      font-family: 'DM Sans', sans-serif;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .cafe-meta .avatar-mini {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #c8855c, #a05530);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 0.65rem;
-      font-family: 'Caveat', cursive;
-      flex-shrink: 0;
-    }
-
-    .cafe-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding-top: 10px;
-      border-top: 1px solid #f5ede0;
-    }
-    .cafe-actions button {
-      font-size: 0.82rem;
-      padding: 5px 12px;
-    }
-    .maps-link {
-      font-size: 0.8rem;
-      color: #c8855c;
-      text-decoration: none;
-      font-family: 'DM Sans', sans-serif;
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .maps-link:hover { text-decoration: underline; }
-
-    /* Comments */
-    .comments-box {
-      display: none;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid #f5ede0;
-    }
-    .comment {
-      font-size: 0.85rem;
-      color: #5c3317;
-      padding: 6px 0;
-      border-bottom: 1px solid #fdf0e6;
-      font-family: 'DM Sans', sans-serif;
-    }
-    .comment:last-child { border-bottom: none; }
-
-    /* Lightbox */
-    .lightbox {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(20,10,5,0.92);
-      z-index: 999999;
-      align-items: center;
-      justify-content: center;
-    }
-    .lightbox.open { display: flex; }
-    .lightbox img {
-      max-width: 90vw;
-      max-height: 90vh;
-      border-radius: 12px;
-      object-fit: contain;
-    }
-    .lightbox-close {
-      position: absolute;
-      top: 20px;
-      right: 24px;
-      color: white;
-      font-size: 2rem;
-      cursor: pointer;
-      font-family: 'DM Sans', sans-serif;
-      opacity: 0.8;
-    }
-    .lightbox-close:hover { opacity: 1; }
-
-    /* Section header */
-    .section-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1.2rem;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    .section-title {
-      font-family: 'Playfair Display', serif;
-      font-style: italic;
-      font-size: 1.3rem;
-      color: #5c3317;
-    }
-    .add-cafe-toggle {
-      background: linear-gradient(135deg, #c8855c, #a05530);
-      color: white;
-      border: none;
-      padding: 8px 20px;
-      border-radius: 24px;
-      font-size: 0.88rem;
-      cursor: pointer;
-      font-family: 'DM Sans', sans-serif;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 60px 20px;
-      font-family: 'Caveat', cursive;
-      color: #b07858;
-      font-size: 1.3rem;
-      grid-column: 1/-1;
-    }
+    .lightbox { display:none; position:fixed; inset:0; background:rgba(10,5,2,0.95); z-index:999999; align-items:center; justify-content:center; }
+    .lightbox.open { display:flex; }
+    .lightbox img { max-width:90vw; max-height:90vh; border-radius:12px; object-fit:contain; }
+    .lightbox-close { position:absolute; top:20px; right:24px; color:#fde0a0; font-size:2rem; cursor:pointer; opacity:0.8; }
+    .empty-state { text-align:center; padding:60px 20px; font-family:'Caveat',cursive; color:rgba(240,205,140,0.6); font-size:1.3rem; grid-column:1/-1; }
   </style>
 </head>
-
 <body>
+
+<div id="cafe-forest-bg">
+  <div class="forest-top"></div>
+  <div class="tree-trunk" style="top:85px;left:4%;width:16px;height:115px;"></div>
+  <div class="tree-trunk" style="top:65px;left:10%;width:13px;height:135px;"></div>
+  <div class="tree-trunk" style="top:75px;left:79%;width:15px;height:120px;"></div>
+  <div class="tree-trunk" style="top:55px;left:87%;width:18px;height:140px;"></div>
+  <div class="tree-trunk" style="top:90px;left:93%;width:11px;height:98px;"></div>
+  <div class="tree-top" style="top:18px;left:1%;width:74px;height:95px;"></div>
+  <div class="tree-top" style="top:5px;left:7%;width:64px;height:85px;background:#1c1004;"></div>
+  <div class="tree-top" style="top:12px;left:74%;width:78px;height:100px;"></div>
+  <div class="tree-top" style="top:0;left:83%;width:82px;height:88px;background:#1c1004;"></div>
+  <div class="wood-wall"></div>
+  <div class="center-glow"></div>
+  <div class="table-surface"></div>
+  <div class="table-glow"></div>
+  <div class="lights-wire"></div>
+  <div class="bulb" style="left:4%;"></div>
+  <div class="bulb" style="left:13%;"></div>
+  <div class="bulb" style="left:22%;"></div>
+  <div class="bulb" style="left:31%;"></div>
+  <div class="bulb" style="left:40%;"></div>
+  <div class="bulb" style="left:49%;"></div>
+  <div class="bulb" style="left:58%;"></div>
+  <div class="bulb" style="left:67%;"></div>
+  <div class="bulb" style="left:76%;"></div>
+  <div class="bulb" style="left:85%;"></div>
+  <div class="bulb" style="left:94%;"></div>
+  <div class="candle-wrap">
+    <div class="candle-halo"></div>
+    <div class="candle-body"><div class="candle-wick"></div><div class="candle-flame"></div></div>
+    <div class="candle-plate"></div>
+  </div>
+  <div class="cup-deco">
+    <div class="cup-deco-body"><div class="cup-deco-fill"></div><div class="cup-deco-handle"></div></div>
+    <div class="cup-deco-saucer"></div>
+  </div>
+  <div class="book-deco"><div class="book-deco-spine"></div><div class="book-deco-pages"></div></div>
+</div>
+
 <div id="daisy-bg"></div>
 
 <header class="top">
   <h1>☕ Cafés</h1>
   <p>"cozy corners worth finding"</p>
   <nav style="margin-top:10px;">
-    <a href="index.html" style="color:#5c3317;text-decoration:none;font-size:0.9rem;font-family:'DM Sans',sans-serif;">← back home</a>
+    <a href="index.html" style="text-decoration:none;font-size:0.9rem;font-family:'DM Sans',sans-serif;">← back home</a>
   </nav>
 </header>
 
 <div class="cafe-wrap">
 
-  <!-- ADD CAFE FORM -->
   <div class="add-cafe-form" id="addBox" style="display:none;">
-    <h3>add a café ☕</h3>
-
+    <h3>Add a café ☕</h3>
     <div class="form-row">
       <input type="text" id="cafeName" placeholder="café name *">
       <input type="text" id="cafeCity" placeholder="city / area">
     </div>
-
-    <input type="url" id="cafeMap" placeholder="🗺 google maps link (optional)" style="margin-bottom:10px;">
-
-    <!-- Photo upload -->
+    <input type="url" id="cafeMap" placeholder="🗺 google maps link (optional)" style="margin-bottom:10px;width:100%;box-sizing:border-box;">
     <div class="photo-upload-area" id="uploadArea">
       <input type="file" id="photoInput" accept="image/*" multiple onchange="previewPhotos(this)">
       <div id="uploadPrompt">
         <div style="font-size:2rem;">📷</div>
-        <div style="font-family:'Caveat',cursive;font-size:1rem;color:#b07858;margin-top:4px;">tap to add photos of the café</div>
-        <div style="font-size:0.75rem;color:#c8a888;font-family:'DM Sans',sans-serif;margin-top:2px;">you can select multiple</div>
+        <div style="font-family:'Caveat',cursive;font-size:1rem;color:rgba(240,205,140,0.6);margin-top:4px;">tap to add photos of the café</div>
+        <div style="font-size:0.75rem;color:rgba(220,175,100,0.4);font-family:'DM Sans',sans-serif;margin-top:2px;">you can select multiple</div>
       </div>
       <div class="photo-preview-grid" id="previewGrid"></div>
     </div>
-
-    <!-- Vibe tags -->
-    <div style="font-size:0.8rem;color:#b07858;font-family:'DM Sans',sans-serif;margin-bottom:8px;">vibe —</div>
+    <div style="font-size:0.8rem;color:rgba(240,205,140,0.55);font-family:'DM Sans',sans-serif;margin-bottom:8px;">vibe —</div>
     <div class="vibe-tags" id="vibeTags">
       <span class="vibe-tag" onclick="toggleVibe(this)">quiet</span>
       <span class="vibe-tag" onclick="toggleVibe(this)">cozy</span>
       <span class="vibe-tag" onclick="toggleVibe(this)">aesthetic</span>
-      <span class="vibe-tag" onclick="toggleVibe(this)">study-friendly</span>
       <span class="vibe-tag" onclick="toggleVibe(this)">good coffee</span>
-      <span class="vibe-tag" onclick="toggleVibe(this)">good food</span>
-      <span class="vibe-tag" onclick="toggleVibe(this)">outdoor seating</span>
       <span class="vibe-tag" onclick="toggleVibe(this)">hidden gem</span>
-      <span class="vibe-tag" onclick="toggleVibe(this)">wifi</span>
       <span class="vibe-tag" onclick="toggleVibe(this)">book-friendly</span>
     </div>
-
-    <!-- Star rating -->
     <div class="star-row">
-      <span style="font-size:0.85rem;color:#b07858;font-family:'DM Sans',sans-serif;">your rating:</span>
+      <span style="font-size:0.85rem;color:rgba(240,205,140,0.55);font-family:'DM Sans',sans-serif;">your rating:</span>
       <div class="star-picker" id="starPicker">
-        <span onclick="setRating(1)">★</span>
-        <span onclick="setRating(2)">★</span>
-        <span onclick="setRating(3)">★</span>
-        <span onclick="setRating(4)">★</span>
-        <span onclick="setRating(5)">★</span>
+        <span onclick="setRating(1)">★</span><span onclick="setRating(2)">★</span>
+        <span onclick="setRating(3)">★</span><span onclick="setRating(4)">★</span><span onclick="setRating(5)">★</span>
       </div>
-      <span id="ratingLabel" style="font-size:0.82rem;color:#c8a888;font-family:'Caveat',cursive;"></span>
+      <span id="ratingLabel" style="font-size:0.82rem;color:rgba(220,175,80,0.6);font-family:'Caveat',cursive;"></span>
     </div>
-
-    <textarea id="cafeNote" placeholder="what made it special... the light, the smell, the corner you sat in 🌸" style="margin-bottom:12px;min-height:80px;"></textarea>
-
+    <textarea id="cafeNote" placeholder="what made it special... the light, the smell, the corner you sat in 🌸" style="margin-bottom:12px;"></textarea>
     <button onclick="addCafe()" id="submitBtn" style="width:100%;padding:12px;font-size:0.95rem;">add to solite ✨</button>
-    <div id="uploadProgress" style="display:none;text-align:center;font-family:'Caveat',cursive;color:#b07858;margin-top:8px;font-size:0.95rem;">uploading photos... 🌸</div>
+    <div id="uploadProgress" style="display:none;text-align:center;font-family:'Caveat',cursive;color:rgba(240,205,140,0.7);margin-top:8px;">uploading photos... 🌸</div>
   </div>
 
-  <p id="loginMsg" style="display:none;text-align:center;font-family:'Caveat',cursive;color:#b07858;font-size:1rem;margin-bottom:1.5rem;">
-    <a href="login.html" style="color:#c8855c;">log in</a> to add cafés 🌸
+  <p id="loginMsg" style="display:none;text-align:center;font-family:'Caveat',cursive;color:rgba(240,205,140,0.7);font-size:1rem;margin-bottom:1.5rem;">
+    <a href="login.html" style="color:#ffdd44;">log in</a> to add cafés 🌸
   </p>
 
-  <!-- SECTION HEADER + FILTERS -->
-  <div class="section-header">
-    <div class="section-title">places people love 🌸</div>
+  <div class="section-title">Places people love!</div>
+
+  <div class="filter-bar">
+    <span class="filter-chip active" onclick="filterFeed('all',this)">all</span>
+    <span class="filter-chip" onclick="filterFeed('quiet',this)">quiet</span>
+    <span class="filter-chip" onclick="filterFeed('cozy',this)">cozy</span>
+    <span class="filter-chip" onclick="filterFeed('aesthetic',this)">aesthetic</span>
+    <span class="filter-chip" onclick="filterFeed('study-friendly',this)">study-friendly</span>
+    <span class="filter-chip" onclick="filterFeed('hidden gem',this)">hidden gem</span>
+    <span class="filter-chip" onclick="filterFeed('good coffee',this)">good coffee</span>
   </div>
 
-  <div class="filter-bar" id="filterBar">
-    <span class="filter-chip active" onclick="filterFeed('all', this)">all</span>
-    <span class="filter-chip" onclick="filterFeed('quiet', this)">quiet</span>
-    <span class="filter-chip" onclick="filterFeed('cozy', this)">cozy</span>
-    <span class="filter-chip" onclick="filterFeed('aesthetic', this)">aesthetic</span>
-    <span class="filter-chip" onclick="filterFeed('study-friendly', this)">study-friendly</span>
-    <span class="filter-chip" onclick="filterFeed('hidden gem', this)">hidden gem</span>
-    <span class="filter-chip" onclick="filterFeed('good coffee', this)">good coffee</span>
-  </div>
-
-  <!-- FEED -->
   <div id="cafeGrid" class="cafe-grid"></div>
-
 </div>
 
-<!-- LIGHTBOX -->
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
   <span class="lightbox-close">✕</span>
   <img id="lightboxImg" src="" alt="">
@@ -531,355 +270,224 @@
 
 <script>
 const db = firebase.firestore();
-let currentUser  = null;
-let selectedRating = 0;
-let selectedVibes  = [];
-let selectedFiles  = [];
-let allCafes       = [];
-let currentFilter  = 'all';
+let currentUser=null,selectedRating=0,selectedVibes=[],selectedFiles=[],allCafes=[],currentFilter='all';
 
 firebase.auth().onAuthStateChanged(async user => {
   currentUser = user;
   if (user) {
     document.getElementById('addBox').style.display = 'block';
-    // load username for display
     const doc = await db.collection('users').doc(user.uid).get();
-    window._myUsername = doc.exists ? (doc.data().username || 'solite member') : 'solite member';
-    window._myPhoto    = doc.exists ? (doc.data().photoUrl || null) : null;
+    window._myUsername = doc.exists?(doc.data().username||'solite member'):'solite member';
+    window._myPhoto    = doc.exists?(doc.data().photoUrl||null):null;
   } else {
     document.getElementById('loginMsg').style.display = 'block';
   }
   loadFeed();
 });
 
-// ========================
-// PHOTO PREVIEW
-// ========================
 function previewPhotos(input) {
   selectedFiles = Array.from(input.files);
-  const grid    = document.getElementById('previewGrid');
-  const prompt  = document.getElementById('uploadPrompt');
-  grid.innerHTML = '';
-
-  if (selectedFiles.length > 0) {
-    prompt.style.display = 'none';
-    selectedFiles.slice(0, 4).forEach(file => {
-      const img = document.createElement('img');
-      img.className = 'photo-preview-item';
-      img.src = URL.createObjectURL(file);
-      grid.appendChild(img);
+  const grid=document.getElementById('previewGrid'), prompt=document.getElementById('uploadPrompt');
+  grid.innerHTML='';
+  if (selectedFiles.length>0) {
+    prompt.style.display='none';
+    selectedFiles.slice(0,4).forEach(file=>{
+      const img=document.createElement('img'); img.className='photo-preview-item'; img.src=URL.createObjectURL(file); grid.appendChild(img);
     });
-    if (selectedFiles.length > 4) {
-      const more = document.createElement('div');
-      more.style.cssText = `width:80px;height:80px;border-radius:10px;background:rgba(200,133,92,0.15);display:flex;align-items:center;justify-content:center;font-family:'Caveat',cursive;color:#c8855c;font-size:0.9rem;`;
-      more.textContent = `+${selectedFiles.length - 4} more`;
-      grid.appendChild(more);
+    if (selectedFiles.length>4) {
+      const more=document.createElement('div');
+      more.style.cssText=`width:80px;height:80px;border-radius:10px;background:rgba(200,133,92,0.15);display:flex;align-items:center;justify-content:center;font-family:'Caveat',cursive;color:#fde0a0;font-size:0.9rem;`;
+      more.textContent=`+${selectedFiles.length-4} more`; grid.appendChild(more);
     }
-  } else {
-    prompt.style.display = 'block';
-  }
+  } else { prompt.style.display='block'; }
 }
 
-// ========================
-// VIBE TAGS
-// ========================
 function toggleVibe(el) {
   el.classList.toggle('selected');
-  const vibe = el.textContent.trim();
-  if (el.classList.contains('selected')) {
-    selectedVibes.push(vibe);
-  } else {
-    selectedVibes = selectedVibes.filter(v => v !== vibe);
-  }
+  const vibe=el.textContent.trim();
+  if (el.classList.contains('selected')) { selectedVibes.push(vibe); }
+  else { selectedVibes=selectedVibes.filter(v=>v!==vibe); }
 }
 
-// ========================
-// STAR RATING
-// ========================
 function setRating(n) {
-  selectedRating = n;
-  document.querySelectorAll('#starPicker span').forEach((s, i) => {
-    s.classList.toggle('active', i < n);
-  });
-  const labels = ['', 'not my vibe', 'it was okay', 'pretty cozy', 'loved it', 'absolute fave ☕'];
-  document.getElementById('ratingLabel').textContent = labels[n];
+  selectedRating=n;
+  document.querySelectorAll('#starPicker span').forEach((s,i)=>s.classList.toggle('active',i<n));
+  const labels=['','not my vibe','it was okay','pretty cozy','loved it','absolute fave ☕'];
+  document.getElementById('ratingLabel').textContent=labels[n];
 }
 
-// ========================
-// ADD CAFE
-// ========================
 async function addCafe() {
   if (!currentUser) return;
-  const name = document.getElementById('cafeName').value.trim();
-  const city = document.getElementById('cafeCity').value.trim();
-  const map  = document.getElementById('cafeMap').value.trim();
-  const note = document.getElementById('cafeNote').value.trim();
-
+  const name=document.getElementById('cafeName').value.trim();
+  const city=document.getElementById('cafeCity').value.trim();
+  const map=document.getElementById('cafeMap').value.trim();
+  const note=document.getElementById('cafeNote').value.trim();
   if (!name) { showToast('please add a café name 🌸'); return; }
-
-  const btn = document.getElementById('submitBtn');
-  btn.disabled = true;
-  btn.textContent = 'adding...';
-
+  const btn=document.getElementById('submitBtn');
+  btn.disabled=true; btn.textContent='adding...';
   try {
-    // Upload photos
-    const photoUrls = [];
-    if (selectedFiles.length > 0) {
-      document.getElementById('uploadProgress').style.display = 'block';
-      for (const file of selectedFiles.slice(0, 5)) {
-        const ref = firebase.storage().ref().child(`cafes/${currentUser.uid}_${Date.now()}_${file.name}`);
-        await ref.put(file);
-        const url = await ref.getDownloadURL();
-        photoUrls.push(url);
+    const photoUrls=[];
+    if (selectedFiles.length>0) {
+      document.getElementById('uploadProgress').style.display='block';
+      for (const file of selectedFiles.slice(0,5)) {
+        const ref=firebase.storage().ref().child(`cafes/${currentUser.uid}_${Date.now()}_${file.name}`);
+        await ref.put(file); photoUrls.push(await ref.getDownloadURL());
       }
-      document.getElementById('uploadProgress').style.display = 'none';
+      document.getElementById('uploadProgress').style.display='none';
     }
-
     await db.collection('cafes').add({
-      uid:       currentUser.uid,
-      username:  window._myUsername || 'solite member',
-      photoUrl:  window._myPhoto || null,
-      name, city, map, note,
-      vibe:      selectedVibes,
-      photos:    photoUrls,
-      rating:    selectedRating,
-      likes:     [],
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      uid:currentUser.uid, username:window._myUsername||'solite member',
+      photoUrl:window._myPhoto||null, name, city, map, note,
+      vibe:selectedVibes, photos:photoUrls, rating:selectedRating,
+      likes:[], createdAt:firebase.firestore.FieldValue.serverTimestamp()
     });
-
-    // reset form
-    document.getElementById('cafeName').value = '';
-    document.getElementById('cafeCity').value = '';
-    document.getElementById('cafeMap').value  = '';
-    document.getElementById('cafeNote').value = '';
-    document.getElementById('previewGrid').innerHTML = '';
-    document.getElementById('uploadPrompt').style.display = 'block';
-    document.querySelectorAll('.vibe-tag').forEach(t => t.classList.remove('selected'));
-    selectedVibes = []; selectedFiles = []; selectedRating = 0;
-    document.querySelectorAll('#starPicker span').forEach(s => s.classList.remove('active'));
-    document.getElementById('ratingLabel').textContent = '';
-    document.getElementById('photoInput').value = '';
-
+    document.getElementById('cafeName').value=''; document.getElementById('cafeCity').value='';
+    document.getElementById('cafeMap').value=''; document.getElementById('cafeNote').value='';
+    document.getElementById('previewGrid').innerHTML=''; document.getElementById('uploadPrompt').style.display='block';
+    document.querySelectorAll('.vibe-tag').forEach(t=>t.classList.remove('selected'));
+    selectedVibes=[]; selectedFiles=[]; selectedRating=0;
+    document.querySelectorAll('#starPicker span').forEach(s=>s.classList.remove('active'));
+    document.getElementById('ratingLabel').textContent=''; document.getElementById('photoInput').value='';
     showToast('café added 🌸');
-  } catch(err) {
-    console.error(err);
-    showToast('something went wrong 🌸 try again');
-  }
-
-  btn.disabled = false;
-  btn.textContent = 'add to solite ✨';
+  } catch(err) { console.error(err); showToast('something went wrong 🌸 try again'); }
+  btn.disabled=false; btn.textContent='add to solite ✨';
 }
 
-// ========================
-// LOAD FEED
-// ========================
 function loadFeed() {
-  db.collection('cafes').orderBy('createdAt', 'desc').onSnapshot(snap => {
-    allCafes = snap.docs;
-    renderFeed();
+  db.collection('cafes').orderBy('createdAt','desc').onSnapshot(snap=>{
+    allCafes=snap.docs; renderFeed();
   });
 }
 
-function filterFeed(filter, el) {
-  currentFilter = filter;
-  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  renderFeed();
+function filterFeed(filter,el) {
+  currentFilter=filter;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active'); renderFeed();
 }
 
 function renderFeed() {
-  const grid = document.getElementById('cafeGrid');
-  grid.innerHTML = '';
+  const grid=document.getElementById('cafeGrid');
+  grid.innerHTML='';
+  let docs=allCafes;
+  if (currentFilter!=='all') docs=docs.filter(doc=>(doc.data().vibe||[]).includes(currentFilter));
+  if (docs.length===0) { grid.innerHTML=`<div class="empty-state">no cafés here yet 🌸<br><span style="font-size:1rem;">be the first to add one</span></div>`; return; }
+  docs.forEach((doc,idx)=>{
+    const d=doc.data(), id=doc.id;
+    const liked=currentUser&&d.likes&&d.likes.includes(currentUser.uid);
+    const stars='★'.repeat(d.rating||0)+'☆'.repeat(5-(d.rating||0));
+    const photos=d.photos||[], isSeeded=d.isSeeded===true;
+    const card=document.createElement('div');
+    card.className=`cafe-card${isSeeded?' seeded':''}`;
+    card.style.animationDelay=`${idx*0.06}s`;
 
-  let docs = allCafes;
-  if (currentFilter !== 'all') {
-    docs = docs.filter(doc => (doc.data().vibe || []).includes(currentFilter));
-  }
-
-  if (docs.length === 0) {
-    grid.innerHTML = `<div class="empty-state">no cafés here yet 🌸<br><span style="font-size:1rem;color:#c8a888;">be the first to add one</span></div>`;
-    return;
-  }
-
-  docs.forEach((doc, idx) => {
-    const d     = doc.data();
-    const id    = doc.id;
-    const liked = currentUser && d.likes && d.likes.includes(currentUser.uid);
-    const stars = '★'.repeat(d.rating || 0) + '☆'.repeat(5 - (d.rating || 0));
-    const photos = d.photos || [];
-
-    const card = document.createElement('div');
-    card.className = 'cafe-card';
-    card.style.animationDelay = `${idx * 0.06}s`;
-
-    // Photo strip
-    let photoHtml = '';
-    if (photos.length === 0) {
-      photoHtml = `<div class="cafe-photo-strip"><div class="no-photo">☕<span>no photos yet</span></div></div>`;
-    } else if (photos.length === 1) {
-      photoHtml = `<div class="cafe-photo-strip"><img src="${photos[0]}" onclick="openLightbox('${photos[0]}')" style="cursor:pointer;"></div>`;
+    let photoHtml='';
+    if (photos.length===0) {
+      photoHtml=`<div class="cafe-photo-strip"><div class="no-photo">☕<span>no photos yet</span></div></div>`;
+    } else if (photos.length===1) {
+      photoHtml=`<div class="cafe-photo-strip"><img src="${photos[0]}" onclick="openLightbox('${photos[0]}')" style="cursor:pointer;"></div>`;
     } else {
-      const right = photos.slice(1, 3).map(p =>
-        `<img src="${p}" onclick="openLightbox('${p}')" style="cursor:pointer;">`
-      ).join('');
-      const badge = photos.length > 3 ? `<div class="photo-count-badge">+${photos.length - 3} more</div>` : '';
-      photoHtml = `
-        <div class="cafe-photo-strip">
-          <div class="multi-photo">
-            <img src="${photos[0]}" onclick="openLightbox('${photos[0]}')" style="cursor:pointer;">
-            <div class="right-col">${right}</div>
-          </div>
-          ${badge}
-        </div>`;
+      const right=photos.slice(1,3).map(p=>`<img src="${p}" onclick="openLightbox('${p}')" style="cursor:pointer;">`).join('');
+      const badge=photos.length>3?`<div class="photo-count-badge">+${photos.length-3} more</div>`:'';
+      photoHtml=`<div class="cafe-photo-strip"><div class="multi-photo"><img src="${photos[0]}" onclick="openLightbox('${photos[0]}')" style="cursor:pointer;"><div class="right-col">${right}</div></div>${badge}</div>`;
     }
+    const tagsHtml=(d.vibe||[]).map(t=>`<span class="cafe-tag">${t}</span>`).join('');
+    const avatarHtml=d.photoUrl?`<img src="${d.photoUrl}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;">`:`<div class="avatar-mini">${(d.username||'s').charAt(0).toUpperCase()}</div>`;
 
-    // Tags
-    const tagsHtml = (d.vibe || []).map(t => `<span class="cafe-tag">${t}</span>`).join('');
-
-    // Avatar
-    const avatarHtml = d.photoUrl
-      ? `<img src="${d.photoUrl}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;">`
-      : `<div class="avatar-mini">${(d.username||'s').charAt(0).toUpperCase()}</div>`;
-
-    card.innerHTML = `
+    card.innerHTML=`
       ${photoHtml}
       <div class="cafe-body">
         <div class="cafe-name">${d.name}</div>
-        ${d.city ? `<div class="cafe-location">📍 ${d.city}</div>` : ''}
-        ${d.rating ? `<div class="cafe-stars">${stars}</div>` : ''}
-        ${d.note ? `<div class="cafe-note">"${d.note}"</div>` : ''}
-        ${tagsHtml ? `<div class="cafe-tags">${tagsHtml}</div>` : ''}
-        <div class="cafe-meta">
-          ${avatarHtml}
-          <span>added by @${d.username || 'solite member'}</span>
-        </div>
+        ${d.city?`<div class="cafe-location">📍 ${d.city}</div>`:''}
+        ${d.rating?`<div class="cafe-stars">${stars}</div>`:''}
+        ${d.note?`<div class="cafe-note">"${d.note}"</div>`:''}
+        ${tagsHtml?`<div class="cafe-tags">${tagsHtml}</div>`:''}
+        <div class="cafe-meta">${avatarHtml}<span>added by @${d.username||'solite member'}</span></div>
         <div class="cafe-actions">
-          <button class="${liked ? 'liked' : ''}" onclick="toggleLike('${id}', ${liked})" id="likeBtn-${id}">
-            ${liked ? '❤️' : '🤍'} ${d.likes ? d.likes.length : 0}
-          </button>
+          <button onclick="toggleLike('${id}',${liked})">${liked?'❤️':'🤍'} ${d.likes?d.likes.length:0}</button>
           <button onclick="toggleComments('${id}')">💬 comments</button>
-          ${d.map ? `<a href="${d.map}" target="_blank" class="maps-link">🗺 maps</a>` : ''}
+          ${d.map?`<a href="${d.map}" target="_blank" class="maps-link">🗺 maps ↗</a>`:''}
         </div>
         <div class="comments-box" id="comments-${id}">
           <div id="commentList-${id}"></div>
-          ${currentUser ? `
-            <div style="display:flex;gap:8px;margin-top:8px;">
-              <input id="commentInput-${id}" placeholder="been here too? 🌸" style="flex:1;padding:7px 10px;border-radius:10px;border:1.5px solid #e0c8b0;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.85);color:#3d2010;">
-              <button onclick="addComment('${id}')">send</button>
-            </div>` : ''}
+          ${currentUser?`<div style="display:flex;gap:8px;margin-top:8px;"><input id="commentInput-${id}" placeholder="been here too? 🌸" style="flex:1;padding:7px 10px;background:rgba(255,255,255,0.08)!important;border:1px solid rgba(210,155,80,0.3)!important;color:#fde0a0!important;border-radius:10px!important;"><button onclick="addComment('${id}')" style="background:rgba(200,110,40,0.4);border:1px solid rgba(210,140,60,0.5);color:#fde0a0;border-radius:20px;padding:5px 14px;font-size:0.82rem;box-shadow:none;">send</button></div>`:''}
         </div>
-      </div>
-    `;
+      </div>`;
 
+    if (isSeeded&&d.map) {
+      card.addEventListener('click',e=>{
+        if (!e.target.closest('button')&&!e.target.closest('input')&&!e.target.closest('a')&&!e.target.closest('img')) window.open(d.map,'_blank');
+      });
+    }
     grid.appendChild(card);
   });
 }
 
-// ========================
-// LIGHTBOX
-// ========================
-function openLightbox(src) {
-  document.getElementById('lightboxImg').src = src;
-  document.getElementById('lightbox').classList.add('open');
-}
-function closeLightbox() {
-  document.getElementById('lightbox').classList.remove('open');
-}
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+function openLightbox(src) { document.getElementById('lightboxImg').src=src; document.getElementById('lightbox').classList.add('open'); }
+function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeLightbox(); });
 
-// ========================
-// LIKE
-// ========================
-function toggleLike(id, liked) {
+function toggleLike(id,liked) {
   if (!currentUser) { showToast('log in to save cafés 🌸'); return; }
-  const ref = db.collection('cafes').doc(id);
-  if (liked) {
-    ref.update({ likes: firebase.firestore.FieldValue.arrayRemove(currentUser.uid) });
-  } else {
-    ref.update({ likes: firebase.firestore.FieldValue.arrayUnion(currentUser.uid) });
-  }
+  const ref=db.collection('cafes').doc(id);
+  if (liked) { ref.update({likes:firebase.firestore.FieldValue.arrayRemove(currentUser.uid)}); }
+  else        { ref.update({likes:firebase.firestore.FieldValue.arrayUnion(currentUser.uid)}); }
 }
 
-// ========================
-// COMMENTS
-// ========================
 function toggleComments(id) {
-  const box = document.getElementById(`comments-${id}`);
-  const open = box.style.display === 'block';
-  box.style.display = open ? 'none' : 'block';
+  const box=document.getElementById(`comments-${id}`);
+  const open=box.style.display==='block';
+  box.style.display=open?'none':'block';
   if (!open) loadComments(id);
 }
-
 function loadComments(postId) {
-  db.collection('cafes').doc(postId).collection('comments')
-    .orderBy('createdAt', 'asc')
-    .onSnapshot(snap => {
-      const list = document.getElementById(`commentList-${postId}`);
-      if (!list) return;
-      list.innerHTML = '';
-      snap.forEach(doc => {
-        const d = doc.data();
-        const c = document.createElement('div');
-        c.className = 'comment';
-        c.innerHTML = `<span style="color:#c8855c;font-weight:500;">@${d.username || 'solite member'}</span> <span>${d.text}</span>`;
-        list.appendChild(c);
-      });
+  db.collection('cafes').doc(postId).collection('comments').orderBy('createdAt','asc').onSnapshot(snap=>{
+    const list=document.getElementById(`commentList-${postId}`); if (!list) return;
+    list.innerHTML='';
+    snap.forEach(doc=>{
+      const d=doc.data(), c=document.createElement('div'); c.className='comment';
+      c.innerHTML=`<span style="color:#ffdd44;font-weight:500;">@${d.username||'solite member'}</span> <span>${d.text}</span>`;
+      list.appendChild(c);
     });
+  });
 }
-
 function addComment(postId) {
   if (!currentUser) return;
-  const input = document.getElementById(`commentInput-${postId}`);
-  const text  = input.value.trim();
+  const input=document.getElementById(`commentInput-${postId}`), text=input.value.trim();
   if (!text) return;
   db.collection('cafes').doc(postId).collection('comments').add({
-    uid:      currentUser.uid,
-    username: window._myUsername || 'solite member',
-    text,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  }).then(() => input.value = '');
+    uid:currentUser.uid, username:window._myUsername||'solite member',
+    text, createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  }).then(()=>input.value='');
 }
 
-// ========================
-// TOAST
-// ========================
 function showToast(msg) {
-  const toast = document.createElement('div');
-  toast.style.cssText = `position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#fdf5ec;border:1px solid #e0c8b0;border-radius:24px;padding:10px 24px;font-family:'Caveat',cursive;font-size:1.1rem;color:#5c3317;box-shadow:0 6px 20px rgba(100,50,10,0.15);z-index:99999;white-space:nowrap;`;
-  toast.textContent = msg;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
+  const toast=document.createElement('div');
+  toast.style.cssText=`position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(60,28,8,0.95);border:1px solid rgba(210,155,80,0.4);border-radius:24px;padding:10px 24px;font-family:'Caveat',cursive;font-size:1.1rem;color:#fde0a0;box-shadow:0 6px 20px rgba(0,0,0,0.4);z-index:99999;white-space:nowrap;`;
+  toast.textContent=msg; document.body.appendChild(toast); setTimeout(()=>toast.remove(),3000);
 }
 </script>
 
-<!-- Daisy background -->
 <script>
-(function() {
-  const container = document.getElementById('daisy-bg');
-  function makeDaisy(size) {
-    const ns = 'http://www.w3.org/2000/svg';
-    const svg = document.createElementNS(ns, 'svg');
-    svg.setAttribute('width', size*2.6); svg.setAttribute('height', size*2.6); svg.setAttribute('viewBox', '-20 -20 40 40');
-    [0,45,90,135,180,225,270,315].forEach(a => {
-      const el = document.createElementNS(ns, 'ellipse');
-      el.setAttribute('cx',0); el.setAttribute('cy',-size); el.setAttribute('rx',size*0.44); el.setAttribute('ry',size*0.77);
-      el.setAttribute('fill','#fffef0'); el.setAttribute('transform',`rotate(${a})`); svg.appendChild(el);
+(function(){
+  const container=document.getElementById('daisy-bg'); if(!container) return;
+  function makeDaisy(size){
+    const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');
+    svg.setAttribute('width',size*2.6);svg.setAttribute('height',size*2.6);svg.setAttribute('viewBox','-20 -20 40 40');
+    [0,45,90,135,180,225,270,315].forEach(a=>{
+      const el=document.createElementNS(ns,'ellipse');
+      el.setAttribute('cx',0);el.setAttribute('cy',-size);el.setAttribute('rx',size*0.44);el.setAttribute('ry',size*0.77);
+      el.setAttribute('fill','rgba(255,240,200,0.12)');el.setAttribute('transform',`rotate(${a})`);svg.appendChild(el);
     });
-    const c1 = document.createElementNS(ns,'circle'); c1.setAttribute('r',size*0.55); c1.setAttribute('fill','#f5d76e'); svg.appendChild(c1);
-    const c2 = document.createElementNS(ns,'circle'); c2.setAttribute('r',size*0.28); c2.setAttribute('fill','#e8c94a'); svg.appendChild(c2);
+    const c1=document.createElementNS(ns,'circle');c1.setAttribute('r',size*0.55);c1.setAttribute('fill','rgba(255,210,60,0.18)');svg.appendChild(c1);
     return svg;
   }
-  for (let i = 0; i < 28; i++) {
-    const w = document.createElement('div'); w.classList.add('daisy');
-    const size = 5+Math.random()*7;
-    const opHigh = (0.25+Math.random()*0.35).toFixed(2);
-    const opLow  = (parseFloat(opHigh)*0.3).toFixed(2);
-    w.style.cssText = `left:${(Math.random()*100).toFixed(1)}%;top:${(Math.random()*100).toFixed(1)}%;--op-high:${opHigh};--op-low:${opLow};animation-duration:${(3+Math.random()*5).toFixed(1)}s;animation-delay:-${(Math.random()*6).toFixed(1)}s;`;
-    const svg = makeDaisy(size); svg.style.animationDuration=`${(2+Math.random()*4).toFixed(1)}s`; svg.style.animationDelay=`-${(Math.random()*6).toFixed(1)}s`;
-    w.appendChild(svg); container.appendChild(w);
+  for(let i=0;i<16;i++){
+    const w=document.createElement('div');w.classList.add('daisy');
+    const size=4+Math.random()*6,opHigh=(0.1+Math.random()*0.15).toFixed(2),opLow=(parseFloat(opHigh)*0.3).toFixed(2);
+    w.style.cssText=`left:${(Math.random()*100).toFixed(1)}%;top:${(Math.random()*100).toFixed(1)}%;--op-high:${opHigh};--op-low:${opLow};animation-duration:${(3+Math.random()*5).toFixed(1)}s;animation-delay:-${(Math.random()*6).toFixed(1)}s;`;
+    w.appendChild(makeDaisy(size));container.appendChild(w);
   }
 })();
 </script>
-
 </body>
 </html>
