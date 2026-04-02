@@ -853,22 +853,100 @@ function quickSearch(term) {
 // ==========================
 // NOTIFICATION BADGE
 // ==========================
+// NOTIFICATION BADGE + TOAST
+// ==========================
+let _lastNotifCount = null;
+
 function watchNotifBadge(user) {
   db.collection('users').doc(user.uid).collection('notifications')
+    .orderBy('createdAt', 'desc')
     .onSnapshot(snap => {
+      // badge count
       const unread = snap.docs.filter(d => d.data().read !== true).length;
       const link = document.querySelector('a[href="notifications.html"]');
-      if (!link) return;
-      const existing = link.querySelector('.notif-badge');
-      if (existing) existing.remove();
-      if (unread > 0) {
-        const badge = document.createElement('span');
-        badge.className = 'notif-badge';
-        badge.textContent = unread;
-        badge.style.cssText = `background:#c8855c;color:white;border-radius:50%;font-size:0.65rem;padding:1px 5px;margin-left:4px;font-family:'DM Sans',sans-serif;`;
-        link.appendChild(badge);
+      if (link) {
+        const existing = link.querySelector('.notif-badge');
+        if (existing) existing.remove();
+        if (unread > 0) {
+          const badge = document.createElement('span');
+          badge.className = 'notif-badge';
+          badge.textContent = unread;
+          badge.style.cssText = `background:#c8855c;color:white;border-radius:50%;font-size:0.65rem;padding:1px 5px;margin-left:4px;font-family:'DM Sans',sans-serif;`;
+          link.appendChild(badge);
+        }
       }
+
+      // toast — only fire for genuinely new notifications
+      if (_lastNotifCount === null) {
+        _lastNotifCount = snap.docs.length;
+        return;
+      }
+
+      if (snap.docs.length > _lastNotifCount) {
+        const newest = snap.docs[0]?.data();
+        if (newest && newest.read !== true) {
+          showNotifToast(newest.text || 'new notification 🌸');
+        }
+      }
+      _lastNotifCount = snap.docs.length;
     });
+}
+
+function showNotifToast(message) {
+  // remove any existing toast
+  document.getElementById('notifToast')?.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'notifToast';
+  toast.style.cssText = `
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: rgba(253,245,236,0.98);
+    border: 1.5px solid rgba(200,133,92,0.4);
+    border-radius: 24px;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    color: #5c3317;
+    box-shadow: 0 8px 28px rgba(120,70,30,0.18);
+    z-index: 999999;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    cursor: pointer;
+    max-width: 320px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  `;
+
+  toast.innerHTML = `
+    <span style="font-size:1.1rem;flex-shrink:0;">🔔</span>
+    <span style="flex:1;overflow:hidden;text-overflow:ellipsis;">${message}</span>
+    <a href="notifications.html" style="color:#c8855c;font-size:0.8rem;text-decoration:none;flex-shrink:0;font-weight:500;">see all</a>
+  `;
+
+  toast.onclick = () => window.location.href = 'notifications.html';
+  document.body.appendChild(toast);
+
+  // animate in
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      toast.style.opacity = '1';
+      toast.style.transform = 'translateX(-50%) translateY(0)';
+    });
+  });
+
+  // animate out after 4 seconds
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(-50%) translateY(-20px)';
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
 }
 
 // ==========================
