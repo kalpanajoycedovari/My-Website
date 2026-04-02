@@ -1,20 +1,23 @@
 {
   "name": "Solite's Corner",
-  "short_name": "Solite",
-  "start_url": "/index.html",
+  "short_name": "Solite's Corner",
+  "start_url": "/My-Website/index.html",
+  "scope": "/My-Website/",
   "display": "standalone",
-  "background_color": "#fff3eb",
-  "theme_color": "#8fbf9f",
+  "background_color": "#f7efe6",
+  "theme_color": "#c8855c",
   "icons": [
     {
       "src": "images/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "images/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
