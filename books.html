@@ -27,7 +27,7 @@
 <div id="daisy-bg"></div>
 
 <header class="top">
-  <h1>📖 Stories</h1>
+  <h1>📖 books</h1>
   <p>"little worlds worth getting lost in"</p>
   <nav style="margin-top:10px;">
     <a href="index.html" style="color:#4a7c59;text-decoration:none;font-size:0.9rem;">← back home</a>
@@ -46,11 +46,11 @@
   </div>
 
   <p id="loginMsg" style="text-align:center;color:#7aaa82;font-size:0.9rem;margin:1rem 0;display:none;">
-    <a href="login.html" style="color:#4a7c59;">Login</a> to write and react to stories.
+    <a href="login.html" style="color:#4a7c59;">Login</a> to write and react to books.
   </p>
 
   <!-- FEED -->
-  <div id="storiesFeed"></div>
+  <div id="booksFeed"></div>
 
 </main>
 
@@ -75,7 +75,7 @@ function postStory() {
   const tags  = document.getElementById('storyTags').value.split(',').map(t => t.trim()).filter(Boolean);
   if (!title || !body) return alert('Please add a title and story!');
 
-  db.collection('stories').add({
+  db.collection('books').add({
     uid:       currentUser.uid,
     email:     currentUser.email,
     title,
@@ -91,8 +91,8 @@ function postStory() {
 }
 
 function loadFeed() {
-  const feed = document.getElementById('storiesFeed');
-  db.collection('stories')
+  const feed = document.getElementById('booksFeed');
+  db.collection('books')
     .orderBy('createdAt', 'desc')
     .onSnapshot(snap => {
       feed.innerHTML = '';
@@ -148,8 +148,8 @@ function toggleStory(id) {
 }
 
 function toggleLike(id, liked) {
-  if (!currentUser) return alert('Login to like stories!');
-  const ref = db.collection('stories').doc(id);
+  if (!currentUser) return alert('Login to like books!');
+  const ref = db.collection('books').doc(id);
   if (liked) {
     ref.update({ likes: firebase.firestore.FieldValue.arrayRemove(currentUser.uid) });
   } else {
@@ -169,7 +169,7 @@ function toggleComments(id) {
 
 function loadComments(postId) {
   const list = document.getElementById(`commentList-${postId}`);
-  db.collection('stories').doc(postId).collection('comments')
+  db.collection('books').doc(postId).collection('comments')
     .orderBy('createdAt', 'asc')
     .onSnapshot(snap => {
       list.innerHTML = '';
@@ -188,7 +188,7 @@ function addComment(postId) {
   const input = document.getElementById(`commentInput-${postId}`);
   const text  = input.value.trim();
   if (!text) return;
-  db.collection('stories').doc(postId).collection('comments').add({
+  db.collection('books').doc(postId).collection('comments').add({
     uid:       currentUser.uid,
     email:     currentUser.email,
     text,

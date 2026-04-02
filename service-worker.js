@@ -10,7 +10,7 @@ const urlsToCache = [
   '/saved.html',
   '/cafes.html',
   '/music.html',
-  '/stories.html',
+  '/books.html',
   '/notifications.html',
   '/messages.html',
   '/post.html',

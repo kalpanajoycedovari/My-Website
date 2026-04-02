@@ -10,7 +10,7 @@
 
 ## What is Solite?
 
-Solite is a cozy, invite-only social platform designed as an antidote to the noise of the mainstream internet. It's a space where members share thoughts, music, stories, and little moments — with no follower counts, no algorithmic feed, no public metrics. Just people, and what they want to say.
+Solite is a cozy, invite-only social platform designed as an antidote to the noise of the mainstream internet. It's a space where members share thoughts, music, books, and little moments — with no follower counts, no algorithmic feed, no public metrics. Just people, and what they want to say.
 
 Built entirely from scratch as a full-stack solo project: real-time database, authentication, user profiles, social graph, messaging, safety tools, and a custom admin system — all hosted on GitHub Pages with a Firebase backend.
 

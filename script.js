@@ -154,7 +154,7 @@ function injectFloatingBtn() {
   menu.id = 'fabMenu';
   menu.style.cssText = `position:fixed;bottom:152px;right:18px;display:none;flex-direction:column;gap:10px;z-index:9998;align-items:flex-end;`;
   menu.innerHTML = `
-    <a href="stories.html" style="${fabItemStyle()}">📖 write a story</a>
+    <a href="books.html" style="${fabItemStyle()}">📖 write a story</a>
     <a href="cafes.html"   style="${fabItemStyle()}">☕ add a café</a>
     <a href="music.html"   style="${fabItemStyle()}">🎧 share a song</a>
     <span onclick="scrollToPost()" style="${fabItemStyle()}cursor:pointer;">💬 yap something</span>
@@ -1146,7 +1146,7 @@ function renderObStep(step, user, existingUsername) {
       <div class="ob-step-body" style="margin-bottom:18px;">here's what lives here —</div>
       <div class="ob-feature"><div class="ob-feature-icon">💬</div><div class="ob-feature-text"><strong>yap</strong>share thoughts, songs, books, café finds</div></div>
       <div class="ob-feature"><div class="ob-feature-icon">🤍</div><div class="ob-feature-text"><strong>find friends</strong>search by username and connect quietly</div></div>
-      <div class="ob-feature"><div class="ob-feature-icon">🎧</div><div class="ob-feature-text"><strong>music & stories & cafés</strong>little collections, all yours</div></div>
+      <div class="ob-feature"><div class="ob-feature-icon">🎧</div><div class="ob-feature-text"><strong>music & books & cafés</strong>little collections, all yours</div></div>
       <div class="ob-feature"><div class="ob-feature-icon">🌼</div><div class="ob-feature-text"><strong>stay small</strong>this place will never have more than 1000 people</div></div>
     `;
     const btn = document.createElement('button');

@@ -223,14 +223,14 @@
   <div class="tab-bar">
     <button class="tab active" onclick="switchTab('posts')">posts</button>
     <button class="tab" onclick="switchTab('music')">music</button>
-    <button class="tab" onclick="switchTab('stories')">stories</button>
+    <button class="tab" onclick="switchTab('books')">books</button>
     <button class="tab" onclick="switchTab('cafes')">cafés</button>
     <button class="tab" onclick="switchTab('friends')">friends</button>
   </div>
 
   <div id="tab-posts"   class="tab-panel active"><div id="postsList"></div></div>
   <div id="tab-music"   class="tab-panel"><div id="musicList"></div></div>
-  <div id="tab-stories" class="tab-panel"><div id="storiesList"></div></div>
+  <div id="tab-books" class="tab-panel"><div id="booksList"></div></div>
   <div id="tab-cafes"   class="tab-panel"><div id="cafesList"></div></div>
   <div id="tab-friends" class="tab-panel"><div id="friendsList"></div></div>
 
@@ -576,7 +576,7 @@ function showToast(msg) {
 
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach((t, i) => {
-    t.classList.toggle('active', ['posts','music','stories','cafes','friends'][i] === tab);
+    t.classList.toggle('active', ['posts','music','books','cafes','friends'][i] === tab);
   });
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.getElementById(`tab-${tab}`).classList.add('active');
@@ -585,7 +585,7 @@ function switchTab(tab) {
 
 function loadTab(tab) {
   if (tab === 'friends') { loadFriendsTab(); return; }
-  const listIds = { posts: 'postsList', music: 'musicList', stories: 'storiesList', cafes: 'cafesList' };
+  const listIds = { posts: 'postsList', music: 'musicList', books: 'booksList', cafes: 'cafesList' };
   const list    = document.getElementById(listIds[tab]);
   list.innerHTML = `<p style="color:#c8a888;font-size:0.88rem;text-align:center;padding:10px;">loading...</p>`;
   db.collection(tab).where('uid', '==', profileUid).orderBy('createdAt', 'desc').get()
@@ -604,7 +604,7 @@ function loadTab(tab) {
           card.innerHTML = `
             <h3 style="font-family:'Playfair Display',serif;color:#5c3317;font-size:1rem;">${d.title || ''}</h3>
             ${d.feelings ? `<p style="font-size:0.85rem;color:#b07858;font-family:'Caveat',cursive;">"${d.feelings}"</p>` : ''}`;
-        } else if (tab === 'stories') {
+        } else if (tab === 'books') {
           const preview = d.body ? d.body.slice(0,120) + (d.body.length > 120 ? '...' : '') : '';
           card.innerHTML = `
             <h3 style="font-family:'Playfair Display',serif;color:#5c3317;font-size:1rem;">${d.title || ''}</h3>
