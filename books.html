@@ -3,10 +3,8 @@
 <head>
   <title>Books — Solite</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&family=Caveat:wght@400;600&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-<link rel="icon" type="image/png" href="favicon.png">
+  <link rel="icon" type="image/png" href="favicon.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -16,10 +14,112 @@
   <script>firebase.initializeApp(firebaseConfig);</script>
 
   <style>
-    .story-card { cursor: pointer; }
-    .story-full { display: none; white-space: pre-wrap; font-size: 0.92rem; color: #4a7c59; line-height: 1.8; margin-top: 10px; font-family: 'Playfair Display', serif; }
-    .story-full.open { display: block; }
-    .story-tag { display: inline-block; background: #e2f4de; color: #4a7c59; font-size: 0.75rem; padding: 3px 10px; border-radius: 20px; margin: 4px 4px 0 0; }
+    /* ========================
+       BOOK PAGE STYLES
+    ======================== */
+    .books-wrap { max-width:900px; margin:0 auto; padding:1.5rem; position:relative; z-index:1; }
+
+    /* ADD BOOK FORM */
+    .add-book-form {
+      background:rgba(255,255,255,0.9); border-radius:24px; padding:24px;
+      margin-bottom:2rem; border:1px solid rgba(210,175,140,0.3);
+      box-shadow:0 4px 20px rgba(120,70,30,0.08);
+    }
+    .add-book-form h3 { font-family:'Playfair Display',serif; font-style:italic; font-size:1.2rem; color:#5c3317; margin-bottom:16px; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+    .form-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px; }
+    @media(max-width:580px){ .form-row,.form-row-3{ grid-template-columns:1fr; } }
+
+    .form-label { font-size:0.78rem; color:#b07858; font-family:'DM Sans',sans-serif; margin-bottom:4px; display:block; }
+
+    /* genre tags */
+    .genre-tags { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+    .genre-tag { padding:5px 14px; border-radius:20px; border:1.5px solid #e0c8b0; font-size:0.8rem; color:#7a4a2a; cursor:pointer; font-family:'DM Sans',sans-serif; background:rgba(255,255,255,0.88); transition:0.15s; user-select:none; }
+    .genre-tag.selected { background:linear-gradient(135deg,#c8855c,#a05530); color:white; border-color:#c8855c; }
+
+    /* star rating */
+    .star-row { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+    .star-picker span { font-size:1.5rem; cursor:pointer; transition:transform 0.15s; display:inline-block; color:rgba(200,160,80,0.3); }
+    .star-picker span.active { color:#f5d76e; transform:scale(1.15); }
+
+    /* ========================
+       FILTER + SECTION
+    ======================== */
+    .filter-bar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1.5rem; }
+    .filter-chip { padding:6px 16px; border-radius:20px; border:1.5px solid #e0c8b0; font-size:0.82rem; color:#7a4a2a; cursor:pointer; font-family:'DM Sans',sans-serif; background:rgba(255,255,255,0.85); transition:0.15s; }
+    .filter-chip.active { background:linear-gradient(135deg,#c8855c,#a05530); color:white; border-color:#c8855c; }
+
+    .section-title { font-family:'Playfair Display',serif; font-style:italic; font-size:1.2rem; color:#5c3317; margin-bottom:1rem; }
+
+    /* ========================
+       BOOK CARDS GRID
+    ======================== */
+    .books-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:1.4rem; }
+    @media(max-width:600px){ .books-grid{ grid-template-columns:1fr; } }
+
+    .book-card {
+      background:rgba(255,255,255,0.92); border-radius:20px; overflow:hidden;
+      border:1px solid rgba(210,175,140,0.25); box-shadow:0 4px 18px rgba(120,70,30,0.08);
+      transition:transform 0.2s,box-shadow 0.2s; animation:fadeUp 0.4s ease forwards; opacity:0;
+      display:flex; flex-direction:column;
+    }
+    .book-card:hover { transform:translateY(-4px); box-shadow:0 12px 30px rgba(120,70,30,0.15); }
+    .book-card.seeded { cursor:pointer; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(16px);} to{opacity:1;transform:translateY(0);} }
+
+    /* spine colour strip at top */
+    .book-spine-strip { height:8px; width:100%; }
+
+    .book-cover {
+      width:100%; height:180px; position:relative; overflow:hidden;
+      display:flex; align-items:center; justify-content:center;
+      font-size:3.5rem;
+    }
+    .book-cover-overlay {
+      position:absolute; inset:0;
+      background:linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.3));
+    }
+    .book-cover-badge {
+      position:absolute; top:10px; right:10px;
+      background:rgba(255,255,255,0.92); border-radius:20px;
+      padding:3px 10px; font-size:0.7rem; font-family:'DM Sans',sans-serif;
+      color:#7a4a2a; border:1px solid rgba(200,150,90,0.3);
+    }
+
+    .book-body { padding:14px 16px; flex:1; display:flex; flex-direction:column; }
+    .book-title { font-family:'Playfair Display',serif; font-size:1rem; color:#3d1f0a; margin-bottom:3px; line-height:1.3; }
+    .book-author { font-size:0.78rem; color:#c8a888; font-family:'DM Sans',sans-serif; margin-bottom:8px; }
+    .book-stars { color:#f5d76e; font-size:0.85rem; margin-bottom:8px; letter-spacing:1px; }
+
+    /* characters row */
+    .book-characters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+    .char-pill {
+      display:flex; align-items:center; gap:5px;
+      background:rgba(200,133,92,0.08); border:1px solid rgba(200,133,92,0.2);
+      border-radius:20px; padding:3px 10px; font-size:0.72rem;
+      font-family:'DM Sans',sans-serif; color:#7a4a2a;
+    }
+    .char-pill .char-icon { font-size:0.8rem; }
+
+    .book-review { font-family:'Caveat',cursive; font-size:0.95rem; color:#7a4a2a; line-height:1.6; margin-bottom:10px; font-style:italic; flex:1; }
+
+    .book-tags { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:12px; }
+    .book-tag { display:inline-block; background:rgba(200,133,92,0.1); color:#7a4a2a; font-size:0.72rem; padding:2px 9px; border-radius:20px; font-family:'DM Sans',sans-serif; border:1px solid rgba(200,133,92,0.2); }
+
+    .book-meta { font-size:0.72rem; color:#c8a888; font-family:'DM Sans',sans-serif; margin-bottom:10px; display:flex; align-items:center; gap:5px; }
+    .avatar-mini { width:18px; height:18px; border-radius:50%; background:linear-gradient(135deg,#c8855c,#a05530); display:flex; align-items:center; justify-content:center; color:white; font-size:0.6rem; font-family:'Caveat',cursive; flex-shrink:0; }
+
+    .book-actions { display:flex; align-items:center; gap:8px; padding-top:10px; border-top:1px solid rgba(210,175,140,0.2); }
+    .book-actions button { font-size:0.8rem; padding:5px 12px; background:rgba(255,248,235,0.8); border:1.5px solid #e0c8b0; color:#7a4a2a; border-radius:20px; box-shadow:none; }
+    .book-actions button:hover { background:#fdf0e6; border-color:#c8855c; }
+    .goodreads-link { font-size:0.78rem; color:#c8855c; text-decoration:none; font-family:'DM Sans',sans-serif; margin-left:auto; }
+    .goodreads-link:hover { text-decoration:underline; }
+
+    .comments-box { display:none; margin-top:10px; padding-top:10px; border-top:1px solid rgba(210,175,140,0.15); }
+    .comment { font-size:0.83rem; color:#5c3317; padding:5px 0; border-bottom:1px solid rgba(210,175,140,0.1); font-family:'DM Sans',sans-serif; }
+    .comment:last-child { border-bottom:none; }
+
+    .empty-state { text-align:center; padding:60px 20px; font-family:'Caveat',cursive; color:#b07858; font-size:1.3rem; grid-column:1/-1; }
   </style>
 </head>
 
@@ -27,216 +127,361 @@
 <div id="daisy-bg"></div>
 
 <header class="top">
-  <h1>📖 books</h1>
+  <h1>📖 Books</h1>
   <p>"little worlds worth getting lost in"</p>
   <nav style="margin-top:10px;">
-    <a href="index.html" style="color:#4a7c59;text-decoration:none;font-size:0.9rem;">← back home</a>
+    <a href="index.html" style="color:#5c3317;text-decoration:none;font-size:0.9rem;font-family:'DM Sans',sans-serif;">← back home</a>
   </nav>
 </header>
 
-<main style="max-width:700px;margin:0 auto;padding:1.5rem;">
+<div class="books-wrap">
 
-  <!-- WRITE A STORY -->
-  <div class="create-post" id="writeBox" style="display:none;">
-    <h3 style="font-family:'Playfair Display',serif;color:#4a7c59;margin-bottom:8px;">write something 🌙</h3>
-    <input type="text" id="storyTitle" placeholder="title...">
-    <textarea id="storyBody" placeholder="once upon a time..." style="min-height:140px;"></textarea>
-    <input type="text" id="storyTags" placeholder="tags — cozy, nostalgic, love... (comma separated)">
-    <button onclick="postStory()">Post ✨</button>
+  <!-- ADD BOOK FORM -->
+  <div class="add-book-form" id="writeBox" style="display:none;">
+    <h3>add a book 📖</h3>
+
+    <div class="form-row">
+      <div>
+        <label class="form-label">book title *</label>
+        <input type="text" id="bookTitle" placeholder="e.g. Fourth Wing">
+      </div>
+      <div>
+        <label class="form-label">author *</label>
+        <input type="text" id="bookAuthor" placeholder="e.g. Rebecca Yarros">
+      </div>
+    </div>
+
+    <div class="form-row-3">
+      <div>
+        <label class="form-label">male main character</label>
+        <input type="text" id="bookMaleMain" placeholder="e.g. Xaden Riorson">
+      </div>
+      <div>
+        <label class="form-label">female main character</label>
+        <input type="text" id="bookFemaleMain" placeholder="e.g. Violet Sorrengail">
+      </div>
+      <div>
+        <label class="form-label">favourite character</label>
+        <input type="text" id="bookFavChar" placeholder="e.g. Liam Mairi">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div>
+        <label class="form-label">trope</label>
+        <input type="text" id="bookTrope" placeholder="e.g. enemies to lovers">
+      </div>
+      <div>
+        <label class="form-label">goodreads / amazon link (optional)</label>
+        <input type="url" id="bookLink" placeholder="paste link here">
+      </div>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <label class="form-label">genre —</label>
+      <div class="genre-tags" id="genreTags">
+        <span class="genre-tag" onclick="toggleGenre(this)">romance</span>
+        <span class="genre-tag" onclick="toggleGenre(this)">romantasy</span>
+        <span class="genre-tag" onclick="toggleGenre(this)">fantasy</span>
+        <span class="genre-tag" onclick="toggleGenre(this)">dark romance</span>
+        <span class="genre-tag" onclick="toggleGenre(this)">contemporary</span>
+        <span class="genre-tag" onclick="toggleGenre(this)">thriller</span>
+        <span class="genre-tag" onclick="toggleGenre(this)">YA</span>
+        <span class="genre-tag" onclick="toggleGenre(this)">historical</span>
+        <span class="genre-tag" onclick="toggleGenre(this)">cozy</span>
+        <span class="genre-tag" onclick="toggleGenre(this)">spicy 🌶️</span>
+      </div>
+    </div>
+
+    <div class="star-row">
+      <span style="font-size:0.85rem;color:#b07858;font-family:'DM Sans',sans-serif;">your rating:</span>
+      <div class="star-picker" id="starPicker">
+        <span onclick="setRating(1)">★</span><span onclick="setRating(2)">★</span>
+        <span onclick="setRating(3)">★</span><span onclick="setRating(4)">★</span><span onclick="setRating(5)">★</span>
+      </div>
+      <span id="ratingLabel" style="font-size:0.82rem;color:#c8a888;font-family:'Caveat',cursive;"></span>
+    </div>
+
+    <div>
+      <label class="form-label">your review / thoughts</label>
+      <textarea id="bookReview" placeholder="what did it make you feel... did you ugly cry? did you throw it across the room? 🌸" style="min-height:80px;width:100%;box-sizing:border-box;margin-bottom:12px;"></textarea>
+    </div>
+
+    <button onclick="postBook()" id="submitBtn" style="width:100%;padding:12px;font-size:0.95rem;">add to solite ✨</button>
   </div>
 
-  <p id="loginMsg" style="text-align:center;color:#7aaa82;font-size:0.9rem;margin:1rem 0;display:none;">
-    <a href="login.html" style="color:#4a7c59;">Login</a> to write and react to books.
+  <p id="loginMsg" style="display:none;text-align:center;font-family:'Caveat',cursive;color:#b07858;font-size:1rem;margin-bottom:1.5rem;">
+    <a href="login.html" style="color:#c8855c;">log in</a> to add books 🌸
   </p>
 
-  <!-- FEED -->
-  <div id="booksFeed"></div>
+  <div class="section-title">on everyone's shelves 🌸</div>
 
-</main>
+  <div class="filter-bar">
+    <span class="filter-chip active" onclick="filterBooks('all',this)">all</span>
+    <span class="filter-chip" onclick="filterBooks('romance',this)">romance</span>
+    <span class="filter-chip" onclick="filterBooks('romantasy',this)">romantasy</span>
+    <span class="filter-chip" onclick="filterBooks('fantasy',this)">fantasy</span>
+    <span class="filter-chip" onclick="filterBooks('dark romance',this)">dark romance</span>
+    <span class="filter-chip" onclick="filterBooks('spicy 🌶️',this)">spicy 🌶️</span>
+    <span class="filter-chip" onclick="filterBooks('cozy',this)">cozy</span>
+  </div>
+
+  <div id="booksGrid" class="books-grid"></div>
+</div>
 
 <script>
 const db = firebase.firestore();
 let currentUser = null;
+let selectedRating = 0;
+let selectedGenres = [];
+let allBooks = [];
+let currentFilter = 'all';
 
-firebase.auth().onAuthStateChanged(user => {
+// spine colours per genre
+const spineColors = {
+  'romance':      '#e8a0b4',
+  'romantasy':    '#b094d4',
+  'fantasy':      '#94b4d4',
+  'dark romance': '#8b6b8b',
+  'contemporary': '#d4a880',
+  'thriller':     '#8b8b6b',
+  'YA':           '#94d4b4',
+  'historical':   '#c4a060',
+  'cozy':         '#d4b894',
+  'spicy 🌶️':    '#e87060',
+};
+
+const coverGradients = [
+  'linear-gradient(135deg,#c8855c,#8b4513)',
+  'linear-gradient(135deg,#9b6b9b,#5c3060)',
+  'linear-gradient(135deg,#6b8b9b,#2c4a5c)',
+  'linear-gradient(135deg,#8b9b6b,#4a5c2c)',
+  'linear-gradient(135deg,#c8a060,#8b6020)',
+  'linear-gradient(135deg,#9b6b6b,#5c2c2c)',
+  'linear-gradient(135deg,#6b8b8b,#2c5050)',
+  'linear-gradient(135deg,#b094d4,#5c3090)',
+  'linear-gradient(135deg,#d4a0a0,#904040)',
+  'linear-gradient(135deg,#a0c4a0,#406040)',
+];
+
+firebase.auth().onAuthStateChanged(async user => {
   currentUser = user;
   if (user) {
     document.getElementById('writeBox').style.display = 'block';
+    const doc = await db.collection('users').doc(user.uid).get();
+    window._myUsername = doc.exists ? (doc.data().username || 'solite member') : 'solite member';
+    window._myPhoto    = doc.exists ? (doc.data().photoUrl || null) : null;
   } else {
     document.getElementById('loginMsg').style.display = 'block';
   }
-  loadFeed();
+  loadBooks();
 });
 
-function postStory() {
-  if (!currentUser) return;
-  const title = document.getElementById('storyTitle').value.trim();
-  const body  = document.getElementById('storyBody').value.trim();
-  const tags  = document.getElementById('storyTags').value.split(',').map(t => t.trim()).filter(Boolean);
-  if (!title || !body) return alert('Please add a title and story!');
+function toggleGenre(el) {
+  el.classList.toggle('selected');
+  const g = el.textContent.trim();
+  if (el.classList.contains('selected')) { selectedGenres.push(g); }
+  else { selectedGenres = selectedGenres.filter(x => x !== g); }
+}
 
-  db.collection('books').add({
-    uid:       currentUser.uid,
-    email:     currentUser.email,
-    title,
-    body,
-    tags,
-    likes:     [],
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  }).then(() => {
-    document.getElementById('storyTitle').value = '';
-    document.getElementById('storyBody').value  = '';
-    document.getElementById('storyTags').value  = '';
+function setRating(n) {
+  selectedRating = n;
+  document.querySelectorAll('#starPicker span').forEach((s,i) => s.classList.toggle('active', i < n));
+  const labels = ['','not my vibe','it was okay','pretty good','loved it','absolutely obsessed ✨'];
+  document.getElementById('ratingLabel').textContent = labels[n];
+}
+
+async function postBook() {
+  if (!currentUser) return;
+  const title     = document.getElementById('bookTitle').value.trim();
+  const author    = document.getElementById('bookAuthor').value.trim();
+  const maleMain  = document.getElementById('bookMaleMain').value.trim();
+  const femMain   = document.getElementById('bookFemaleMain').value.trim();
+  const favChar   = document.getElementById('bookFavChar').value.trim();
+  const trope     = document.getElementById('bookTrope').value.trim();
+  const link      = document.getElementById('bookLink').value.trim();
+  const review    = document.getElementById('bookReview').value.trim();
+
+  if (!title || !author) { showToast('please add a title and author 🌸'); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = 'adding...';
+
+  await db.collection('books').add({
+    uid: currentUser.uid, username: window._myUsername || 'solite member',
+    photoUrl: window._myPhoto || null,
+    title, author, maleMain, femMain, favChar, trope, link, review,
+    genres: selectedGenres, rating: selectedRating,
+    likes: [], createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  // reset
+  ['bookTitle','bookAuthor','bookMaleMain','bookFemaleMain','bookFavChar','bookTrope','bookLink','bookReview'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.querySelectorAll('.genre-tag').forEach(t => t.classList.remove('selected'));
+  document.querySelectorAll('#starPicker span').forEach(s => s.classList.remove('active'));
+  selectedGenres = []; selectedRating = 0;
+  document.getElementById('ratingLabel').textContent = '';
+  showToast('book added 🌸');
+
+  btn.disabled = false; btn.textContent = 'add to solite ✨';
+}
+
+function loadBooks() {
+  db.collection('books').orderBy('createdAt','desc').onSnapshot(snap => {
+    allBooks = snap.docs; renderBooks();
   });
 }
 
-function loadFeed() {
-  const feed = document.getElementById('booksFeed');
-  db.collection('books')
-    .orderBy('createdAt', 'desc')
-    .onSnapshot(snap => {
-      feed.innerHTML = '';
-      snap.forEach(doc => {
-        const d   = doc.data();
-        const id  = doc.id;
-        const liked = currentUser && d.likes && d.likes.includes(currentUser.uid);
-        const preview = d.body.length > 120 ? d.body.slice(0, 120) + '...' : d.body;
-        const tagsHtml = (d.tags || []).map(t => `<span class="story-tag">${t}</span>`).join('');
-
-        const card = document.createElement('div');
-        card.className = 'post-card story-card';
-        card.innerHTML = `
-          <h3 style="font-family:'Playfair Display',serif;color:#4a7c59;">${d.title}</h3>
-          <p style="font-size:0.78rem;color:#9ab89e;margin:2px 0 6px;">${d.email}</p>
-          <p style="color:#6a8f6e;font-size:0.88rem;line-height:1.6;">${preview}</p>
-          <div class="story-full" id="full-${id}">${d.body}</div>
-          <button onclick="toggleStory('${id}')" id="readBtn-${id}" style="margin-top:8px;background:transparent;color:#4a7c59;border:1px solid #c5e0bc;font-size:0.82rem;padding:5px 12px;">read more</button>
-          <div style="margin-top:8px;">${tagsHtml}</div>
-          <div class="post-actions" style="margin-top:10px;">
-            <button class="like-btn ${liked ? 'liked' : ''}" onclick="toggleLike('${id}', ${liked})">
-              ${liked ? '❤️' : '🤍'} ${d.likes ? d.likes.length : 0}
-            </button>
-            <button onclick="toggleComments('${id}')">💬 comments</button>
-          </div>
-          <div id="comments-${id}" style="display:none;">
-            <div id="commentList-${id}"></div>
-            ${currentUser ? `
-              <div style="display:flex;gap:8px;margin-top:8px;">
-                <input id="commentInput-${id}" placeholder="leave a note..." style="flex:1;padding:7px 10px;border-radius:10px;border:1px solid #c5e0bc;font-family:'DM Sans',sans-serif;">
-                <button onclick="addComment('${id}')">send</button>
-              </div>` : ''}
-          </div>
-        `;
-        feed.appendChild(card);
-      });
-    });
+function filterBooks(filter, el) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active'); renderBooks();
 }
 
-function toggleStory(id) {
-  const full = document.getElementById(`full-${id}`);
-  const btn  = document.getElementById(`readBtn-${id}`);
-  const preview = full.previousElementSibling;
-  if (full.classList.contains('open')) {
-    full.classList.remove('open');
-    preview.style.display = 'block';
-    btn.textContent = 'read more';
-  } else {
-    full.classList.add('open');
-    preview.style.display = 'none';
-    btn.textContent = 'show less';
+function renderBooks() {
+  const grid = document.getElementById('booksGrid');
+  grid.innerHTML = '';
+  let docs = allBooks;
+  if (currentFilter !== 'all') {
+    docs = docs.filter(doc => (doc.data().genres || []).includes(currentFilter));
   }
+  if (docs.length === 0) {
+    grid.innerHTML = `<div class="empty-state">no books here yet 🌸<br><span style="font-size:1rem;">be the first to add one</span></div>`;
+    return;
+  }
+
+  docs.forEach((doc, idx) => {
+    const d = doc.data(), id = doc.id;
+    const liked = currentUser && d.likes && d.likes.includes(currentUser.uid);
+    const stars = '★'.repeat(d.rating || 0) + '☆'.repeat(5 - (d.rating || 0));
+    const isSeeded = d.isSeeded === true;
+    const genres = d.genres || [];
+    const spineColor = spineColors[genres[0]] || '#c8855c';
+    const coverGrad = coverGradients[Math.abs(d.title?.charCodeAt(0) || 0) % coverGradients.length];
+
+    const card = document.createElement('div');
+    card.className = `book-card${isSeeded ? ' seeded' : ''}`;
+    card.style.animationDelay = `${idx * 0.06}s`;
+
+    const tagsHtml = genres.map(g => `<span class="book-tag">${g}</span>`).join('');
+    const avatarHtml = d.photoUrl
+      ? `<img src="${d.photoUrl}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;">`
+      : `<div class="avatar-mini">${(d.username||'s').charAt(0).toUpperCase()}</div>`;
+
+    card.innerHTML = `
+      <div class="book-spine-strip" style="background:${spineColor};"></div>
+      <div class="book-cover" style="background:${coverGrad};">
+        <div style="font-size:3rem;z-index:1;">📖</div>
+        <div class="book-cover-overlay"></div>
+        ${genres[0] ? `<div class="book-cover-badge">${genres[0]}</div>` : ''}
+      </div>
+      <div class="book-body">
+        <div class="book-title">${d.title}</div>
+        <div class="book-author">by ${d.author}</div>
+        ${d.rating ? `<div class="book-stars">${stars}</div>` : ''}
+        ${(d.maleMain || d.femMain || d.favChar) ? `
+        <div class="book-characters">
+          ${d.maleMain  ? `<div class="char-pill"><span class="char-icon">👦</span>${d.maleMain}</div>` : ''}
+          ${d.femMain   ? `<div class="char-pill"><span class="char-icon">👧</span>${d.femMain}</div>` : ''}
+          ${d.favChar   ? `<div class="char-pill"><span class="char-icon">🌟</span>${d.favChar}</div>` : ''}
+        </div>` : ''}
+        ${d.trope ? `<div style="font-size:0.75rem;color:#c8a888;font-family:'DM Sans',sans-serif;margin-bottom:8px;">✦ ${d.trope}</div>` : ''}
+        ${d.review ? `<div class="book-review">"${d.review}"</div>` : ''}
+        ${tagsHtml ? `<div class="book-tags">${tagsHtml}</div>` : ''}
+        <div class="book-meta">${avatarHtml}<span>added by @${d.username || 'solite member'}</span></div>
+        <div class="book-actions">
+          <button onclick="toggleLike('${id}',${liked})" id="likeBtn-${id}">${liked ? '❤️' : '🤍'} ${d.likes ? d.likes.length : 0}</button>
+          <button onclick="toggleComments('${id}')">💬</button>
+          ${d.link ? `<a href="${d.link}" target="_blank" class="goodreads-link">goodreads ↗</a>` : ''}
+        </div>
+        <div class="comments-box" id="comments-${id}">
+          <div id="commentList-${id}"></div>
+          ${currentUser ? `
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <input id="commentInput-${id}" placeholder="your thoughts... 🌸" style="flex:1;padding:7px 10px;border-radius:10px;border:1.5px solid #e0c8b0;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.85);color:#3d2010;">
+            <button onclick="addComment('${id}')" style="padding:5px 14px;font-size:0.82rem;">send</button>
+          </div>` : ''}
+        </div>
+      </div>`;
+
+    if (isSeeded && d.link) {
+      card.addEventListener('click', e => {
+        if (!e.target.closest('button') && !e.target.closest('input') && !e.target.closest('a')) {
+          window.open(d.link, '_blank');
+        }
+      });
+    }
+
+    grid.appendChild(card);
+  });
 }
 
 function toggleLike(id, liked) {
-  if (!currentUser) return alert('Login to like books!');
+  if (!currentUser) { showToast('log in to like books 🌸'); return; }
   const ref = db.collection('books').doc(id);
-  if (liked) {
-    ref.update({ likes: firebase.firestore.FieldValue.arrayRemove(currentUser.uid) });
-  } else {
-    ref.update({ likes: firebase.firestore.FieldValue.arrayUnion(currentUser.uid) });
-  }
+  if (liked) { ref.update({ likes: firebase.firestore.FieldValue.arrayRemove(currentUser.uid) }); }
+  else        { ref.update({ likes: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)  }); }
 }
 
 function toggleComments(id) {
   const box = document.getElementById(`comments-${id}`);
-  if (box.style.display === 'none') {
-    box.style.display = 'block';
-    loadComments(id);
-  } else {
-    box.style.display = 'none';
-  }
+  const open = box.style.display === 'block';
+  box.style.display = open ? 'none' : 'block';
+  if (!open) loadComments(id);
 }
 
 function loadComments(postId) {
-  const list = document.getElementById(`commentList-${postId}`);
-  db.collection('books').doc(postId).collection('comments')
-    .orderBy('createdAt', 'asc')
-    .onSnapshot(snap => {
-      list.innerHTML = '';
-      snap.forEach(doc => {
-        const d = doc.data();
-        const c = document.createElement('div');
-        c.className = 'comment';
-        c.innerHTML = `<strong style="color:#4a7c59;font-size:0.82rem;">${d.email}</strong><p style="font-size:0.88rem;margin-top:2px;">${d.text}</p>`;
-        list.appendChild(c);
-      });
+  db.collection('books').doc(postId).collection('comments').orderBy('createdAt','asc').onSnapshot(snap => {
+    const list = document.getElementById(`commentList-${postId}`); if (!list) return;
+    list.innerHTML = '';
+    snap.forEach(doc => {
+      const d = doc.data(), c = document.createElement('div'); c.className = 'comment';
+      c.innerHTML = `<span style="color:#c8855c;font-weight:500;">@${d.username || 'solite member'}</span> <span>${d.text}</span>`;
+      list.appendChild(c);
     });
+  });
 }
 
 function addComment(postId) {
   if (!currentUser) return;
-  const input = document.getElementById(`commentInput-${postId}`);
-  const text  = input.value.trim();
+  const input = document.getElementById(`commentInput-${postId}`), text = input.value.trim();
   if (!text) return;
   db.collection('books').doc(postId).collection('comments').add({
-    uid:       currentUser.uid,
-    email:     currentUser.email,
-    text,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    uid: currentUser.uid, username: window._myUsername || 'solite member',
+    text, createdAt: firebase.firestore.FieldValue.serverTimestamp()
   }).then(() => input.value = '');
+}
+
+function showToast(msg) {
+  const toast = document.createElement('div');
+  toast.style.cssText = `position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#fdf5ec;border:1px solid #e0c8b0;border-radius:24px;padding:10px 24px;font-family:'Caveat',cursive;font-size:1.1rem;color:#5c3317;box-shadow:0 6px 20px rgba(100,50,10,0.15);z-index:99999;white-space:nowrap;`;
+  toast.textContent = msg; document.body.appendChild(toast); setTimeout(() => toast.remove(), 3000);
 }
 </script>
 
+<!-- daisy bg -->
 <script>
-(function() {
-  const container = document.getElementById('daisy-bg');
-  const count = 36;
-  function makeDaisy(size) {
-    const ns = 'http://www.w3.org/2000/svg';
-    const svg = document.createElementNS(ns, 'svg');
-    svg.setAttribute('width', size * 2.6);
-    svg.setAttribute('height', size * 2.6);
-    svg.setAttribute('viewBox', '-20 -20 40 40');
-    [0,45,90,135,180,225,270,315].forEach(a => {
-      const el = document.createElementNS(ns, 'ellipse');
-      el.setAttribute('cx', 0); el.setAttribute('cy', -size);
-      el.setAttribute('rx', size * 0.44); el.setAttribute('ry', size * 0.77);
-      el.setAttribute('fill', '#fffef0');
-      el.setAttribute('transform', `rotate(${a})`);
-      svg.appendChild(el);
+(function(){
+  const container=document.getElementById('daisy-bg'); if(!container) return;
+  function makeDaisy(size){
+    const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');
+    svg.setAttribute('width',size*2.6);svg.setAttribute('height',size*2.6);svg.setAttribute('viewBox','-20 -20 40 40');
+    [0,45,90,135,180,225,270,315].forEach(a=>{
+      const el=document.createElementNS(ns,'ellipse');el.setAttribute('cx',0);el.setAttribute('cy',-size);
+      el.setAttribute('rx',size*0.44);el.setAttribute('ry',size*0.77);el.setAttribute('fill','#fffef0');
+      el.setAttribute('transform',`rotate(${a})`);svg.appendChild(el);
     });
-    const c1 = document.createElementNS(ns, 'circle');
-    c1.setAttribute('cx', 0); c1.setAttribute('cy', 0);
-    c1.setAttribute('r', size * 0.55); c1.setAttribute('fill', '#f5d76e');
-    svg.appendChild(c1);
-    const c2 = document.createElementNS(ns, 'circle');
-    c2.setAttribute('cx', 0); c2.setAttribute('cy', 0);
-    c2.setAttribute('r', size * 0.28); c2.setAttribute('fill', '#e8c94a');
-    svg.appendChild(c2);
+    const c1=document.createElementNS(ns,'circle');c1.setAttribute('r',size*0.55);c1.setAttribute('fill','#f5d76e');svg.appendChild(c1);
+    const c2=document.createElementNS(ns,'circle');c2.setAttribute('r',size*0.28);c2.setAttribute('fill','#e8c94a');svg.appendChild(c2);
     return svg;
   }
-  for (let i = 0; i < count; i++) {
-    const wrapper = document.createElement('div');
-    wrapper.classList.add('daisy');
-    const size = 5 + Math.random() * 7;
-    const opHigh = (0.25 + Math.random() * 0.35).toFixed(2);
-    const opLow  = (parseFloat(opHigh) * 0.3).toFixed(2);
-    wrapper.style.cssText = `left:${(Math.random()*100).toFixed(1)}%;top:${(Math.random()*100).toFixed(1)}%;--op-high:${opHigh};--op-low:${opLow};animation-duration:${(3+Math.random()*5).toFixed(1)}s;animation-delay:-${(Math.random()*6).toFixed(1)}s;`;
-    const svg = makeDaisy(size);
-    svg.style.animationDuration = `${(2+Math.random()*4).toFixed(1)}s`;
-    svg.style.animationDelay    = `-${(Math.random()*6).toFixed(1)}s`;
-    wrapper.appendChild(svg);
-    container.appendChild(wrapper);
+  for(let i=0;i<28;i++){
+    const w=document.createElement('div');w.classList.add('daisy');
+    const size=5+Math.random()*7,opHigh=(0.25+Math.random()*0.35).toFixed(2),opLow=(parseFloat(opHigh)*0.3).toFixed(2);
+    w.style.cssText=`left:${(Math.random()*100).toFixed(1)}%;top:${(Math.random()*100).toFixed(1)}%;--op-high:${opHigh};--op-low:${opLow};animation-duration:${(3+Math.random()*5).toFixed(1)}s;animation-delay:-${(Math.random()*6).toFixed(1)}s;`;
+    w.appendChild(makeDaisy(size));container.appendChild(w);
   }
 })();
 </script>
