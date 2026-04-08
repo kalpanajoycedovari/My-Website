@@ -6,177 +6,193 @@
   <link rel="stylesheet" href="style.css">
   <link rel="icon" type="image/png" href="favicon.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script src="firebase-config.js"></script>
   <script>firebase.initializeApp(firebaseConfig);</script>
-
   <style>
-    /* ========================
-       BOOK PAGE STYLES
-    ======================== */
-    .books-wrap { max-width:900px; margin:0 auto; padding:1.5rem; position:relative; z-index:1; }
-
-    /* ADD BOOK FORM */
-    .add-book-form {
-      background:rgba(255,255,255,0.9); border-radius:24px; padding:24px;
-      margin-bottom:2rem; border:1px solid rgba(210,175,140,0.3);
-      box-shadow:0 4px 20px rgba(120,70,30,0.08);
-    }
-    .add-book-form h3 { font-family:'Playfair Display',serif; font-style:italic; font-size:1.2rem; color:#5c3317; margin-bottom:16px; }
-    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
-    .form-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px; }
-    @media(max-width:580px){ .form-row,.form-row-3{ grid-template-columns:1fr; } }
-
-    .form-label { font-size:0.78rem; color:#b07858; font-family:'DM Sans',sans-serif; margin-bottom:4px; display:block; }
-
-    /* genre tags */
-    .genre-tags { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
-    .genre-tag { padding:5px 14px; border-radius:20px; border:1.5px solid #e0c8b0; font-size:0.8rem; color:#7a4a2a; cursor:pointer; font-family:'DM Sans',sans-serif; background:rgba(255,255,255,0.88); transition:0.15s; user-select:none; }
-    .genre-tag.selected { background:linear-gradient(135deg,#c8855c,#a05530); color:white; border-color:#c8855c; }
-
-    /* star rating */
-    .star-row { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
-    .star-picker span { font-size:1.5rem; cursor:pointer; transition:transform 0.15s; display:inline-block; color:rgba(200,160,80,0.3); }
-    .star-picker span.active { color:#f5d76e; transform:scale(1.15); }
-
-    /* ========================
-       FILTER + SECTION
-    ======================== */
-    .filter-bar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1.5rem; }
-    .filter-chip { padding:6px 16px; border-radius:20px; border:1.5px solid #e0c8b0; font-size:0.82rem; color:#7a4a2a; cursor:pointer; font-family:'DM Sans',sans-serif; background:rgba(255,255,255,0.85); transition:0.15s; }
-    .filter-chip.active { background:linear-gradient(135deg,#c8855c,#a05530); color:white; border-color:#c8855c; }
-
-    .section-title { font-family:'Playfair Display',serif; font-style:italic; font-size:1.2rem; color:#5c3317; margin-bottom:1rem; }
-
-    /* ========================
-       BOOK CARDS GRID
-    ======================== */
-    .books-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:1.4rem; }
-    @media(max-width:600px){ .books-grid{ grid-template-columns:1fr; } }
-
-    .book-card {
-      background:rgba(255,255,255,0.92); border-radius:20px; overflow:hidden;
-      border:1px solid rgba(210,175,140,0.25); box-shadow:0 4px 18px rgba(120,70,30,0.08);
-      transition:transform 0.2s,box-shadow 0.2s; animation:fadeUp 0.4s ease forwards; opacity:0;
-      display:flex; flex-direction:column;
-    }
-    .book-card:hover { transform:translateY(-4px); box-shadow:0 12px 30px rgba(120,70,30,0.15); }
-    .book-card.seeded { cursor:pointer; }
-    @keyframes fadeUp { from{opacity:0;transform:translateY(16px);} to{opacity:1;transform:translateY(0);} }
-
-    /* spine colour strip at top */
-    .book-spine-strip { height:8px; width:100%; }
-
-    .book-cover {
-      width:100%; height:180px; position:relative; overflow:hidden;
-      display:flex; align-items:center; justify-content:center;
-      font-size:3.5rem;
-    }
-    .book-cover-overlay {
-      position:absolute; inset:0;
-      background:linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.3));
-    }
-    .book-cover-badge {
-      position:absolute; top:10px; right:10px;
-      background:rgba(255,255,255,0.92); border-radius:20px;
-      padding:3px 10px; font-size:0.7rem; font-family:'DM Sans',sans-serif;
-      color:#7a4a2a; border:1px solid rgba(200,150,90,0.3);
-    }
-
-    .book-body { padding:14px 16px; flex:1; display:flex; flex-direction:column; }
-    .book-title { font-family:'Playfair Display',serif; font-size:1rem; color:#3d1f0a; margin-bottom:3px; line-height:1.3; }
-    .book-author { font-size:0.78rem; color:#c8a888; font-family:'DM Sans',sans-serif; margin-bottom:8px; }
-    .book-stars { color:#f5d76e; font-size:0.85rem; margin-bottom:8px; letter-spacing:1px; }
-
-    /* characters row */
-    .book-characters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
-    .char-pill {
-      display:flex; align-items:center; gap:5px;
-      background:rgba(200,133,92,0.08); border:1px solid rgba(200,133,92,0.2);
-      border-radius:20px; padding:3px 10px; font-size:0.72rem;
-      font-family:'DM Sans',sans-serif; color:#7a4a2a;
-    }
-    .char-pill .char-icon { font-size:0.8rem; }
-
-    .book-review { font-family:'Caveat',cursive; font-size:0.95rem; color:#7a4a2a; line-height:1.6; margin-bottom:10px; font-style:italic; flex:1; }
-
-    .book-tags { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:12px; }
-    .book-tag { display:inline-block; background:rgba(200,133,92,0.1); color:#7a4a2a; font-size:0.72rem; padding:2px 9px; border-radius:20px; font-family:'DM Sans',sans-serif; border:1px solid rgba(200,133,92,0.2); }
-
-    .book-meta { font-size:0.72rem; color:#c8a888; font-family:'DM Sans',sans-serif; margin-bottom:10px; display:flex; align-items:center; gap:5px; }
-    .avatar-mini { width:18px; height:18px; border-radius:50%; background:linear-gradient(135deg,#c8855c,#a05530); display:flex; align-items:center; justify-content:center; color:white; font-size:0.6rem; font-family:'Caveat',cursive; flex-shrink:0; }
-
-    .book-actions { display:flex; align-items:center; gap:8px; padding-top:10px; border-top:1px solid rgba(210,175,140,0.2); }
-    .book-actions button { font-size:0.8rem; padding:5px 12px; background:rgba(255,248,235,0.8); border:1.5px solid #e0c8b0; color:#7a4a2a; border-radius:20px; box-shadow:none; }
-    .book-actions button:hover { background:#fdf0e6; border-color:#c8855c; }
-    .goodreads-link { font-size:0.78rem; color:#c8855c; text-decoration:none; font-family:'DM Sans',sans-serif; margin-left:auto; }
-    .goodreads-link:hover { text-decoration:underline; }
-
-    .comments-box { display:none; margin-top:10px; padding-top:10px; border-top:1px solid rgba(210,175,140,0.15); }
-    .comment { font-size:0.83rem; color:#5c3317; padding:5px 0; border-bottom:1px solid rgba(210,175,140,0.1); font-family:'DM Sans',sans-serif; }
-    .comment:last-child { border-bottom:none; }
-
-    .empty-state { text-align:center; padding:60px 20px; font-family:'Caveat',cursive; color:#b07858; font-size:1.3rem; grid-column:1/-1; }
+    body{margin:0;min-height:100vh;position:relative;}
+    #books-bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;background:#1a1005;}
+    .bg-glow{position:absolute;top:80px;left:50%;transform:translateX(-50%);width:500px;height:300px;background:radial-gradient(ellipse at 50% 20%,rgba(180,110,30,0.1) 0%,transparent 65%);}
+    .shelf-l{position:absolute;top:0;left:0;width:140px;bottom:0;background:#221408;border-right:3px solid rgba(140,90,40,0.35);}
+    .shelf-r{position:absolute;top:0;right:0;width:130px;bottom:0;background:#1e1206;border-left:3px solid rgba(140,90,40,0.3);}
+    .sp{position:absolute;left:0;right:0;height:4px;background:linear-gradient(90deg,rgba(160,100,40,0.5),rgba(120,75,30,0.3));border-radius:1px;}
+    .desk{position:absolute;bottom:0;left:0;right:0;height:180px;background:linear-gradient(180deg,#3a2008,#251405);border-top:3px solid rgba(160,100,40,0.5);}
+    .desk-grain{position:absolute;inset:0;background:repeating-linear-gradient(88deg,transparent 0px,transparent 40px,rgba(255,255,255,0.025) 40px,rgba(255,255,255,0.025) 41px);}
+    .b{position:absolute;border-radius:2px 3px 3px 2px;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+    .b::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0px,transparent 4px,rgba(0,0,0,0.12) 4px,rgba(0,0,0,0.12) 5px);}
+    .b::after{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;background:rgba(0,0,0,0.25);border-radius:2px 0 0 2px;}
+    .bt{font-family:'Caveat',cursive;font-size:7.5px;color:rgba(255,220,160,0.65);writing-mode:vertical-rl;transform:rotate(180deg);line-height:1.1;text-align:center;padding:3px 1px;letter-spacing:0.5px;position:relative;z-index:1;}
+    .b1{background:linear-gradient(180deg,#6b3a18,#4a2410);}
+    .b2{background:linear-gradient(180deg,#7a4520,#553018);}
+    .b3{background:linear-gradient(180deg,#5a3012,#3e200c);}
+    .b4{background:linear-gradient(180deg,#8a5228,#622e18);}
+    .b5{background:linear-gradient(180deg,#4e2a0e,#341a08);}
+    .b6{background:linear-gradient(180deg,#724020,#4e2a12);}
+    .b7{background:linear-gradient(180deg,#613818,#42240e);}
+    .b8{background:linear-gradient(180deg,#9a6030,#6a3e18);}
+    .b9{background:linear-gradient(180deg,#583210,#3c220a);}
+    .b0{background:linear-gradient(180deg,#7e4c24,#562e12);}
+    .ds{position:absolute;border-radius:2px;overflow:hidden;}
+    .ds::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0px,transparent 4px,rgba(0,0,0,0.1) 4px,rgba(0,0,0,0.1) 5px);}
+    .ds::after{content:'';position:absolute;left:0;top:0;bottom:0;width:8px;background:rgba(0,0,0,0.2);}
+    .dbt{font-family:'Caveat',cursive;font-size:7px;color:rgba(255,215,150,0.6);position:absolute;left:12px;top:50%;transform:translateY(-50%);white-space:nowrap;z-index:1;}
+    .books-wrap{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:1.5rem;}
+    header.top{position:relative;z-index:2;}
+    header.top h1{color:#f0d8a8 !important;text-shadow:0 0 24px rgba(255,180,60,0.35),0 2px 10px rgba(0,0,0,0.6) !important;}
+    header.top p{color:rgba(220,185,120,0.8) !important;}
+    header.top a{color:rgba(200,160,90,0.7) !important;}
+    .add-book-form{background:rgba(35,20,5,0.88);border-radius:24px;padding:22px;margin-bottom:2rem;border:1px solid rgba(180,120,50,0.35);box-shadow:0 8px 32px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,200,100,0.06);backdrop-filter:blur(6px);}
+    .add-book-form h3{font-family:'Playfair Display',serif;font-style:italic;font-size:1.2rem;color:#f0d8a8;margin-bottom:16px;}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+    .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;}
+    @media(max-width:580px){.form-row,.form-row-3{grid-template-columns:1fr;}}
+    .form-label{font-size:0.75rem;color:rgba(200,155,80,0.6);font-family:'DM Sans',sans-serif;margin-bottom:4px;display:block;}
+    .add-book-form input,.add-book-form textarea{background:rgba(255,255,255,0.07)!important;border:1px solid rgba(190,135,60,0.35)!important;color:#f0d8a8!important;border-radius:10px!important;}
+    .add-book-form input::placeholder,.add-book-form textarea::placeholder{color:rgba(230,190,110,0.4)!important;}
+    .add-book-form textarea{min-height:80px;width:100%;box-sizing:border-box;}
+    .genre-tags{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+    .genre-tag{padding:5px 14px;border-radius:20px;border:1px solid rgba(190,135,60,0.3);font-size:0.8rem;color:rgba(230,190,110,0.65);cursor:pointer;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.05);transition:0.15s;user-select:none;}
+    .genre-tag.selected{background:rgba(180,100,35,0.45);color:#f0d8a8;border-color:rgba(200,130,55,0.65);}
+    .star-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+    .star-picker span{font-size:1.4rem;cursor:pointer;transition:transform 0.15s;display:inline-block;color:rgba(200,160,80,0.2);}
+    .star-picker span.active{color:#ffdd44;transform:scale(1.15);text-shadow:0 0 8px rgba(255,220,60,0.6);}
+    .filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1.5rem;}
+    .filter-chip{padding:6px 16px;border-radius:20px;border:1px solid rgba(190,135,60,0.3);font-size:0.82rem;color:rgba(230,190,110,0.65);cursor:pointer;font-family:'DM Sans',sans-serif;background:rgba(35,20,5,0.7);transition:0.15s;backdrop-filter:blur(4px);}
+    .filter-chip.active{background:rgba(180,100,35,0.5);color:#f0d8a8;border-color:rgba(200,130,55,0.65);}
+    .section-title{font-family:'Playfair Display',serif;font-style:italic;font-size:1.2rem;color:#f0d8a8;margin-bottom:1rem;text-shadow:0 2px 8px rgba(0,0,0,0.4);}
+    .books-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.4rem;}
+    @media(max-width:600px){.books-grid{grid-template-columns:1fr;}}
+    .book-card{background:rgba(35,20,5,0.85);border-radius:20px;overflow:hidden;border:1px solid rgba(180,120,50,0.25);box-shadow:0 4px 20px rgba(0,0,0,0.4);transition:transform 0.2s,box-shadow 0.2s;animation:fadeUp 0.4s ease forwards;opacity:0;display:flex;flex-direction:column;backdrop-filter:blur(4px);}
+    .book-card:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,0,0,0.5);}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+    .book-spine-strip{height:8px;width:100%;}
+    .book-cover{width:100%;height:180px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+    .book-cover img{width:100%;height:100%;object-fit:cover;}
+    .book-cover-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.4));}
+    .book-cover-badge{position:absolute;top:10px;right:10px;background:rgba(35,20,5,0.85);border-radius:20px;padding:3px 10px;font-size:0.7rem;font-family:'DM Sans',sans-serif;color:rgba(230,190,110,0.8);border:1px solid rgba(180,120,50,0.4);}
+    .book-body{padding:14px 16px;flex:1;display:flex;flex-direction:column;}
+    .book-title{font-family:'Playfair Display',serif;font-size:1rem;color:#f0d8a8;margin-bottom:3px;line-height:1.3;}
+    .book-author{font-size:0.78rem;color:rgba(200,155,80,0.55);font-family:'DM Sans',sans-serif;margin-bottom:8px;}
+    .book-stars{color:#ffdd44;font-size:0.85rem;margin-bottom:8px;letter-spacing:1px;text-shadow:0 0 6px rgba(255,220,50,0.4);}
+    .book-characters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+    .char-pill{display:flex;align-items:center;gap:5px;background:rgba(180,120,50,0.12);border:1px solid rgba(180,120,50,0.25);border-radius:20px;padding:3px 10px;font-size:0.72rem;font-family:'DM Sans',sans-serif;color:rgba(230,190,110,0.8);}
+    .book-review{font-family:'Caveat',cursive;font-size:0.95rem;color:rgba(220,180,100,0.85);line-height:1.6;margin-bottom:10px;font-style:italic;flex:1;}
+    .book-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;}
+    .book-tag{display:inline-block;background:rgba(180,120,50,0.12);color:rgba(230,190,110,0.8);font-size:0.72rem;padding:2px 9px;border-radius:20px;font-family:'DM Sans',sans-serif;border:1px solid rgba(180,120,50,0.25);}
+    .book-meta{font-size:0.72rem;color:rgba(180,135,70,0.5);font-family:'DM Sans',sans-serif;margin-bottom:10px;display:flex;align-items:center;gap:5px;}
+    .avatar-mini{width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#c8855c,#a05530);display:flex;align-items:center;justify-content:center;color:white;font-size:0.6rem;font-family:'Caveat',cursive;flex-shrink:0;}
+    .book-actions{display:flex;align-items:center;gap:8px;padding-top:10px;border-top:1px solid rgba(180,120,50,0.2);}
+    .book-actions button{font-size:0.8rem;padding:5px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(190,135,60,0.3);color:rgba(230,190,110,0.8);border-radius:20px;box-shadow:none;}
+    .book-actions button:hover{background:rgba(180,100,35,0.3);border-color:rgba(200,130,55,0.5);}
+    .goodreads-link{font-size:0.78rem;color:rgba(200,155,80,0.7);text-decoration:none;font-family:'DM Sans',sans-serif;margin-left:auto;}
+    .goodreads-link:hover{color:#ffdd44;text-decoration:underline;}
+    .comments-box{display:none;margin-top:10px;padding-top:10px;border-top:1px solid rgba(180,120,50,0.15);}
+    .comment{font-size:0.83rem;color:rgba(220,180,100,0.85);padding:5px 0;border-bottom:1px solid rgba(180,120,50,0.1);font-family:'DM Sans',sans-serif;}
+    .comment:last-child{border-bottom:none;}
+    .empty-state{text-align:center;padding:60px 20px;font-family:'Caveat',cursive;color:rgba(200,155,80,0.6);font-size:1.3rem;grid-column:1/-1;}
   </style>
 </head>
-
 <body>
+<div id="books-bg">
+  <div class="bg-glow"></div>
+  <div class="shelf-l">
+    <div class="sp" style="top:155px;"></div><div class="sp" style="top:312px;"></div><div class="sp" style="top:469px;"></div><div class="sp" style="top:626px;"></div>
+    <div class="b b1" style="bottom:630px;left:6px;width:19px;height:82px;"><div class="bt">Pride & Prejudice</div></div>
+    <div class="b b3" style="bottom:630px;left:27px;width:15px;height:70px;"><div class="bt">Jane Eyre</div></div>
+    <div class="b b5" style="bottom:630px;left:44px;width:22px;height:88px;"><div class="bt">Wuthering Heights</div></div>
+    <div class="b b7" style="bottom:630px;left:68px;width:17px;height:76px;"><div class="bt">Rebecca</div></div>
+    <div class="b b2" style="bottom:630px;left:87px;width:20px;height:84px;"><div class="bt">North & South</div></div>
+    <div class="b b6" style="bottom:630px;left:109px;width:18px;height:78px;"><div class="bt">Persuasion</div></div>
+    <div class="b b4" style="bottom:473px;left:6px;width:21px;height:86px;"><div class="bt">Fourth Wing</div></div>
+    <div class="b b8" style="bottom:473px;left:29px;width:16px;height:72px;"><div class="bt">ACOTAR</div></div>
+    <div class="b b1" style="bottom:473px;left:47px;width:20px;height:90px;"><div class="bt">It Ends With Us</div></div>
+    <div class="b b5" style="bottom:473px;left:69px;width:18px;height:80px;"><div class="bt">Beach Read</div></div>
+    <div class="b b3" style="bottom:473px;left:89px;width:22px;height:84px;"><div class="bt">Icebreaker</div></div>
+    <div class="b b9" style="bottom:473px;left:113px;width:16px;height:74px;"><div class="bt">Wildfire</div></div>
+    <div class="b b6" style="bottom:316px;left:6px;width:18px;height:80px;"><div class="bt">Twisted Love</div></div>
+    <div class="b b2" style="bottom:316px;left:26px;width:22px;height:88px;"><div class="bt">Song of Achilles</div></div>
+    <div class="b b0" style="bottom:316px;left:50px;width:16px;height:74px;"><div class="bt">Daydream</div></div>
+    <div class="b b4" style="bottom:316px;left:68px;width:20px;height:86px;"><div class="bt">Red White Blue</div></div>
+    <div class="b b7" style="bottom:316px;left:90px;width:18px;height:78px;"><div class="bt">Love Hypothesis</div></div>
+    <div class="b b1" style="bottom:316px;left:110px;width:20px;height:82px;"><div class="bt">Spanish Love Dec.</div></div>
+    <div class="b b3" style="bottom:159px;left:6px;width:20px;height:84px;"><div class="bt">Onyx Storm</div></div>
+    <div class="b b8" style="bottom:159px;left:28px;width:16px;height:72px;"><div class="bt">Twisted Games</div></div>
+    <div class="b b5" style="bottom:159px;left:46px;width:22px;height:88px;"><div class="bt">Twisted Hate</div></div>
+    <div class="b b2" style="bottom:159px;left:70px;width:18px;height:76px;"><div class="bt">Book Lovers</div></div>
+    <div class="b b6" style="bottom:159px;left:90px;width:20px;height:82px;"><div class="bt">People We Meet</div></div>
+    <div class="b b0" style="bottom:159px;left:112px;width:17px;height:78px;"><div class="bt">Happy Place</div></div>
+  </div>
+  <div class="shelf-r">
+    <div class="sp" style="top:155px;"></div><div class="sp" style="top:312px;"></div><div class="sp" style="top:469px;"></div><div class="sp" style="top:626px;"></div>
+    <div class="b b2" style="bottom:630px;left:5px;width:19px;height:84px;"><div class="bt">Great Gatsby</div></div>
+    <div class="b b5" style="bottom:630px;left:26px;width:16px;height:72px;"><div class="bt">Sense & Sensibility</div></div>
+    <div class="b b8" style="bottom:630px;left:44px;width:21px;height:88px;"><div class="bt">Little Women</div></div>
+    <div class="b b1" style="bottom:630px;left:67px;width:18px;height:76px;"><div class="bt">Middlemarch</div></div>
+    <div class="b b4" style="bottom:630px;left:87px;width:22px;height:82px;"><div class="bt">Far From Madding</div></div>
+    <div class="b b7" style="bottom:473px;left:5px;width:20px;height:86px;"><div class="bt">Bridgerton</div></div>
+    <div class="b b3" style="bottom:473px;left:27px;width:17px;height:74px;"><div class="bt">Outlander</div></div>
+    <div class="b b0" style="bottom:473px;left:46px;width:22px;height:90px;"><div class="bt">The Notebook</div></div>
+    <div class="b b6" style="bottom:473px;left:70px;width:18px;height:78px;"><div class="bt">Me Before You</div></div>
+    <div class="b b2" style="bottom:473px;left:90px;width:20px;height:84px;"><div class="bt">Ugly Love</div></div>
+    <div class="b b5" style="bottom:316px;left:5px;width:19px;height:80px;"><div class="bt">The Hating Game</div></div>
+    <div class="b b9" style="bottom:316px;left:26px;width:22px;height:88px;"><div class="bt">Anna Karenina</div></div>
+    <div class="b b1" style="bottom:316px;left:50px;width:16px;height:72px;"><div class="bt">Verity</div></div>
+    <div class="b b4" style="bottom:316px;left:68px;width:21px;height:86px;"><div class="bt">Reminders of Him</div></div>
+    <div class="b b7" style="bottom:316px;left:91px;width:18px;height:78px;"><div class="bt">Confess</div></div>
+    <div class="b b0" style="bottom:159px;left:5px;width:20px;height:84px;"><div class="bt">Hopeless</div></div>
+    <div class="b b3" style="bottom:159px;left:27px;width:17px;height:74px;"><div class="bt">Slammed</div></div>
+    <div class="b b6" style="bottom:159px;left:46px;width:22px;height:88px;"><div class="bt">Maybe Someday</div></div>
+    <div class="b b2" style="bottom:159px;left:70px;width:18px;height:76px;"><div class="bt">November 9</div></div>
+    <div class="b b8" style="bottom:159px;left:90px;width:22px;height:82px;"><div class="bt">Ugly Love</div></div>
+  </div>
+  <div class="desk"><div class="desk-grain"></div></div>
+  <div style="position:absolute;bottom:138px;left:155px;">
+    <div class="ds" style="width:90px;height:13px;background:linear-gradient(90deg,#6b3a18,#4a2410);"><div class="dbt">Fourth Wing</div></div>
+    <div class="ds" style="width:84px;height:13px;background:linear-gradient(90deg,#7a4520,#553018);margin-top:1px;"><div class="dbt">ACOTAR</div></div>
+    <div class="ds" style="width:92px;height:13px;background:linear-gradient(90deg,#5a3012,#3e200c);margin-top:1px;"><div class="dbt">It Ends With Us</div></div>
+    <div class="ds" style="width:80px;height:13px;background:linear-gradient(90deg,#4e2a0e,#341a08);margin-top:1px;"><div class="dbt">Beach Read</div></div>
+  </div>
+  <div style="position:absolute;bottom:138px;right:155px;">
+    <div class="ds" style="width:86px;height:13px;background:linear-gradient(90deg,#8a5228,#622e18);"><div class="dbt">Twisted Love</div></div>
+    <div class="ds" style="width:80px;height:13px;background:linear-gradient(90deg,#724020,#4e2a12);margin-top:1px;"><div class="dbt">Icebreaker</div></div>
+    <div class="ds" style="width:88px;height:13px;background:linear-gradient(90deg,#613818,#42240e);margin-top:1px;"><div class="dbt">Song of Achilles</div></div>
+  </div>
+  <div style="position:absolute;top:0;left:38%;display:flex;flex-direction:column;align-items:center;">
+    <div style="width:3px;height:75px;background:#6b4820;margin:0 auto;border-radius:2px;"></div>
+    <div style="width:55px;height:3px;background:#6b4820;position:absolute;top:28px;left:50%;transform:translateX(-50%);border-radius:2px;"></div>
+    <div style="width:48px;height:26px;background:linear-gradient(180deg,#c8855c,#a06030);border-radius:50% 50% 40% 40%;position:absolute;top:31px;left:50%;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;">
+      <div style="width:11px;height:11px;border-radius:50%;background:rgba(255,220,100,0.9);box-shadow:0 0 14px 6px rgba(255,200,60,0.65),0 0 28px 10px rgba(255,180,40,0.3);"></div>
+    </div>
+    <div style="width:180px;height:140px;position:absolute;top:50px;left:50%;transform:translateX(-50%);background:radial-gradient(ellipse at 50% 0%,rgba(255,200,60,0.14),transparent);border-radius:50%;"></div>
+  </div>
+</div>
+
 <div id="daisy-bg"></div>
 
 <header class="top">
   <h1>📖 Books</h1>
   <p>"little worlds worth getting lost in"</p>
-  <nav style="margin-top:10px;">
-    <a href="index.html" style="color:#5c3317;text-decoration:none;font-size:0.9rem;font-family:'DM Sans',sans-serif;">← back home</a>
-  </nav>
+  <nav style="margin-top:10px;"><a href="index.html" style="text-decoration:none;font-size:0.9rem;font-family:'DM Sans',sans-serif;">← back home</a></nav>
 </header>
 
 <div class="books-wrap">
-
-  <!-- ADD BOOK FORM -->
   <div class="add-book-form" id="writeBox" style="display:none;">
     <h3>add a book 📖</h3>
-
     <div class="form-row">
-      <div>
-        <label class="form-label">book title *</label>
-        <input type="text" id="bookTitle" placeholder="e.g. Fourth Wing">
-      </div>
-      <div>
-        <label class="form-label">author *</label>
-        <input type="text" id="bookAuthor" placeholder="e.g. Rebecca Yarros">
-      </div>
+      <div><label class="form-label">book title *</label><input type="text" id="bookTitle" placeholder="e.g. Fourth Wing"></div>
+      <div><label class="form-label">author *</label><input type="text" id="bookAuthor" placeholder="e.g. Rebecca Yarros"></div>
     </div>
-
     <div class="form-row-3">
-      <div>
-        <label class="form-label">male main character</label>
-        <input type="text" id="bookMaleMain" placeholder="e.g. Xaden Riorson">
-      </div>
-      <div>
-        <label class="form-label">female main character</label>
-        <input type="text" id="bookFemaleMain" placeholder="e.g. Violet Sorrengail">
-      </div>
-      <div>
-        <label class="form-label">favourite character</label>
-        <input type="text" id="bookFavChar" placeholder="e.g. Liam Mairi">
-      </div>
+      <div><label class="form-label">male main character</label><input type="text" id="bookMaleMain" placeholder="e.g. Xaden Riorson"></div>
+      <div><label class="form-label">female main character</label><input type="text" id="bookFemaleMain" placeholder="e.g. Violet Sorrengail"></div>
+      <div><label class="form-label">favourite character</label><input type="text" id="bookFavChar" placeholder="e.g. Liam Mairi"></div>
     </div>
-
     <div class="form-row">
-      <div>
-        <label class="form-label">trope</label>
-        <input type="text" id="bookTrope" placeholder="e.g. enemies to lovers">
-      </div>
-      <div>
-        <label class="form-label">goodreads / amazon link (optional)</label>
-        <input type="url" id="bookLink" placeholder="paste link here">
-      </div>
+      <div><label class="form-label">trope</label><input type="text" id="bookTrope" placeholder="e.g. enemies to lovers"></div>
+      <div><label class="form-label">goodreads / amazon link (optional)</label><input type="url" id="bookLink" placeholder="paste link here"></div>
     </div>
-
     <div style="margin-bottom:12px;">
       <label class="form-label">genre —</label>
       <div class="genre-tags" id="genreTags">
@@ -192,30 +208,19 @@
         <span class="genre-tag" onclick="toggleGenre(this)">spicy 🌶️</span>
       </div>
     </div>
-
     <div class="star-row">
-      <span style="font-size:0.85rem;color:#b07858;font-family:'DM Sans',sans-serif;">your rating:</span>
+      <span style="font-size:0.85rem;color:rgba(200,155,80,0.6);font-family:'DM Sans',sans-serif;">your rating:</span>
       <div class="star-picker" id="starPicker">
-        <span onclick="setRating(1)">★</span><span onclick="setRating(2)">★</span>
-        <span onclick="setRating(3)">★</span><span onclick="setRating(4)">★</span><span onclick="setRating(5)">★</span>
+        <span onclick="setRating(1)">★</span><span onclick="setRating(2)">★</span><span onclick="setRating(3)">★</span><span onclick="setRating(4)">★</span><span onclick="setRating(5)">★</span>
       </div>
-      <span id="ratingLabel" style="font-size:0.82rem;color:#c8a888;font-family:'Caveat',cursive;"></span>
+      <span id="ratingLabel" style="font-size:0.82rem;color:rgba(200,155,80,0.5);font-family:'Caveat',cursive;"></span>
     </div>
-
-    <div>
-      <label class="form-label">your review / thoughts</label>
-      <textarea id="bookReview" placeholder="what did it make you feel... did you ugly cry? did you throw it across the room? 🌸" style="min-height:80px;width:100%;box-sizing:border-box;margin-bottom:12px;"></textarea>
-    </div>
-
+    <div><label class="form-label">your review / thoughts</label>
+    <textarea id="bookReview" placeholder="what did it make you feel... did you ugly cry? did you throw it across the room? 🌸" style="margin-bottom:12px;"></textarea></div>
     <button onclick="postBook()" id="submitBtn" style="width:100%;padding:12px;font-size:0.95rem;">add to solite ✨</button>
   </div>
-
-  <p id="loginMsg" style="display:none;text-align:center;font-family:'Caveat',cursive;color:#b07858;font-size:1rem;margin-bottom:1.5rem;">
-    <a href="login.html" style="color:#c8855c;">log in</a> to add books 🌸
-  </p>
-
+  <p id="loginMsg" style="display:none;text-align:center;font-family:'Caveat',cursive;color:rgba(200,155,80,0.7);font-size:1rem;margin-bottom:1.5rem;"><a href="login.html" style="color:#ffdd44;">log in</a> to add books 🌸</p>
   <div class="section-title">on everyone's shelves 🌸</div>
-
   <div class="filter-bar">
     <span class="filter-chip active" onclick="filterBooks('all',this)">all</span>
     <span class="filter-chip" onclick="filterBooks('romance',this)">romance</span>
@@ -225,260 +230,103 @@
     <span class="filter-chip" onclick="filterBooks('spicy 🌶️',this)">spicy 🌶️</span>
     <span class="filter-chip" onclick="filterBooks('cozy',this)">cozy</span>
   </div>
-
   <div id="booksGrid" class="books-grid"></div>
 </div>
 
 <script>
-const db = firebase.firestore();
-let currentUser = null;
-let selectedRating = 0;
-let selectedGenres = [];
-let allBooks = [];
-let currentFilter = 'all';
+const db=firebase.firestore();
+let currentUser=null,selectedRating=0,selectedGenres=[],allBooks=[],currentFilter='all';
+const spineColors={'romance':'#e8a0b4','romantasy':'#b094d4','fantasy':'#94b4d4','dark romance':'#8b6b8b','contemporary':'#d4a880','thriller':'#8b8b6b','YA':'#94d4b4','historical':'#c4a060','cozy':'#d4b894','spicy 🌶️':'#e87060'};
+const coverGradients=['linear-gradient(135deg,#6b3a18,#4a2410)','linear-gradient(135deg,#7a4520,#553018)','linear-gradient(135deg,#5a3012,#3e200c)','linear-gradient(135deg,#8a5228,#622e18)','linear-gradient(135deg,#4e2a0e,#341a08)','linear-gradient(135deg,#724020,#4e2a12)','linear-gradient(135deg,#613818,#42240e)','linear-gradient(135deg,#9a6030,#6a3e18)','linear-gradient(135deg,#583210,#3c220a)','linear-gradient(135deg,#7e4c24,#562e12)'];
 
-// spine colours per genre
-const spineColors = {
-  'romance':      '#e8a0b4',
-  'romantasy':    '#b094d4',
-  'fantasy':      '#94b4d4',
-  'dark romance': '#8b6b8b',
-  'contemporary': '#d4a880',
-  'thriller':     '#8b8b6b',
-  'YA':           '#94d4b4',
-  'historical':   '#c4a060',
-  'cozy':         '#d4b894',
-  'spicy 🌶️':    '#e87060',
-};
-
-const coverGradients = [
-  'linear-gradient(135deg,#c8855c,#8b4513)',
-  'linear-gradient(135deg,#9b6b9b,#5c3060)',
-  'linear-gradient(135deg,#6b8b9b,#2c4a5c)',
-  'linear-gradient(135deg,#8b9b6b,#4a5c2c)',
-  'linear-gradient(135deg,#c8a060,#8b6020)',
-  'linear-gradient(135deg,#9b6b6b,#5c2c2c)',
-  'linear-gradient(135deg,#6b8b8b,#2c5050)',
-  'linear-gradient(135deg,#b094d4,#5c3090)',
-  'linear-gradient(135deg,#d4a0a0,#904040)',
-  'linear-gradient(135deg,#a0c4a0,#406040)',
-];
-
-firebase.auth().onAuthStateChanged(async user => {
-  currentUser = user;
-  if (user) {
-    document.getElementById('writeBox').style.display = 'block';
-    const doc = await db.collection('users').doc(user.uid).get();
-    window._myUsername = doc.exists ? (doc.data().username || 'solite member') : 'solite member';
-    window._myPhoto    = doc.exists ? (doc.data().photoUrl || null) : null;
-  } else {
-    document.getElementById('loginMsg').style.display = 'block';
-  }
+firebase.auth().onAuthStateChanged(async user=>{
+  currentUser=user;
+  if(user){document.getElementById('writeBox').style.display='block';const doc=await db.collection('users').doc(user.uid).get();window._myUsername=doc.exists?(doc.data().username||'solite member'):'solite member';window._myPhoto=doc.exists?(doc.data().photoUrl||null):null;}
+  else{document.getElementById('loginMsg').style.display='block';}
   loadBooks();
 });
 
-function toggleGenre(el) {
-  el.classList.toggle('selected');
-  const g = el.textContent.trim();
-  if (el.classList.contains('selected')) { selectedGenres.push(g); }
-  else { selectedGenres = selectedGenres.filter(x => x !== g); }
-}
+function toggleGenre(el){el.classList.toggle('selected');const g=el.textContent.trim();if(el.classList.contains('selected')){selectedGenres.push(g);}else{selectedGenres=selectedGenres.filter(x=>x!==g);}}
+function setRating(n){selectedRating=n;document.querySelectorAll('#starPicker span').forEach((s,i)=>s.classList.toggle('active',i<n));const labels=['','not my vibe','it was okay','pretty good','loved it','absolutely obsessed ✨'];document.getElementById('ratingLabel').textContent=labels[n];}
 
-function setRating(n) {
-  selectedRating = n;
-  document.querySelectorAll('#starPicker span').forEach((s,i) => s.classList.toggle('active', i < n));
-  const labels = ['','not my vibe','it was okay','pretty good','loved it','absolutely obsessed ✨'];
-  document.getElementById('ratingLabel').textContent = labels[n];
-}
-
-async function postBook() {
-  if (!currentUser) return;
-  const title     = document.getElementById('bookTitle').value.trim();
-  const author    = document.getElementById('bookAuthor').value.trim();
-  const maleMain  = document.getElementById('bookMaleMain').value.trim();
-  const femMain   = document.getElementById('bookFemaleMain').value.trim();
-  const favChar   = document.getElementById('bookFavChar').value.trim();
-  const trope     = document.getElementById('bookTrope').value.trim();
-  const link      = document.getElementById('bookLink').value.trim();
-  const review    = document.getElementById('bookReview').value.trim();
-
-  if (!title || !author) { showToast('please add a title and author 🌸'); return; }
-
-  const btn = document.getElementById('submitBtn');
-  btn.disabled = true; btn.textContent = 'adding...';
-
+async function postBook(){
+  if(!currentUser)return;
+  const title=document.getElementById('bookTitle').value.trim();
+  const author=document.getElementById('bookAuthor').value.trim();
+  if(!title||!author){showToast('please add a title and author 🌸');return;}
+  const btn=document.getElementById('submitBtn');btn.disabled=true;btn.textContent='adding...';
   await db.collection('books').add({
-    uid: currentUser.uid, username: window._myUsername || 'solite member',
-    photoUrl: window._myPhoto || null,
-    title, author, maleMain, femMain, favChar, trope, link, review,
-    genres: selectedGenres, rating: selectedRating,
-    likes: [], createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    uid:currentUser.uid,username:window._myUsername||'solite member',photoUrl:window._myPhoto||null,
+    title,author,
+    maleMain:document.getElementById('bookMaleMain').value.trim(),
+    femMain:document.getElementById('bookFemaleMain').value.trim(),
+    favChar:document.getElementById('bookFavChar').value.trim(),
+    trope:document.getElementById('bookTrope').value.trim(),
+    link:document.getElementById('bookLink').value.trim(),
+    review:document.getElementById('bookReview').value.trim(),
+    genres:selectedGenres,rating:selectedRating,likes:[],
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
   });
-
-  // reset
-  ['bookTitle','bookAuthor','bookMaleMain','bookFemaleMain','bookFavChar','bookTrope','bookLink','bookReview'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
-  document.querySelectorAll('.genre-tag').forEach(t => t.classList.remove('selected'));
-  document.querySelectorAll('#starPicker span').forEach(s => s.classList.remove('active'));
-  selectedGenres = []; selectedRating = 0;
-  document.getElementById('ratingLabel').textContent = '';
-  showToast('book added 🌸');
-
-  btn.disabled = false; btn.textContent = 'add to solite ✨';
+  ['bookTitle','bookAuthor','bookMaleMain','bookFemaleMain','bookFavChar','bookTrope','bookLink','bookReview'].forEach(id=>document.getElementById(id).value='');
+  document.querySelectorAll('.genre-tag').forEach(t=>t.classList.remove('selected'));
+  document.querySelectorAll('#starPicker span').forEach(s=>s.classList.remove('active'));
+  selectedGenres=[];selectedRating=0;document.getElementById('ratingLabel').textContent='';
+  showToast('book added 🌸');btn.disabled=false;btn.textContent='add to solite ✨';
 }
 
-function loadBooks() {
-  db.collection('books').orderBy('createdAt','desc').onSnapshot(snap => {
-    allBooks = snap.docs; renderBooks();
-  });
-}
+function loadBooks(){db.collection('books').orderBy('createdAt','desc').onSnapshot(snap=>{allBooks=snap.docs;renderBooks();});}
+function filterBooks(filter,el){currentFilter=filter;document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');renderBooks();}
 
-function filterBooks(filter, el) {
-  currentFilter = filter;
-  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active'); renderBooks();
-}
-
-function renderBooks() {
-  const grid = document.getElementById('booksGrid');
-  grid.innerHTML = '';
-  let docs = allBooks;
-  if (currentFilter !== 'all') {
-    docs = docs.filter(doc => (doc.data().genres || []).includes(currentFilter));
-  }
-  if (docs.length === 0) {
-    grid.innerHTML = `<div class="empty-state">no books here yet 🌸<br><span style="font-size:1rem;">be the first to add one</span></div>`;
-    return;
-  }
-
-  docs.forEach((doc, idx) => {
-    const d = doc.data(), id = doc.id;
-    const liked = currentUser && d.likes && d.likes.includes(currentUser.uid);
-    const stars = '★'.repeat(d.rating || 0) + '☆'.repeat(5 - (d.rating || 0));
-    const isSeeded = d.isSeeded === true;
-    const genres = d.genres || [];
-    const spineColor = spineColors[genres[0]] || '#c8855c';
-    const coverGrad = coverGradients[Math.abs(d.title?.charCodeAt(0) || 0) % coverGradients.length];
-    const coverHtml = d.coverUrl
-  ? `<img src="${d.coverUrl}" style="width:100%;height:180px;object-fit:cover;" onerror="this.parentElement.style.background='${coverGrad}';this.style.display='none'">`
-  : `<div style="font-size:3rem;z-index:1;display:flex;align-items:center;justify-content:center;height:100%;">📖</div>`;
-    const card = document.createElement('div');
-    card.className = `book-card${isSeeded ? ' seeded' : ''}`;
-    card.style.animationDelay = `${idx * 0.06}s`;
-
-    const tagsHtml = genres.map(g => `<span class="book-tag">${g}</span>`).join('');
-    const avatarHtml = d.photoUrl
-      ? `<img src="${d.photoUrl}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;">`
-      : `<div class="avatar-mini">${(d.username||'s').charAt(0).toUpperCase()}</div>`;
-
-    card.innerHTML = `
+function renderBooks(){
+  const grid=document.getElementById('booksGrid');grid.innerHTML='';
+  let docs=allBooks;
+  if(currentFilter!=='all')docs=docs.filter(doc=>(doc.data().genres||[]).includes(currentFilter));
+  if(docs.length===0){grid.innerHTML=`<div class="empty-state">no books here yet 🌸<br><span style="font-size:1rem;">be the first to add one</span></div>`;return;}
+  docs.forEach((doc,idx)=>{
+    const d=doc.data(),id=doc.id;
+    const liked=currentUser&&d.likes&&d.likes.includes(currentUser.uid);
+    const stars='★'.repeat(d.rating||0)+'☆'.repeat(5-(d.rating||0));
+    const genres=d.genres||[];
+    const spineColor=spineColors[genres[0]]||'#c8855c';
+    const coverGrad=coverGradients[Math.abs(d.title?.charCodeAt(0)||0)%coverGradients.length];
+    const coverHtml=d.coverUrl?`<img src="${d.coverUrl}" style="width:100%;height:180px;object-fit:cover;" onerror="this.parentElement.style.background='${coverGrad}';this.style.display='none'">`:`<div style="font-size:3rem;z-index:1;display:flex;align-items:center;justify-content:center;height:100%;position:relative;">📖<span style="font-family:'Caveat',cursive;font-size:9px;color:rgba(255,220,150,0.6);position:absolute;bottom:10px;left:50%;transform:translateX(-50%);white-space:nowrap;">${d.title}</span></div>`;
+    const card=document.createElement('div');card.className='book-card';card.style.animationDelay=`${idx*0.06}s`;
+    const tagsHtml=genres.map(g=>`<span class="book-tag">${g}</span>`).join('');
+    const avatarHtml=d.photoUrl?`<img src="${d.photoUrl}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;">`:`<div class="avatar-mini">${(d.username||'s').charAt(0).toUpperCase()}</div>`;
+    card.innerHTML=`
       <div class="book-spine-strip" style="background:${spineColor};"></div>
-      <div class="book-cover" style="background:${coverGrad};">
-        ${coverHtml}
-        <div class="book-cover-overlay"></div>
-        ${genres[0] ? `<div class="book-cover-badge">${genres[0]}</div>` : ''}
-      </div>
+      <div class="book-cover" style="background:${coverGrad};">${coverHtml}<div class="book-cover-overlay"></div>${genres[0]?`<div class="book-cover-badge">${genres[0]}</div>`:''}</div>
       <div class="book-body">
         <div class="book-title">${d.title}</div>
         <div class="book-author">by ${d.author}</div>
-        ${d.rating ? `<div class="book-stars">${stars}</div>` : ''}
-        ${(d.maleMain || d.femMain || d.favChar) ? `
-        <div class="book-characters">
-          ${d.maleMain  ? `<div class="char-pill"><span class="char-icon">👦</span>${d.maleMain}</div>` : ''}
-          ${d.femMain   ? `<div class="char-pill"><span class="char-icon">👧</span>${d.femMain}</div>` : ''}
-          ${d.favChar   ? `<div class="char-pill"><span class="char-icon">🌟</span>${d.favChar}</div>` : ''}
-        </div>` : ''}
-        ${d.trope ? `<div style="font-size:0.75rem;color:#c8a888;font-family:'DM Sans',sans-serif;margin-bottom:8px;">✦ ${d.trope}</div>` : ''}
-        ${d.review ? `<div class="book-review">"${d.review}"</div>` : ''}
-        ${tagsHtml ? `<div class="book-tags">${tagsHtml}</div>` : ''}
-        <div class="book-meta">${avatarHtml}<span>added by @${d.username || 'solite member'}</span></div>
+        ${d.rating?`<div class="book-stars">${stars}</div>`:''}
+        ${(d.maleMain||d.femMain||d.favChar)?`<div class="book-characters">${d.maleMain?`<div class="char-pill"><span>👦</span>${d.maleMain}</div>`:''}${d.femMain?`<div class="char-pill"><span>👧</span>${d.femMain}</div>`:''}${d.favChar?`<div class="char-pill"><span>🌟</span>${d.favChar}</div>`:''}</div>`:''}
+        ${d.trope?`<div style="font-size:0.75rem;color:rgba(180,135,70,0.55);font-family:'DM Sans',sans-serif;margin-bottom:8px;">✦ ${d.trope}</div>`:''}
+        ${d.review?`<div class="book-review">"${d.review}"</div>`:''}
+        ${tagsHtml?`<div class="book-tags">${tagsHtml}</div>`:''}
+        <div class="book-meta">${avatarHtml}<span>added by @${d.username||'solite member'}</span></div>
         <div class="book-actions">
-          <button onclick="toggleLike('${id}',${liked})" id="likeBtn-${id}">${liked ? '❤️' : '🤍'} ${d.likes ? d.likes.length : 0}</button>
+          <button onclick="toggleLike('${id}',${liked})">${liked?'❤️':'🤍'} ${d.likes?d.likes.length:0}</button>
           <button onclick="toggleComments('${id}')">💬</button>
-          ${d.link ? `<a href="${d.link}" target="_blank" class="goodreads-link">goodreads ↗</a>` : ''}
+          ${d.link?`<a href="${d.link}" target="_blank" class="goodreads-link">goodreads ↗</a>`:''}
         </div>
         <div class="comments-box" id="comments-${id}">
           <div id="commentList-${id}"></div>
-          ${currentUser ? `
-          <div style="display:flex;gap:8px;margin-top:8px;">
-            <input id="commentInput-${id}" placeholder="your thoughts... 🌸" style="flex:1;padding:7px 10px;border-radius:10px;border:1.5px solid #e0c8b0;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.85);color:#3d2010;">
-            <button onclick="addComment('${id}')" style="padding:5px 14px;font-size:0.82rem;">send</button>
-          </div>` : ''}
+          ${currentUser?`<div style="display:flex;gap:8px;margin-top:8px;"><input id="commentInput-${id}" placeholder="your thoughts... 🌸" style="flex:1;padding:7px 10px;border-radius:10px;border:1px solid rgba(190,135,60,0.3)!important;background:rgba(255,255,255,0.06)!important;color:#f0d8a8!important;font-family:'DM Sans',sans-serif;"><button onclick="addComment('${id}')" style="padding:5px 14px;font-size:0.82rem;">send</button></div>`:''}
         </div>
       </div>`;
-
     grid.appendChild(card);
   });
 }
 
-function toggleLike(id, liked) {
-  if (!currentUser) { showToast('log in to like books 🌸'); return; }
-  const ref = db.collection('books').doc(id);
-  if (liked) { ref.update({ likes: firebase.firestore.FieldValue.arrayRemove(currentUser.uid) }); }
-  else        { ref.update({ likes: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)  }); }
-}
-
-function toggleComments(id) {
-  const box = document.getElementById(`comments-${id}`);
-  const open = box.style.display === 'block';
-  box.style.display = open ? 'none' : 'block';
-  if (!open) loadComments(id);
-}
-
-function loadComments(postId) {
-  db.collection('books').doc(postId).collection('comments').orderBy('createdAt','asc').onSnapshot(snap => {
-    const list = document.getElementById(`commentList-${postId}`); if (!list) return;
-    list.innerHTML = '';
-    snap.forEach(doc => {
-      const d = doc.data(), c = document.createElement('div'); c.className = 'comment';
-      c.innerHTML = `<span style="color:#c8855c;font-weight:500;">@${d.username || 'solite member'}</span> <span>${d.text}</span>`;
-      list.appendChild(c);
-    });
-  });
-}
-
-function addComment(postId) {
-  if (!currentUser) return;
-  const input = document.getElementById(`commentInput-${postId}`), text = input.value.trim();
-  if (!text) return;
-  db.collection('books').doc(postId).collection('comments').add({
-    uid: currentUser.uid, username: window._myUsername || 'solite member',
-    text, createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  }).then(() => input.value = '');
-}
-
-function showToast(msg) {
-  const toast = document.createElement('div');
-  toast.style.cssText = `position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#fdf5ec;border:1px solid #e0c8b0;border-radius:24px;padding:10px 24px;font-family:'Caveat',cursive;font-size:1.1rem;color:#5c3317;box-shadow:0 6px 20px rgba(100,50,10,0.15);z-index:99999;white-space:nowrap;`;
-  toast.textContent = msg; document.body.appendChild(toast); setTimeout(() => toast.remove(), 3000);
-}
+function toggleLike(id,liked){if(!currentUser){showToast('log in to like books 🌸');return;}const ref=db.collection('books').doc(id);if(liked){ref.update({likes:firebase.firestore.FieldValue.arrayRemove(currentUser.uid)});}else{ref.update({likes:firebase.firestore.FieldValue.arrayUnion(currentUser.uid)});}}
+function toggleComments(id){const box=document.getElementById(`comments-${id}`);const open=box.style.display==='block';box.style.display=open?'none':'block';if(!open)loadComments(id);}
+function loadComments(postId){db.collection('books').doc(postId).collection('comments').orderBy('createdAt','asc').onSnapshot(snap=>{const list=document.getElementById(`commentList-${postId}`);if(!list)return;list.innerHTML='';snap.forEach(doc=>{const d=doc.data(),c=document.createElement('div');c.className='comment';c.innerHTML=`<span style="color:#ffdd44;font-weight:500;">@${d.username||'solite member'}</span> <span>${d.text}</span>`;list.appendChild(c);});});}
+function addComment(postId){if(!currentUser)return;const input=document.getElementById(`commentInput-${postId}`),text=input.value.trim();if(!text)return;db.collection('books').doc(postId).collection('comments').add({uid:currentUser.uid,username:window._myUsername||'solite member',text,createdAt:firebase.firestore.FieldValue.serverTimestamp()}).then(()=>input.value='');}
+function showToast(msg){const toast=document.createElement('div');toast.style.cssText=`position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(35,20,5,0.95);border:1px solid rgba(180,120,50,0.4);border-radius:24px;padding:10px 24px;font-family:'Caveat',cursive;font-size:1.1rem;color:#f0d8a8;box-shadow:0 6px 20px rgba(0,0,0,0.4);z-index:99999;white-space:nowrap;`;toast.textContent=msg;document.body.appendChild(toast);setTimeout(()=>toast.remove(),3000);}
 </script>
-
-<!-- daisy bg -->
 <script>
-(function(){
-  const container=document.getElementById('daisy-bg'); if(!container) return;
-  function makeDaisy(size){
-    const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');
-    svg.setAttribute('width',size*2.6);svg.setAttribute('height',size*2.6);svg.setAttribute('viewBox','-20 -20 40 40');
-    [0,45,90,135,180,225,270,315].forEach(a=>{
-      const el=document.createElementNS(ns,'ellipse');el.setAttribute('cx',0);el.setAttribute('cy',-size);
-      el.setAttribute('rx',size*0.44);el.setAttribute('ry',size*0.77);el.setAttribute('fill','#fffef0');
-      el.setAttribute('transform',`rotate(${a})`);svg.appendChild(el);
-    });
-    const c1=document.createElementNS(ns,'circle');c1.setAttribute('r',size*0.55);c1.setAttribute('fill','#f5d76e');svg.appendChild(c1);
-    const c2=document.createElementNS(ns,'circle');c2.setAttribute('r',size*0.28);c2.setAttribute('fill','#e8c94a');svg.appendChild(c2);
-    return svg;
-  }
-  for(let i=0;i<28;i++){
-    const w=document.createElement('div');w.classList.add('daisy');
-    const size=5+Math.random()*7,opHigh=(0.25+Math.random()*0.35).toFixed(2),opLow=(parseFloat(opHigh)*0.3).toFixed(2);
-    w.style.cssText=`left:${(Math.random()*100).toFixed(1)}%;top:${(Math.random()*100).toFixed(1)}%;--op-high:${opHigh};--op-low:${opLow};animation-duration:${(3+Math.random()*5).toFixed(1)}s;animation-delay:-${(Math.random()*6).toFixed(1)}s;`;
-    w.appendChild(makeDaisy(size));container.appendChild(w);
-  }
-})();
+(function(){const container=document.getElementById('daisy-bg');if(!container)return;function makeDaisy(size){const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('width',size*2.6);svg.setAttribute('height',size*2.6);svg.setAttribute('viewBox','-20 -20 40 40');[0,45,90,135,180,225,270,315].forEach(a=>{const el=document.createElementNS(ns,'ellipse');el.setAttribute('cx',0);el.setAttribute('cy',-size);el.setAttribute('rx',size*0.44);el.setAttribute('ry',size*0.77);el.setAttribute('fill','rgba(200,150,80,0.12)');el.setAttribute('transform',`rotate(${a})`);svg.appendChild(el);});const c1=document.createElementNS(ns,'circle');c1.setAttribute('r',size*0.55);c1.setAttribute('fill','rgba(220,170,60,0.15)');svg.appendChild(c1);return svg;}for(let i=0;i<14;i++){const w=document.createElement('div');w.classList.add('daisy');const size=4+Math.random()*6,opHigh=(0.08+Math.random()*0.1).toFixed(2),opLow=(parseFloat(opHigh)*0.3).toFixed(2);w.style.cssText=`left:${(Math.random()*100).toFixed(1)}%;top:${(Math.random()*100).toFixed(1)}%;--op-high:${opHigh};--op-low:${opLow};animation-duration:${(3+Math.random()*5).toFixed(1)}s;animation-delay:-${(Math.random()*6).toFixed(1)}s;`;w.appendChild(makeDaisy(size));container.appendChild(w);}})();
 </script>
-
 </body>
 </html>
