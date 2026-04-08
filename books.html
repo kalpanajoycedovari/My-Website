@@ -408,14 +408,6 @@ function renderBooks() {
         </div>
       </div>`;
 
-    if (isSeeded && d.link) {
-      card.addEventListener('click', e => {
-        if (!e.target.closest('button') && !e.target.closest('input') && !e.target.closest('a')) {
-          window.open(d.link, '_blank');
-        }
-      });
-    }
-
     grid.appendChild(card);
   });
 }
