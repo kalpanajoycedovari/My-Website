@@ -1037,3 +1037,20 @@ header.top {
   white-space: nowrap;
 }
 #randomBtn:hover { background: #fff5ea; border-color: #c8855c; }
+.country-btn {
+  background: rgba(255,255,255,0.7);
+  border: 1.5px solid #e0c8b0;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  font-family: 'DM Sans', sans-serif;
+  color: #7a4a2a;
+  cursor: pointer;
+  transition: 0.15s;
+  box-shadow: none;
+}
+.country-btn.active {
+  background: linear-gradient(135deg, #c8855c, #a05530);
+  color: white;
+  border-color: #c8855c;
+}

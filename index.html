@@ -60,6 +60,15 @@
       </div>
     </div>
     <div style="padding:5px 0;border-bottom:1px solid #f5ede0;">
+  <div style="padding:6px 16px 4px;font-size:10px;color:#c8a888;font-family:'DM Sans',sans-serif;text-transform:uppercase;letter-spacing:0.06em;">country</div>
+  <div style="display:flex;flex-wrap:wrap;gap:6px;padding:4px 16px 10px;">
+    <button onclick="setCountry('🇮🇳 India')" id="country-india" class="country-btn">🇮🇳 India</button>
+    <button onclick="setCountry('🇬🇧 UK')" id="country-uk" class="country-btn">🇬🇧 UK</button>
+    <button onclick="setCountry('🇺🇸 USA')" id="country-usa" class="country-btn">🇺🇸 USA</button>
+  </div>
+  <div style="padding:0 16px 8px;font-size:11px;color:#c8a888;font-family:'Caveat',cursive;" id="currentCountryLabel"></div>
+</div>
+    <div style="padding:5px 0;border-bottom:1px solid #f5ede0;">
       <div style="padding:6px 16px 2px;font-size:10px;color:#c8a888;font-family:'DM Sans',sans-serif;text-transform:uppercase;letter-spacing:0.06em;">account</div>
       <div onclick="showEditUsername();toggleMenuPanel();" style="padding:9px 16px;font-size:13px;color:#7a4a2a;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:8px;">✏️ change username</div>
       <div onclick="showInviteLink();toggleMenuPanel();" style="padding:9px 16px;font-size:13px;color:#7a4a2a;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:8px;">🌼 invite someone</div>

@@ -59,6 +59,7 @@ function loadUserProfile(user) {
       showOnboarding(user, username);
     } else {
       renderProfileBox(username);
+      loadCountry();
     }
   });
 }
@@ -1184,4 +1185,27 @@ function spawnObDaisies() {
     w.style.cssText = `position:absolute;left:${(Math.random()*100).toFixed(1)}%;top:${(Math.random()*100).toFixed(1)}%;--op-high:${opHigh};--op-low:${opLow};animation-duration:${(3+Math.random()*5).toFixed(1)}s;animation-delay:-${(Math.random()*6).toFixed(1)}s;`;
     w.appendChild(makeDaisy(size)); container.appendChild(w);
   }
+}
+// ==========================
+// COUNTRY SELECTOR
+// ==========================
+function setCountry(country) {
+  localStorage.setItem('soliteCountry', country);
+  document.querySelectorAll('.country-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.textContent.trim() === country);
+  });
+  const label = document.getElementById('currentCountryLabel');
+  if (label) label.textContent = `currently: ${country}`;
+  showToast(`country set to ${country} 🌸`);
+  toggleMenuPanel();
+}
+
+function loadCountry() {
+  const saved = localStorage.getItem('soliteCountry');
+  if (!saved) return;
+  document.querySelectorAll('.country-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.textContent.trim() === saved);
+  });
+  const label = document.getElementById('currentCountryLabel');
+  if (label) label.textContent = `currently: ${saved}`;
 }
